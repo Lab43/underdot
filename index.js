@@ -1,1 +1,1 @@
-module.exports = require('./lib/underdot');
+module.exports = require('./lib/Underdot');

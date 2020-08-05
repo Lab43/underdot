@@ -7,7 +7,7 @@ const logger = require('./logger');
 
 
 
-module.exports = (destination) => (path, buffer) => {
+module.exports = (destination) => ({path, file}) => {
 
   // don't output file if it starts with an underscore
   if (p.basename(path).startsWith('_')) {
@@ -15,7 +15,7 @@ module.exports = (destination) => (path, buffer) => {
   }
 
   const dest = p.join(destination, path);
-  return fs.outputFile(dest, buffer).then(() => {
+  return fs.outputFile(dest, file).then(() => {
     logger.log('Created file', dest);
   });
 

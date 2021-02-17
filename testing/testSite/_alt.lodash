@@ -1,0 +1,6 @@
+---
+bodyClass: alt-template
+---
+
+<h2>This page is using the alternative template.</h2>
+<div>${content}</div>

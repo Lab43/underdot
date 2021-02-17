@@ -7,7 +7,7 @@ const logger = require('./logger');
 
 
 
-module.exports = (destination) => ({path, file}) => {
+module.exports = (destination, path, file) => {
 
   // don't output file if it starts with an underscore
   if (p.basename(path).startsWith('_')) {

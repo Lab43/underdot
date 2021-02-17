@@ -1,0 +1,6 @@
+---
+title: Subdirectory Alt Template Page
+template: alt
+---
+
+<p>This is a page using the alt template in a subdirectory.</p>

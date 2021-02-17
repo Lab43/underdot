@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Page class parse method returns the body 1`] = `
+exports[`Page class parse returns the body 1`] = `
 "One who makes himself a worm cannot complain afterwards if people step on him.
 – Immanuel Kant
 "

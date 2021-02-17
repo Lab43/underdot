@@ -1,0 +1,6 @@
+---
+bodyClass: subdirectory-alt-template
+---
+
+<h3>This page is using the alt template in a subdirectory.</h3>
+<div>${content}</div>

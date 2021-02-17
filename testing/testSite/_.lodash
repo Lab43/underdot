@@ -1,0 +1,9 @@
+<html>
+  <head>
+    <title>${title} | ${siteName}</title>
+  </head>
+  <body class='<% print(typeof bodyClass !== "undefined" ? bodyClass : "default") %>'>
+    <h1>${title}</h1>
+    <div>${content}</div>
+  </body>
+</html>

@@ -6,7 +6,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "test": "jest --watch --collect-coverage"
+    "test": "jest --watchAll --collect-coverage"
   },
   "dependencies": {
     "front-matter": "^4.0.2",

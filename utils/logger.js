@@ -1,11 +1,13 @@
+const chalk = require('chalk');
+
+
+
 exports.log = (...messages) => {
-  console.log(...messages);
+  console.log(chalk.green(...messages));
 }
 
-exports.error = (err, message) => {
-  if (message) {
-    console.log(message);
-  }
-  console.log(err);
+exports.error = (err, ...messages) => {
+  if (messages) console.log(chalk.red(...messages));
+  console.error(err);
   process.exit();
 }

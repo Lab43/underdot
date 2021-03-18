@@ -1,12 +1,16 @@
 {
   "name": "underdot",
   "version": "1.0.0",
-  "description": "",
+  "description": "A static site generate",
   "main": "index.js",
-  "author": "",
+  "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
   "scripts": {
     "test": "jest --watchAll --collect-coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lab43/underdot.git"
   },
   "dependencies": {
     "chalk": "^4.1.0",

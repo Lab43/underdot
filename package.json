@@ -13,11 +13,11 @@
     "url": "https://github.com/Lab43/underdot.git"
   },
   "dependencies": {
-    "chalk": "^4.1.0",
+    "chalk": "^4.1.2",
     "front-matter": "^4.0.2",
     "fs-extra": "^9.1.0",
     "lodash": "^4.17.21",
-    "minimatch": "^3.0.4",
+    "minimatch": "^3.1.2",
     "p-queue": "^6.6.2"
   },
   "devDependencies": {

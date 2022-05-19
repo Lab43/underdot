@@ -37,7 +37,7 @@ Here are the options that can be passed to Underdot (`new Underdot(options)`).
 | source      | String: The name of the source directory. Defaults to source.    |
 | destination | String: The name of the output directory. Defaults to build.     |
 | plugins     | Array: Underdot plugins to use, in order.                        |
-| globals     | Object: Global variables passed to all pages and templates       |
+| globals     | Object: Global variables passed to all pages and templates.      |
 | concurrency | Integer: How many files to process concurrently. Defaults to 10. |
 
 
@@ -66,7 +66,7 @@ Let's say that `a-very-fancy-page.ejs` has YAML front matter that specifies the 
 
 ## YAML front matter and variables
 
-You can use [YAML front matter](https://jekyllrb.com/docs/front-matter/) to specify a template page or to pass variables to the template engine.
+You can use [YAML front matter](https://jekyllrb.com/docs/front-matter/) to specify a template or to pass variables to the template engine.
 
 `source/a-very-fancy-page.ejs`
 ```

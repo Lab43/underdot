@@ -2,6 +2,15 @@
 
 Underdot is a static site generator written in node.js that I built primarily to make marketing sites. The static site generators I had tried at the time were geared towards blogs, with a strong separation between template/layout code and content. That makes a lot of sense if your website has tons of pages that should all pretty much look the same. But when you're building a small site with many unique pages, each with different designs, that model breaks down. I wanted a system that I could throw a bunch of templates, assets, and content at and have it use some simple inheritance logic and a robust plugin system to spit out my site with minimal need for scaffolding or configuration.
 
+#### Sites built with Underdot include:
+
+* [eusonic](https://www.eusonic.com)
+* [Di Costanzo](https://www.mdcwines.com)
+* [Kinsman Eades](https://www.kinsmaneades.com)
+* [Impensata](https://impensata.com)
+* [Abreu](https://abreuvineyards.com)
+* [Almacerro](https://almacerro.com) 
+
 
 ## Setting it up
 

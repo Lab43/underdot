@@ -1,5 +1,0 @@
----
-title: Home
----
-
-<p>This is the homepage of <%= siteName %>.</p>

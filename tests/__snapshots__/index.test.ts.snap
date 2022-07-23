@@ -1,0 +1,55 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Underdot class copies all files on build 1`] = `
+[MockFunction] {
+  "calls": Array [
+    Array [
+      "tests/temp",
+      Object {
+        "recursive": true,
+      },
+    ],
+    Array [
+      "tests/temp/sub",
+      Object {
+        "recursive": true,
+      },
+    ],
+  ],
+  "results": Array [
+    Object {
+      "type": "return",
+      "value": undefined,
+    },
+    Object {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`Underdot class copies all files on build 2`] = `
+[MockFunction] {
+  "calls": Array [
+    Array [
+      "tests/temp/chidi.jpg",
+      "Buffer of length 65590",
+    ],
+    Array [
+      "tests/temp/sub/sub.txt",
+      "Buffer of length 5",
+    ],
+  ],
+  "results": Array [
+    Object {
+      "type": "return",
+      "value": undefined,
+    },
+    Object {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

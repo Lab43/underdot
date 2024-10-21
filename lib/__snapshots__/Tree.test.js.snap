@@ -1,53 +1,53 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Tree class tree matches snapshot 1`] = `
-Object {
-  "children": Object {
-    "alt": Object {
-      "children": Object {
-        "alt-page": Object {
+{
+  "children": {
+    "alt": {
+      "children": {
+        "alt-page": {
           "content": "<p>This is a page using the alt template in a subdirectory.</p>
 ",
           "dirname": "alt",
-          "metadata": Object {
+          "metadata": {
             "template": "alt",
             "title": "Subdirectory Alt Template Page",
           },
         },
-        "page": Object {
+        "page": {
           "content": "<p>This is a page using the default template in a subdirectory.</p>
 ",
           "dirname": "alt",
-          "metadata": Object {
+          "metadata": {
             "title": "Subdirectory Default Template Page",
           },
         },
       },
     },
-    "alt-page": Object {
+    "alt-page": {
       "content": "<p>This is a page using the alternative template.</p>
 ",
       "dirname": "",
-      "metadata": Object {
+      "metadata": {
         "template": "alt",
         "title": "Alt Template Page",
       },
     },
-    "simple": Object {
-      "children": Object {
-        "child1": Object {
+    "simple": {
+      "children": {
+        "child1": {
           "content": "<p>This is a simple child page.</p>
 ",
           "dirname": "simple",
-          "metadata": Object {
+          "metadata": {
             "title": "Simple Child Page 1",
           },
         },
-        "child2": Object {
+        "child2": {
           "content": "<p>This is another simple child page.</p>
 ",
           "dirname": "simple",
-          "metadata": Object {
+          "metadata": {
             "title": "Simple Child Page 2",
           },
         },
@@ -55,17 +55,17 @@ Object {
       "content": "<p>This is a simple page.</p>
 ",
       "dirname": "",
-      "metadata": Object {
+      "metadata": {
         "title": "Simple Page",
       },
     },
-    "sub": Object {
-      "children": Object {
-        "regular": Object {
+    "sub": {
+      "children": {
+        "regular": {
           "content": "<p>This is a regular page in a subdirectory.</p>
 ",
           "dirname": "sub",
-          "metadata": Object {
+          "metadata": {
             "title": "Sub Regular Page",
           },
         },
@@ -73,7 +73,7 @@ Object {
       "content": "<p>This is an index page in a subdirectory.</p>
 ",
       "dirname": "sub",
-      "metadata": Object {
+      "metadata": {
         "title": "Sub Index Page",
       },
     },
@@ -81,7 +81,7 @@ Object {
   "content": "<p>This is the homepage of Test Site.</p>
 ",
   "dirname": "",
-  "metadata": Object {
+  "metadata": {
     "title": "Home",
   },
 }

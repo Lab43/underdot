@@ -1,6 +1,6 @@
 {
   "name": "underdot",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A static site generate",
   "main": "index.js",
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",

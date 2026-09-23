@@ -30,7 +30,7 @@ The configuration lists the plugins in order (see: docs/specs/plugins.md, Plugin
 
 ## Rewrites
 
-The configuration may list rewrites: pairs of a URL pattern and the path to serve in its place. The dev server applies them to a request before looking for a file (see: docs/specs/dev-server.md, Serving). A build ignores them. Rationale: a site whose production server routes several URLs to one page, as a hosted store's routes are sent to the page that embeds it, is a site whose routing is a fact about the site, committed alongside the rules its production server carries. Without it the dev server cannot show the author those pages.
+The configuration may list rewrites: pairs of a glob and the path to serve for any request URL the glob matches. The dev server applies them to a request before looking for a file (see: docs/specs/dev-server.md, Serving). A build ignores them. Globs are the one pattern syntax the configuration uses, for rewrites, excluded files, and file handler rules alike. Rationale: a site whose production server routes several URLs to one page, as a hosted store's routes are sent to the page that embeds it, is a site whose routing is a fact about the site, committed alongside the rules its production server carries. Without it the dev server cannot show the author those pages.
 
 ## Commands
 

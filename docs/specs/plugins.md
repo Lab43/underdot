@@ -29,7 +29,7 @@ Renderers and helpers receive a render context for the file being rendered. It c
 - The page: its URL and output path.
 - The file being rendered: its path under the source root, and so its directory. This is the page during the page's render and the template during a template's render, which is what makes relative paths resolve per file.
 - The variables the file renders with, as merged (see: docs/specs/templates.md, Variables), and the `_chain` view.
-- The build's read operations: read a file under the source root, read the handled output of a static file (see: File handlers), and read the rendered body of another page. Rationale: a cache-busting helper needs the hash of the CSS as it will be served, not as it sits in source, and an archive page needs each post's body as rendered.
+- The build's read operations: read a file under the source root, read the handled output of a static file by its output path (see: File handlers), and read the rendered body of another page by its URL. Rationale: a cache-busting helper needs the hash of the CSS as it will be served, not as it sits in source, and an archive page needs each post's body as rendered.
 - The build's emit operation (see: Emitted files).
 - A logger.
 

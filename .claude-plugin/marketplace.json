@@ -1,0 +1,12 @@
+{
+  "name": "q-pin-lab43-underdot-62de63",
+  "owner": { "name": "this project" },
+  "metadata": { "description": "Pins the q this project's sessions load. The name must stay unique to this project. Sharing another project's name makes this one resolve to that project's q." },
+  "plugins": [
+    {
+      "name": "q",
+      "source": "./node_modules/@lab43/q/q-extension",
+      "description": "The q workflow plugin, pinned for this project."
+    }
+  ]
+}

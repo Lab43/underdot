@@ -26,3 +26,17 @@ This project's own:
 
 - `docs/conventions/principles.md` — cross-cutting rules, including deviations from q's
 - `docs/conventions/documentation.md` — documentation rulings and deviations
+- `docs/conventions/toolchain.md` — the language, module system, and runtime the code is written against
+
+Specs:
+
+- `docs/specs/source-tree.md` — what Underdot makes of a site's source directory: which files are pages, templates, and static files, where each lands in the destination, and what URL a page gets
+- `docs/specs/templates.md` — how a page becomes a finished document: frontmatter, how a page finds its template chain, and which variables every file in the chain sees
+- `docs/specs/plugins.md` — what a plugin can do to a build and what it owes the build in return, so the build knows what depends on what
+- `docs/specs/build.md` — what one build guarantees: how the destination relates to the source, the order of work, when work is skipped, and what a failure does
+- `docs/specs/dev-server.md` — what a development session gives an author: one command that builds, serves locally, rebuilds on change, and reloads the browser
+- `docs/specs/configuration.md` — how a site tells Underdot what to build and how it is routed: the configuration file, its settings, and the commands and programmatic entry points that consume it
+
+Guides:
+
+- `docs/guides/migrating-from-v1.md` — what to change in a site built on Underdot v1 so it builds on v2, each entry pointing at the spec section that decided it

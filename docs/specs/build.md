@@ -12,9 +12,9 @@ An incremental build produces the same destination as a full build of the same s
 
 A build proceeds in phases. Each phase completes before the next begins, and within a phase, units run in no defined order (see: Concurrency).
 
-1. Classify every file under the source root (see: docs/specs/source-tree.md, Classification) and parse every page's and template's frontmatter.
+1. Classify every file under the source root (see: docs/specs/source-tree.md, Classification), parse every page's and template's frontmatter, and parse the data files (see: docs/specs/templates.md, Data files).
 2. Run file handlers over every static file (see: docs/specs/plugins.md, File handlers).
-3. Run page hooks (see: docs/specs/plugins.md, Page hooks).
+3. Run page hooks (see: docs/specs/plugins.md, Page hooks). Every global is now defined, so this is where a name defined twice, or shared with a helper, is caught.
 4. Render every page's body.
 5. Render every page's template chain (see: docs/specs/templates.md, Rendering the chain) and run emitted files' producers (see: docs/specs/plugins.md, Emitted files).
 6. Write the destination (see: Destination).

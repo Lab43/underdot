@@ -1,6 +1,6 @@
 # Configuration
 
-How a site tells Underdot what to build: the configuration file, the settings it holds, and the commands and programmatic entry points that consume it. The configuration describes the build alone; how a dev-server session is served is given to the command that starts it.
+How a site tells Underdot what to build and how it is routed: the configuration file, the settings it holds, and the commands and programmatic entry points that consume it. The configuration describes the site. How a dev-server session is served on this machine, its port and whether it uses HTTPS, is given to the command that starts it.
 
 ## The configuration file
 
@@ -28,15 +28,19 @@ The configuration may define globals, an object whose keys become variables in e
 
 The configuration lists the plugins in order (see: docs/specs/plugins.md, Plugin identity and order). A site with no renderer among its plugins builds static files only (see: docs/specs/templates.md).
 
+## Rewrites
+
+The configuration may list rewrites: pairs of a URL pattern and the path to serve in its place. The dev server applies them to a request before looking for a file (see: docs/specs/dev-server.md, Serving). A build ignores them. Rationale: a site whose production server routes several URLs to one page, as a hosted store's routes are sent to the page that embeds it, is a site whose routing is a fact about the site, committed alongside the rules its production server carries. Without it the dev server cannot show the author those pages.
+
 ## Commands
 
 Underdot installs one command, `underdot`, with two subcommands:
 
 - `underdot build` builds the site and exits with a non-zero status when the build fails (see: docs/specs/build.md, Errors).
-- `underdot dev` runs a dev-server session (see: docs/specs/dev-server.md). It accepts a port and an HTTPS option. Rationale: how a session is served is a fact about the session and the machine, not about the site's build, so it stays out of the configuration. Two sessions of one site in two worktrees share a configuration and cannot share a port, and a site that must be served over HTTPS says so in its `dev` script.
+- `underdot dev` runs a dev-server session (see: docs/specs/dev-server.md). It accepts a port and an HTTPS option. Rationale: how a session is served on this machine is a fact about the session, not about the site, so it stays out of the configuration. Two sessions of one site in two worktrees share a configuration and cannot share a port, and a site that must be served over HTTPS says so in its `dev` script.
 
 Both accept a path to a configuration file in place of the default.
 
 ## Programmatic use
 
-The package exports the build and the dev-server session as functions taking a configuration, so a script can prepare a source tree before building it, or build a second output from a second configuration. What the functions do is what the commands do. Rationale: a project that assembles a source from several directories, or builds a companion page from the same templates, needs a step no setting expresses, and the command line is a thin layer over the same calls.
+The package exports the build and the dev-server session as functions taking a configuration, so a script can prepare a source tree before building or serving it, or build and serve a second output from a second configuration. What the functions do is what the commands do, and a script may run several sessions at once on different ports. Rationale: a project that assembles a source from several directories, or builds a companion page from the same templates, needs a step no setting expresses, and the command line is a thin layer over the same calls.

@@ -4,7 +4,7 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 
 ## Pages and URLs
 
-- **`slug` is replaced by `_url`.** The page's identity is its URL: `/` for the home page, `/about/` for `about/index.html`. Replace `'/' + slug` with `_url`, and `slug === ''` with `_url === '/'`. A helper that compared `slug` compares `_url`. A template that built a sibling file's path from the slug, such as `` `/${slug}.jpg` `` for an image beside the page, builds it from `_url` with the trailing slash removed (see: docs/specs/source-tree.md, URLs).
+- **`slug` is replaced by `_url`.** The page's identity is its URL: `/` for the home page, `/about/` for `about/index.html`. Replace `'/' + slug` with `_url`, and `slug === ''` with `_url === '/'`. A helper that compared `slug` compares `_url`. A template that built a sibling file's path from the slug, such as `` `/${slug}.jpg` `` for an image beside the page, builds it from `_url` with the trailing slash removed. The home page's `_url` is `/`, so a template that may render it keeps that case separate (see: docs/specs/source-tree.md, URLs).
 - **Two sources writing one output path fail the build.** v1 kept whichever it met first. Rename or remove one of them (see: docs/specs/source-tree.md, Output paths are unique).
 
 ## Building
@@ -30,9 +30,9 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **Data files move into `source/_data/`.** A build script that read a JSON file and passed it as a global drops that code, and the file moves to `source/_data/<name>.json`, where it defines the variable `<name>` (see: docs/specs/templates.md, Data files).
 
 - **A global no longer overrides a template's frontmatter.** The order is globals, then templates from the root down, then the page. A site that relied on a global winning over a template's frontmatter moves the value into the page or the template (see: docs/specs/templates.md, Variables).
-- **Relative paths in a template resolve against the template's own directory.** v1 resolved them against the page being rendered. A template include or helper path that only worked because of the page's location is rewritten relative to the template, or made absolute (see: docs/specs/templates.md, Relative paths).
+- **Relative paths in a template resolve against the template's own directory.** v1 resolved them against the page being rendered. A helper path, or an include that names a path, that only worked because of the page's location is rewritten relative to the template, or made absolute. An include that names a partial without a path, resolved through the EJS plugin's `views` directories, keeps working unchanged (see: docs/specs/templates.md, Relative paths).
 - **`content` is now `_content`.** Every `<%- content %>` in a template becomes `<%- _content %>`. Built-in variables all start with an underscore, and a frontmatter key starting with an underscore is an error (see: docs/specs/templates.md, Reserved keys).
-- **A template reading a value meant for it from a page it did not directly wrap reads `_chain[0]` instead.** The merged variables give the page's value; `_chain` gives each file's own (see: docs/specs/templates.md, Variables).
+- **A template reading a value meant for it from a page it did not directly wrap reads `_chain[0]` instead.** The merged variables give the page's value, and `_chain` gives each file's own (see: docs/specs/templates.md, Variables).
 - **`dirname` is no longer a variable.** Helpers receive the current file's directory from the render context instead (see: docs/specs/plugins.md, Render context).
 - **`locals.title` can become `title`.** An unset variable reads as absent instead of throwing, so the `locals.` prefix is no longer needed. Existing uses keep working (see: docs/specs/templates.md, Built-in variables).
 

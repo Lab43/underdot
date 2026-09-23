@@ -1,6 +1,6 @@
 ## Documentation
 
-This project follows q, an agentic coding workflow. Its rules live in the project's own documentation. Those rules are conventions: binding decisions about how this project's code and docs get written, recorded as they are made. Two other kinds of doc sit alongside them. Specs state what Underdot commits to, as behavior the code must honor, and are written only on the user's instruction. Guides say how to operate the project, rather than how to write it.
+This project follows q, an agentic coding workflow. Its rules live in the project's own documentation. Those rules are conventions: binding decisions about how this project's code and docs get written, recorded as they are made. Two other kinds of doc sit alongside them. Specs state what Underdot commits to, as behavior the code must honor. Guides say how to use and operate Underdot, rather than how to write it (source: @lab43/q conventions/documentation.md, Taxonomy).
 
 If the session's skill list has no `/q:` skills, this machine is missing the q plugin — ask the user to install the project's dependencies (`npm install`, or the project's package manager's equivalent), then run `/q:reconcile`.
 

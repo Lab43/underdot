@@ -21,6 +21,7 @@
     "p-queue": "^6.6.2"
   },
   "devDependencies": {
+    "@lab43/q": "0.6.1",
     "jest": "^29.7.0",
     "jest-extended": "^4.0.2"
   },

@@ -204,3 +204,16 @@ Register a template engine. The first argument is the file extension for this re
 * [underdot-cname](https://github.com/Lab43/underdot-cname): Add a cname file for GitHub Pages
 * [underdot-template-helpers](https://github.com/Lab43/underdot-template-helpers): Commonly used template helpers
 * [underdot-collection](https://github.com/Lab43/underdot-collection): WORK IN PROGRESS. Turn a folder of pages into a collection that can be used in templates
+
+
+## Working with q
+
+This project uses [q](https://www.npmjs.com/package/@lab43/q), an agentic coding workflow that grounds Claude Code sessions in the project's own conventions. It arrives with the project's dependencies, and Claude Code loads it from the repo's tracked settings.
+
+The project's rules live in `docs/conventions/`, and q ships rules of its own inside the package. Sessions read both before writing code, and record new decisions into the project's docs as they are made — the docs assemble themselves out of the work.
+
+A session lists every `/q:` skill. Start with these:
+
+- `/q:implement` — take on a task or bug
+- `/q:create-plan`, then `/q:implement-plan` — plan bigger work, then execute the plan
+- `/q:review` — review anything against the project's conventions

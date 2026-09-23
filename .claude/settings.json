@@ -1,0 +1,6 @@
+{
+  "extraKnownMarketplaces": {
+    "q-pin-lab43-underdot-62de63": { "source": { "source": "directory", "path": "./" } }
+  },
+  "enabledPlugins": { "q@q-pin-lab43-underdot-62de63": true }
+}

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src", "plugins/*/src"]
+  "include": ["src", "plugins/*/src", "test"]
 }

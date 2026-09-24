@@ -1,6 +1,6 @@
 {
   "name": "underdot",
-  "version": "1.0.5",
+  "version": "2.0.0-alpha.0",
   "description": "A static site generator",
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
@@ -8,7 +8,33 @@
     "type": "git",
     "url": "https://github.com/Lab43/underdot.git"
   },
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "workspaces": [
+    "plugins/*"
+  ],
+  "files": [
+    "dist",
+    "q-extension"
+  ],
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.solution.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --conditions=development --test --experimental-test-coverage --test-coverage-include='src/**' --test-coverage-include='plugins/*/src/**' --test-coverage-exclude='**/*.test.ts' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'src/**/*.test.ts' 'plugins/*/src/**/*.test.ts'",
+    "prepack": "npm run build"
+  },
   "devDependencies": {
-    "@lab43/q": "0.6.1"
+    "@lab43/q": "0.6.1",
+    "@types/node": "^22.20.4",
+    "typescript": "~6.0.3"
   }
 }

@@ -1,3 +1,7 @@
+## Rewrite
+
+We are rewriting Underdot v2 from the ground up. Build v2 from the specs alone. Never read the `master` branch, the v1 package, or the source of a site built on Underdot as a reference for how anything should work, because v2 exists to shed v1's decisions and a session that reads v1 carries them over without noticing. Where the specs are silent, decide from their rationale and the conventions, or ask the user. Write test fixtures from scratch in this repo, from the specs, never from an existing site.
+
 ## Documentation
 
 This project follows q, an agentic coding workflow. Its rules live in the project's own documentation. Those rules are conventions: binding decisions about how this project's code and docs get written, recorded as they are made. Two other kinds of doc sit alongside them. Specs state what Underdot commits to, as behavior the code must honor. Guides say how to use and operate Underdot, rather than how to write it (source: @lab43/q conventions/documentation.md, Taxonomy).

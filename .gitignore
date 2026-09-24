@@ -1,5 +1,4 @@
 node_modules
-coverage
 .idea
 .claude/settings.local.json
 .claude/worktrees/

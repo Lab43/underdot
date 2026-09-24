@@ -1,6 +1,0 @@
----
-bodyClass: subdirectory-default-template
----
-
-<h2>This page is using the default template in a subdirectory.</h2>
-<div>${content}</div>

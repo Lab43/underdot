@@ -1,6 +1,5 @@
 // exception: docs/conventions/toolchain.md, TypeScript
-// ESLint loads a TypeScript config file only behind an unstable flag, so this
-// one file is JavaScript.
+// ESLint loads a TypeScript config file only behind an unstable flag.
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';

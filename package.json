@@ -28,13 +28,29 @@
   },
   "scripts": {
     "build": "tsc -b tsconfig.solution.json",
-    "typecheck": "tsc -p tsconfig.json",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "lint": "eslint --max-warnings 0 .",
+    "prepare": "husky",
+    "prepack": "npm run build",
     "test": "node --conditions=development --test --experimental-test-coverage --test-coverage-include='src/**' --test-coverage-include='plugins/*/src/**' --test-coverage-exclude='**/*.test.ts' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'src/**/*.test.ts' 'plugins/*/src/**/*.test.ts'",
-    "prepack": "npm run build"
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "lint-staged": {
+    "*.{ts,js}": "eslint --max-warnings 0"
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "@eslint/js": "^10.0.1",
     "@lab43/q": "0.6.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^22.20.4",
-    "typescript": "~6.0.3"
+    "eslint": "^10.11.0",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-n": "^18.3.0",
+    "globals": "^17.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1"
   }
 }

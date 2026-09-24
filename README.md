@@ -19,7 +19,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
 
 1. [x] **Scaffolding.** The core package at the repository root with plugin packages as npm workspaces, TypeScript per the toolchain convention, the Node floor, the built-in test runner, a linter, GitHub Actions, and the q extension payload.
 2. [ ] **Configuration and the static build.** Three plans:
-   1. [ ] **Configuration.** The exported configuration type, loading the configuration file with the both-present and path-override rules, unknown-setting errors, source and destination defaults, the placement rules, and the default exclude pattern.
+   1. [x] **Configuration.** The exported configuration type, loading the configuration file with the both-present and path-override rules, unknown-setting errors, source and destination defaults, the placement rules, and the default exclude pattern.
    2. [ ] **The static build.** Walking the source, excluded files, classifying every file as static with the underscore and dotfile rules, output paths, unique output paths, a destination that does not depend on traversal order, writing and cleaning the destination, exported as a function taking a configuration.
    3. [ ] **The `underdot build` command.** The bin entry, argument parsing, the configuration path option, exit status, and how a failure is printed.
 3. [ ] **Pages and templates.** Plugin identity and renderer registration, page and template classification, frontmatter, template resolution, chain rendering, variables and built-ins, globals and data files, page output paths and URLs, proven with a fixture renderer.

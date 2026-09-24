@@ -115,7 +115,7 @@ export default defineConfig(
     },
   },
   {
-    files: ['eslint.config.js'],
+    files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
   },
 );

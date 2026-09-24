@@ -14,6 +14,8 @@ Every package is an ES module: `"type": "module"`, compiled with `module` and `m
 
 Rejected: dual publishing ESM and CommonJS. It doubles the build and the surface for packaging bugs for a consumer that does not exist.
 
+Export by name, never as a default. Rationale: a default export is renamed at every import site, while a named export is the same word everywhere and a misspelled one fails to compile. Name a module that exports one function after that function, so `load-configuration.ts` exports `loadConfiguration`. Rejected: naming a module after its subject. A subject collects every function about it, and the reader who finishes one function finds another's helpers below it.
+
 Every package's `exports` map carries a `development` condition pointing at its source entry, listed before `types`. Run tests and type checks under that condition, so neither needs a build and a plugin's tests exercise the core's source rather than its last build. Rationale: without the condition a plugin's import of `underdot` resolves to `dist`, and every test run waits on a compile of every package below it. `development` comes before `types` because TypeScript matches conditions in object order and always carries `types`, so a `types`-first map resolves to `dist` even under `customConditions`. Node never matches `types`, so the order changes nothing at runtime.
 
 ## TypeScript

@@ -1,6 +1,6 @@
 ## Rewrite
 
-We are rewriting Underdot v2 from the ground up. Build v2 from the specs alone. Never read the `master` branch, the v1 package, or the source of a site built on Underdot as a reference for how anything should work, because v2 exists to shed v1's decisions and a session that reads v1 carries them over without noticing. Where the specs are silent, decide from their rationale and the conventions, or ask the user. Write test fixtures from scratch in this repo, from the specs, never from an existing site.
+We are rewriting Underdot v2 from the ground up. Build v2 from the specs alone. Never read the `master` branch, the v1 package, or the source of a site built on Underdot as a reference for how anything should work, because v2 exists to shed v1's decisions and a session that reads v1 carries them over without noticing. Where the specs are silent, decide from their rationale and the conventions, or ask the user. Write test fixtures from scratch in this repo, from the specs, never from an existing site. The README's Version 2 section carries the rebuild checklist. Tick a step there when its last plan ships.
 
 ## Documentation
 

@@ -13,6 +13,24 @@ This branch is Underdot version 2. Its documentation is in three places:
 
 Version 1 is published on npm as `underdot@1`, and its source is on the `master` branch.
 
+### Rebuild checklist
+
+The rewrite proceeds through these steps, in this order. Each step is one or more plans created with `/q:create-plan` from the specs, and the step is divided into plans only when it is planned. A step is ticked when its last plan ships.
+
+1. [ ] **Scaffolding.** The core package at the repository root with plugin packages as npm workspaces, TypeScript per the toolchain convention, the Node floor, the built-in test runner, a linter, GitHub Actions, and the q extension payload.
+2. [ ] **Configuration and the static build.** Loading the configuration file, source and destination rules, excluded files, classifying every file as static, the underscore and dotfile rules, unique output paths, destination cleaning, and the `underdot build` command.
+3. [ ] **Pages and templates.** Plugin identity and renderer registration, page and template classification, frontmatter, template resolution, chain rendering, variables and built-ins, globals and data files, page output paths and URLs, proven with a fixture renderer.
+4. [ ] **EJS and the render context.** The render context with its reads and logger, and the EJS plugin as the first real renderer.
+5. [ ] **File handlers and helpers.** The cache-busting plugin as their first consumer, and a fixture producer proving emitted files.
+6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.
+7. [ ] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.
+8. [ ] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
+9. [ ] **Images plugin.** Emitted derivatives with producers.
+10. [ ] **Markdown plugin.**
+11. [ ] **Sass plugin.**
+
+Each plugin's spec is written inside the plan that builds it. The `underdot` package ships a q extension for sites that use it, carrying conventions for authoring a site. Each step writes the site-facing conventions it decides into that payload as it ships.
+
 ## Working with q
 
 This project uses [q](https://www.npmjs.com/package/@lab43/q), an agentic coding workflow that grounds Claude Code sessions in the project's own conventions. It arrives with the project's dependencies, and Claude Code loads it from the repo's tracked settings.

@@ -84,6 +84,7 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-type-assertion': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       'no-console': 'error',
+      'import-x/no-default-export': 'error',
     },
   },
   {
@@ -113,6 +114,12 @@ export default defineConfig(
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/unbound-method': 'off',
     },
+  },
+  {
+    // ESLint reads its configuration from the default export, and a site's
+    // configuration file is its default export (see: docs/specs/configuration.md).
+    files: ['eslint.config.js', 'test/fixtures/**/underdot.config.{ts,js}'],
+    rules: { 'import-x/no-default-export': 'off' },
   },
   {
     files: ['**/*.js'],

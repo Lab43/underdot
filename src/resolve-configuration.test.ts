@@ -99,8 +99,8 @@ describe('resolveConfiguration', () => {
     });
   });
 
+  // spec: docs/specs/build.md
   describe('placement', () => {
-    // spec: docs/specs/build.md
     test('the destination may not be the project directory', () => {
       assert.throws(() => resolveConfiguration({ destination: '.' }, project), {
         message: 'The destination /site must be inside the project directory /site.',

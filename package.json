@@ -2,11 +2,17 @@
   "name": "underdot",
   "version": "2.0.0-alpha.0",
   "description": "A static site generator",
+  "keywords": [
+    "q-extension"
+  ],
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
   "repository": {
     "type": "git",
     "url": "https://github.com/Lab43/underdot.git"
+  },
+  "q": {
+    "description": "Rules for writing a site built on Underdot: its configuration, source tree, templates, and plugins."
   },
   "type": "module",
   "engines": {

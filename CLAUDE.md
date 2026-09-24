@@ -10,7 +10,7 @@ If the session's skill list has no `/q:` skills, this machine is missing the q p
 
 When another session is already working this repo, take a worktree rather than sharing the checkout (source: @lab43/q references/run-contract.md, The delivery branch).
 
-Conventions come in three tiers: q's own, the conventions of any installed extensions, and this project's own `docs/conventions/` (source: @lab43/q conventions/conventions.md, Three tiers of conventions). q and the extensions are dependencies in `package.json`. Project rules win over an extension's rule, and an extension's rule wins over q's. Check all three tiers before writing code, before design decisions and reviews, and before changing docs. Doc changes — the README and this briefing itself included — go through `/q:update-docs`.
+Conventions come in three tiers: q's own, the conventions of any installed extensions, and this project's own `docs/conventions/` (source: @lab43/q conventions/conventions.md, Three tiers of conventions). q and any installed extension are dependencies in `package.json`, and the payload this package ships to sites is read from its own `q-extension/` directory. Project rules win over an extension's rule, and an extension's rule wins over q's. Check all three tiers before writing code, before design decisions and reviews, and before changing docs. Doc changes — the README and this briefing itself included — go through `/q:update-docs`.
 
 Package doc paths are package name plus path from the package's `q-extension/` payload directory, resolved under `node_modules/`: `@lab43/q conventions/principles.md` is `node_modules/@lab43/q/q-extension/conventions/principles.md` (source: @lab43/q conventions/documentation.md, Package doc paths).
 
@@ -26,11 +26,16 @@ Package doc paths are package name plus path from the package's `q-extension/` p
 - `@lab43/q conventions/pull-requests.md` — rules for authoring a pull request
 - `@lab43/q conventions/writing.md` — rules for writing prose: docs, plans, PR bodies, anything a human or agent will read
 
+`underdot` — Rules for writing a site built on Underdot: its configuration, source tree, templates, and plugins.
+
+- `underdot conventions/configuration.md` — rules for writing a site's Underdot configuration file
+
 This project's own:
 
 - `docs/conventions/principles.md` — cross-cutting rules, including deviations from q's
 - `docs/conventions/documentation.md` — documentation rulings and deviations
 - `docs/conventions/toolchain.md` — the language, module system, and runtime the code is written against
+- `docs/conventions/testing.md` — rules for writing and running the tests
 
 Specs — what Underdot commits to, stated as behavior the code must honor (source: @lab43/q conventions/documentation.md, Taxonomy):
 

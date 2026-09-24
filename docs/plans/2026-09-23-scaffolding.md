@@ -121,7 +121,7 @@ Proven in a scratch build run 2026-09-23 outside the repo, with TypeScript 6.0.3
 
 1. Write `q-extension/conventions/configuration.md` per Decision 14: a title, an intro stating the doc's purpose, and the two rules with rationale inline. Add `"keywords": ["q-extension"]` and `"q": {"description": "…"}` to `package.json`.
 2. Through `/q:update-docs`: add the payload's group to `CLAUDE.md` between q's group and this project's own, headed by the package name and its `q.description`, with one line for the doc in path form `underdot conventions/configuration.md`; add to `docs/conventions/toolchain.md`, TypeScript, the pin rule of Decision 3; add to `docs/conventions/toolchain.md`, Modules, the `development` condition rule of Decision 7; create `docs/conventions/testing.md` with the coverage rule of Decision 8 and index it in `CLAUDE.md`; tick step 1 in `README.md`.
-3. Run `npm pack --dry-run` and confirm the tarball lists `package.json`, `README.md`, `dist/index.js`, `dist/index.d.ts`, and `q-extension/conventions/configuration.md`, and no test file.
+3. Run `npm pack --dry-run` and confirm the tarball lists `package.json`, `README.md`, `dist/index.js`, `dist/index.d.ts`, and `q-extension/conventions/configuration.md`, and no test file. *(result: the tarball listed exactly those five files.)*
 
 ## Verification
 

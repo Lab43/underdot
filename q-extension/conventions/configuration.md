@@ -4,7 +4,7 @@ Rules for writing a site's Underdot configuration file.
 
 ## Write the configuration in TypeScript
 
-Name the configuration `underdot.config.ts`, never `underdot.config.js`. Rationale: `underdot` publishes the configuration's type, and only a TypeScript file is checked against it in the editor, so a wrong setting or a wrong plugin option fails as you type rather than in a build.
+Write the configuration as `underdot.config.ts`. Rationale: `underdot` publishes the configuration's type, and only a TypeScript file is checked against it in the editor, so a wrong setting or a wrong plugin option fails as you type rather than in a build.
 
 ## Use only syntax the runtime erases
 

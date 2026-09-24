@@ -35,6 +35,18 @@ export default defineConfig(
   comments.recommended,
   n.configs['flat/recommended'],
   {
+    settings: {
+      n: {
+        resolverConfig: {
+          // The plugin resolves an import without the development condition
+          // and so looks for dist. Listing the condition keeps lint on the
+          // same no-build path as tests and type checks. The rest are the
+          // plugin's own defaults, which this setting replaces rather than
+          // extends.
+          conditionNames: ['development', 'node', 'require', 'import', 'types'],
+        },
+      },
+    },
     rules: {
       'n/no-extraneous-import': 'error',
       'n/no-unsupported-features/node-builtins': 'error',

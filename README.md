@@ -15,10 +15,13 @@ Version 1 is published on npm as `underdot@1`, and its source is on the `master`
 
 ### Rebuild checklist
 
-The rewrite proceeds through these steps, in this order. Each step is one or more plans created with `/q:create-plan` from the specs, and the step is divided into plans only when it is planned. A step is ticked when its last plan ships.
+The rewrite proceeds through these steps, in this order. Each step is one or more plans created with `/q:create-plan` from the specs. A step is divided into plans when its decisions are best made one plan at a time. Each plan is then grounded in the code the one before shipped. A divided step lists its plans beneath it. A step is ticked when its last plan ships, and a listed plan when it ships.
 
 1. [x] **Scaffolding.** The core package at the repository root with plugin packages as npm workspaces, TypeScript per the toolchain convention, the Node floor, the built-in test runner, a linter, GitHub Actions, and the q extension payload.
-2. [ ] **Configuration and the static build.** Loading the configuration file, source and destination rules, excluded files, classifying every file as static, the underscore and dotfile rules, unique output paths, destination cleaning, and the `underdot build` command.
+2. [ ] **Configuration and the static build.** Three plans:
+   1. [ ] **Configuration.** The exported configuration type, loading the configuration file with the both-present and path-override rules, unknown-setting errors, source and destination defaults, the placement rules, and the default exclude pattern.
+   2. [ ] **The static build.** Walking the source, excluded files, classifying every file as static with the underscore and dotfile rules, output paths, unique output paths, a destination that does not depend on traversal order, writing and cleaning the destination, exported as a function taking a configuration.
+   3. [ ] **The `underdot build` command.** The bin entry, argument parsing, the configuration path option, exit status, and how a failure is printed.
 3. [ ] **Pages and templates.** Plugin identity and renderer registration, page and template classification, frontmatter, template resolution, chain rendering, variables and built-ins, globals and data files, page output paths and URLs, proven with a fixture renderer.
 4. [ ] **EJS and the render context.** The render context with its reads and logger, and the EJS plugin as the first real renderer.
 5. [ ] **File handlers and helpers.** The cache-busting plugin as their first consumer, and a fixture producer proving emitted files.

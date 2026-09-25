@@ -18,7 +18,7 @@ The configuration names the source root and the destination, as paths relative t
 
 ## Excluded files
 
-The configuration may list glob patterns for files under the source root that the build treats as absent: they are not classified, not handled, and not written. The default excludes `.DS_Store` files everywhere. Rationale: operating-system litter appears in every source tree and belongs in no destination, and a site with a file of its own to hide needs the same tool.
+The configuration may list glob patterns for files under the source root that the build treats as absent: they are not classified, not handled, and not written. A pattern is matched against each file's path relative to the source root, with forward slashes, in minimatch's dialect. A dotfile is matched like any other name. A pattern names files and not directories: `drafts/**` hides every file under `drafts`, and `drafts` alone hides nothing. The default excludes `.DS_Store` files everywhere. Rationale: operating-system litter appears in every source tree and belongs in no destination, and a site with a file of its own to hide needs the same tool. A dotfile is an ordinary file to the source tree (see: docs/specs/source-tree.md, Dotfiles), so a pattern that skipped it silently would hide a file the author named.
 
 ## Globals
 

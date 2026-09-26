@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
+import pagesConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { copyFixture } from '../../test/helpers/copy-fixture.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
@@ -55,6 +56,27 @@ describe('build', () => {
     const directory = await copyFixture(t, 'excluding');
     await build(resolveConfiguration(excludingConfiguration, directory));
     assert.deepEqual(await list(join(directory, 'build')), ['.DS_Store', 'index.html']);
+  });
+
+  test('the templated fixture builds its static files alone: no page is copied and no template is written', async (t) => {
+    const directory = await copyFixture(t, 'templated');
+    await build(resolveConfiguration(pagesConfiguration, directory));
+    assert.deepEqual(await list(join(directory, 'build')), ['notes.txt', 'styles/site.css']);
+  });
+
+  test('a frontmatter error names the page and fails before any write', async () => {
+    const directory = fixturePath('bad-frontmatter');
+    const plugins = [{ name: 'fixture', renderers: { tpl: (body: string) => body } }];
+    await assert.rejects(build(resolveConfiguration({ plugins }, directory)), {
+      message: 'index.tpl: The frontmatter key _title starts with an underscore, which is reserved.',
+    });
+    await assertAbsent(join(directory, 'build'));
+  });
+
+  test('two plugins with one name fail before any write', async () => {
+    const configuration = resolveConfiguration({ plugins: [{ name: 'dup' }, { name: 'dup' }] }, defaultsFixture);
+    await assert.rejects(build(configuration), { message: 'Two plugins are named dup.' });
+    await assertAbsent(join(defaultsFixture, 'build'));
   });
 
   test("the walk's error reaches the caller", async () => {

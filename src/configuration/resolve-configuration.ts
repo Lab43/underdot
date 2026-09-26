@@ -1,11 +1,14 @@
 // spec: docs/specs/configuration.md
 
 import { isAbsolute, relative, resolve, sep } from 'node:path';
+import type { Plugin } from '../plugins/register-plugins.ts';
+import { isObject } from '../shared/is-object.ts';
 
 export interface Configuration {
   source?: string;
   destination?: string;
   exclude?: string[];
+  plugins?: Plugin[];
 }
 
 export interface ResolvedConfiguration {
@@ -13,24 +16,25 @@ export interface ResolvedConfiguration {
   source: string;
   destination: string;
   exclude: string[];
+  plugins: Plugin[];
 }
 
 // Every setting the configuration knows, held to the type's keys in both
 // directions so the unknown-setting check cannot drift from the type.
-const settingNames = { source: true, destination: true, exclude: true } satisfies Record<keyof Configuration, true>;
+const settingNames = { source: true, destination: true, exclude: true, plugins: true } satisfies Record<keyof Configuration, true>;
 const settings: ReadonlySet<string> = new Set(Object.keys(settingNames));
 
 const defaults: Required<Configuration> = {
   source: 'source',
   destination: 'build',
   exclude: ['**/.DS_Store'],
+  plugins: [],
 };
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string');
+
+const isPlugin = (value: unknown): value is Plugin => isObject(value) && typeof value.name === 'string';
 
 // Whether the child is strictly inside the parent: neither the parent itself
 // nor anything outside it. Both paths are absolute.
@@ -56,16 +60,15 @@ const checkPlacement = (projectDirectory: string, source: string, destination: s
   }
 };
 
-export const resolveConfiguration = (configuration: unknown, projectDirectory: string): ResolvedConfiguration => {
-  if (!isObject(configuration)) {
-    throw new Error('The configuration must be an object.');
-  }
+type SettingsCheck = (configuration: Record<string, unknown>) => asserts configuration is Record<string, unknown> & Configuration;
+
+// Check that every setting is known and has its shape.
+const checkSettings: SettingsCheck = (configuration) => {
   const unknown = Object.keys(configuration).filter((name) => !settings.has(name));
   if (unknown.length > 0) {
     const noun = unknown.length === 1 ? 'setting' : 'settings';
     throw new Error(`Unknown ${noun}: ${unknown.join(', ')}.`);
   }
-
   if (configuration.source !== undefined && typeof configuration.source !== 'string') {
     throw new Error('The source setting must be a string.');
   }
@@ -75,12 +78,26 @@ export const resolveConfiguration = (configuration: unknown, projectDirectory: s
   if (configuration.exclude !== undefined && !isStringArray(configuration.exclude)) {
     throw new Error('The exclude setting must be an array of strings.');
   }
+  if (configuration.plugins !== undefined && !Array.isArray(configuration.plugins)) {
+    throw new Error('The plugins setting must be an array.');
+  }
+  if (configuration.plugins !== undefined && !configuration.plugins.every(isPlugin)) {
+    throw new Error('Each plugin must be an object with a name.');
+  }
+};
+
+export const resolveConfiguration = (configuration: unknown, projectDirectory: string): ResolvedConfiguration => {
+  if (!isObject(configuration)) {
+    throw new Error('The configuration must be an object.');
+  }
+  checkSettings(configuration);
 
   const source = resolve(projectDirectory, configuration.source ?? defaults.source);
   const destination = resolve(projectDirectory, configuration.destination ?? defaults.destination);
   const exclude = configuration.exclude ?? [...defaults.exclude];
+  const plugins = configuration.plugins ?? [...defaults.plugins];
 
   checkPlacement(projectDirectory, source, destination);
 
-  return { projectDirectory, source, destination, exclude };
+  return { projectDirectory, source, destination, exclude, plugins };
 };

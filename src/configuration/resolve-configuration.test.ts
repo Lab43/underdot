@@ -13,6 +13,7 @@ describe('resolveConfiguration', () => {
       source: '/site/source',
       destination: '/site/build',
       exclude: ['**/.DS_Store'],
+      plugins: [],
     });
   });
 
@@ -21,11 +22,13 @@ describe('resolveConfiguration', () => {
       source: 'content',
       destination: 'out/site',
       exclude: ['**/*.draft'],
+      plugins: [{ name: 'first' }, { name: 'second' }],
     }, project), {
       projectDirectory: project,
       source: '/site/content',
       destination: '/site/out/site',
       exclude: ['**/*.draft'],
+      plugins: [{ name: 'first' }, { name: 'second' }],
     });
   });
 
@@ -95,6 +98,24 @@ describe('resolveConfiguration', () => {
     test('exclude must hold only strings', () => {
       assert.throws(() => resolveConfiguration({ exclude: ['**/.DS_Store', /tmp/] }, project), {
         message: 'The exclude setting must be an array of strings.',
+      });
+    });
+
+    test('plugins must be an array', () => {
+      assert.throws(() => resolveConfiguration({ plugins: 'markdown' }, project), {
+        message: 'The plugins setting must be an array.',
+      });
+    });
+
+    test('a plugin with no name is rejected', () => {
+      assert.throws(() => resolveConfiguration({ plugins: [{ renderers: {} }] }, project), {
+        message: 'Each plugin must be an object with a name.',
+      });
+    });
+
+    test('a plugin given as a string is rejected', () => {
+      assert.throws(() => resolveConfiguration({ plugins: ['markdown'] }, project), {
+        message: 'Each plugin must be an object with a name.',
       });
     });
   });

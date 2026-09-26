@@ -4,13 +4,19 @@ How a page becomes a finished document: the frontmatter a page or template carri
 
 ## Frontmatter
 
-A page or template may open with a YAML frontmatter block, delimited by a line of three hyphens before and after. Everything after the block is the file's body. A file with no block has an empty set of frontmatter keys and its whole contents as its body. Static files have no frontmatter. Rationale: a title, a body class, or a template choice is a fact about the file, and frontmatter is the one place a file states such facts.
+A page or template may open with a YAML frontmatter block, delimited by a line of three hyphens before and after. Everything after the block is the file's body. A file with no block has an empty set of frontmatter keys and its whole contents as its body, and so does a file whose block is empty or holds only comments. Static files have no frontmatter. Rationale: a title, a body class, or a template choice is a fact about the file, and frontmatter is the one place a file states such facts.
+
+Three things about a block are build errors naming the file:
+
+- A block that opens and never closes. Rationale: the block would otherwise become the body, and a page whose frontmatter silently became its body is never what its author means.
+- A block whose YAML is not a mapping.
+- YAML the parser rejects. The error carries the parser's reason and the line's number in the file.
 
 A frontmatter key becomes a variable of the same name (see: Variables), except the reserved keys below. Values keep the types YAML gives them, so an unquoted date is a date value and not a string. Rationale: a listing sorts and formats posts by date, and a string would need every template to parse it.
 
 ## Reserved keys
 
-One frontmatter key is a directive rather than a variable. `template` names the file's parent template (see: Template resolution). A directive is read from the file's own frontmatter only, never from the merged variables, so a page's `template` cannot redirect its template's parent.
+One frontmatter key is a directive rather than a variable. `template` names the file's parent template (see: Template resolution). Its value is a string, and any other value is a build error naming the file. A directive is read from the file's own frontmatter only, never from the merged variables, so a page's `template` cannot redirect its template's parent.
 
 Frontmatter keys starting with an underscore are reserved for the built-in variables (see: Built-in variables). A frontmatter key starting with an underscore is a build error naming the file. Rationale: reserving the class rather than a list lets a built-in be added later without breaking any site, and a silently shadowed built-in makes a link or an active-state check wrong on one page only, which is the hardest kind of bug to find.
 

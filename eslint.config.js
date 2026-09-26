@@ -50,6 +50,9 @@ export default defineConfig(
       'n/no-extraneous-import': 'error',
       'n/no-unsupported-features/node-builtins': 'error',
       'n/no-unsupported-features/es-syntax': 'error',
+      // Lint runs on src, but bin names the compiled file in dist.
+      // The mapping lets the rule match the shim to its bin entry.
+      'n/hashbang': ['error', { convertPath: { 'src/**/*.ts': ['^src/(.+?)\\.ts$', 'dist/$1.js'] } }],
     },
   },
   {

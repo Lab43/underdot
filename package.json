@@ -25,6 +25,9 @@
     "dist",
     "q-extension"
   ],
+  "bin": {
+    "underdot": "dist/underdot.js"
+  },
   "exports": {
     ".": {
       "development": "./src/index.ts",

@@ -6,7 +6,13 @@ Rules for writing and running the tests.
 
 Hold coverage at 100% for lines, branches, and functions on every test run, never only in CI. Rationale: a threshold that runs only in CI is one people meet after the push.
 
+The report covers the files the tests load, in the test process or in a process a test spawns. A module nothing loads is absent from the report rather than reported at zero, so the threshold never catches a module without a test. Give every module a test beside it (see: docs/conventions/toolchain.md, Modules).
+
 Exclude a line that cannot run under test with a `node:coverage ignore next` comment stating why it cannot, and give the comment a line count when the excluded code spans more than one line. Exclude a whole file only through the test script's exclude list, never with a comment, so every file-level exclusion is visible in one place.
+
+## Placement
+
+Put a test in the file of the module whose code does the work it proves. A module that delegates gets tests only for what it adds: its own checks, its defaults, and one test that reaches the delegate end to end. Never prove the delegate's behavior again through the caller. A whole-site test belongs to the module that runs the pipeline, not to the entry that wraps it. When a function is split, its tests move with the work. Rationale: a test filed under a caller proves the delegate through a layer that adds nothing, so the delegate's own file looks untested and the same case gets written there too. A reader with a module open expects its tests to be that module's own.
 
 ## Fixtures
 

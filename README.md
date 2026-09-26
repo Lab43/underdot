@@ -22,7 +22,10 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    1. [x] **Configuration.** The exported configuration type, loading the configuration file with the both-present and path-override rules, unknown-setting errors, source and destination defaults, the placement rules, and the default exclude pattern.
    2. [x] **The static build.** Walking the source, excluded files, classifying every file as static with the underscore and dotfile rules, output paths, unique output paths, a destination that does not depend on traversal order, writing and cleaning the destination, exported as a function taking a configuration.
    3. [x] **The `underdot build` command.** The bin entry, argument parsing, the configuration path option, exit status, and how a failure is printed.
-3. [ ] **Pages and templates.** Plugin identity and renderer registration, page and template classification, frontmatter, template resolution, chain rendering, variables and built-ins, globals and data files, page output paths and URLs, proven with a fixture renderer.
+3. [ ] **Pages and templates.** Three plans:
+   1. [ ] **Plugins and pages.** The exported plugin type with a name and renderers, the `plugins` setting, duplicate plugin names and duplicate extensions as errors, classifying pages and templates by the registered extensions, frontmatter with its reserved keys, page output paths and URLs, and output uniqueness across pages and static files, proven with a fixture renderer.
+   2. [ ] **Templates.** Template resolution and its errors, rendering the chain, variables merged from frontmatter, the built-in variables, and writing rendered pages.
+   3. [ ] **Globals and data files.** The `globals` setting, the `_data` directory, the first layer of the variable merge, and the collision errors.
 4. [ ] **EJS and the render context.** The render context with its reads and logger, and the EJS plugin as the first real renderer.
 5. [ ] **File handlers and helpers.** The cache-busting plugin as their first consumer, and a fixture producer proving emitted files.
 6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.

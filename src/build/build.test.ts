@@ -1,9 +1,8 @@
 // spec: docs/specs/build.md
 
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, test } from 'node:test';
+import { describe, expect, test } from 'vitest';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
@@ -32,56 +31,56 @@ const contents = async (directory: string, paths: string[]): Promise<string[]> =
   Promise.all(paths.map((path) => readFile(join(directory, path), 'utf8')));
 
 describe('build', () => {
-  test('the defaults fixture builds its static files, each byte-equal to its source', async (t) => {
-    const directory = await copyFixture(t, 'defaults');
+  test('the defaults fixture builds its static files, each byte-equal to its source', async () => {
+    const directory = await copyFixture('defaults');
     const destination = join(directory, 'build');
     await build(resolveConfiguration(defaultsConfiguration, directory));
-    assert.deepEqual(await list(destination), defaultsFiles);
-    assert.deepEqual(await contents(destination, defaultsFiles), await contents(join(directory, 'source'), defaultsFiles));
+    expect(await list(destination)).toStrictEqual(defaultsFiles);
+    expect(await contents(destination, defaultsFiles)).toStrictEqual(await contents(join(directory, 'source'), defaultsFiles));
     await assertAbsent(join(destination, 'litter'));
   });
 
-  test('building twice produces the same destination', async (t) => {
-    const directory = await copyFixture(t, 'defaults');
+  test('building twice produces the same destination', async () => {
+    const directory = await copyFixture('defaults');
     const destination = join(directory, 'build');
     const configuration = resolveConfiguration(defaultsConfiguration, directory);
     await build(configuration);
     const first = await contents(destination, defaultsFiles);
     await build(configuration);
-    assert.deepEqual(await list(destination), defaultsFiles);
-    assert.deepEqual(await contents(destination, defaultsFiles), first);
+    expect(await list(destination)).toStrictEqual(defaultsFiles);
+    expect(await contents(destination, defaultsFiles)).toStrictEqual(first);
   });
 
-  test('the excluding fixture builds only what its patterns keep', async (t) => {
-    const directory = await copyFixture(t, 'excluding');
+  test('the excluding fixture builds only what its patterns keep', async () => {
+    const directory = await copyFixture('excluding');
     await build(resolveConfiguration(excludingConfiguration, directory));
-    assert.deepEqual(await list(join(directory, 'build')), ['.DS_Store', 'index.html']);
+    expect(await list(join(directory, 'build'))).toStrictEqual(['.DS_Store', 'index.html']);
   });
 
-  test('the templated fixture builds its static files alone: no page is copied and no template is written', async (t) => {
-    const directory = await copyFixture(t, 'templated');
+  test('the templated fixture builds its static files alone: no page is copied and no template is written', async () => {
+    const directory = await copyFixture('templated');
     await build(resolveConfiguration(templatedConfiguration, directory));
-    assert.deepEqual(await list(join(directory, 'build')), ['notes.txt', 'styles/site.css']);
+    expect(await list(join(directory, 'build'))).toStrictEqual(['notes.txt', 'styles/site.css']);
   });
 
   test('a frontmatter error names the page and fails before any write', async () => {
     const directory = fixturePath('bad-frontmatter');
     const plugins = [{ name: 'fixture', renderers: { tpl: (body: string) => body } }];
-    await assert.rejects(build(resolveConfiguration({ plugins }, directory)), {
-      message: 'index.tpl: The frontmatter key _title starts with an underscore, which is reserved.',
-    });
+    await expect(build(resolveConfiguration({ plugins }, directory))).rejects.toThrow(
+      new Error('index.tpl: The frontmatter key _title starts with an underscore, which is reserved.'),
+    );
     await assertAbsent(join(directory, 'build'));
   });
 
   test('two plugins with one name fail before any write', async () => {
     const configuration = resolveConfiguration({ plugins: [{ name: 'dup' }, { name: 'dup' }] }, defaultsFixture);
-    await assert.rejects(build(configuration), { message: 'Two plugins are named dup.' });
+    await expect(build(configuration)).rejects.toThrow(new Error('Two plugins are named dup.'));
     await assertAbsent(join(defaultsFixture, 'build'));
   });
 
   test("the walk's error reaches the caller", async () => {
-    await assert.rejects(build(resolveConfiguration({ source: 'content' }, defaultsFixture)), {
-      message: `The source root ${join(defaultsFixture, 'content')} does not exist.`,
-    });
+    await expect(build(resolveConfiguration({ source: 'content' }, defaultsFixture))).rejects.toThrow(
+      new Error(`The source root ${join(defaultsFixture, 'content')} does not exist.`),
+    );
   });
 });

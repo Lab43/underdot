@@ -1,15 +1,17 @@
-import assert from 'node:assert/strict';
-import { describe, test } from 'node:test';
+import { describe, expect, test } from 'vitest';
 import { isObject } from './is-object.ts';
 
 describe('isObject', () => {
   test('an object literal is an object', () => {
-    assert.equal(isObject({}), true);
+    expect(isObject({})).toBe(true);
   });
 
-  for (const [name, value] of [['null', null], ['an array', []], ['a string', 'x'], ['undefined', undefined]] as const) {
-    test(`${name} is not an object`, () => {
-      assert.equal(isObject(value), false);
-    });
-  }
+  test.each([
+    ['null', null],
+    ['an array', []],
+    ['a string', 'x'],
+    ['undefined', undefined],
+  ])('%s is not an object', (_name, value) => {
+    expect(isObject(value)).toBe(false);
+  });
 });

@@ -41,7 +41,7 @@
     "lint": "eslint --max-warnings 0 .",
     "prepare": "husky",
     "prepack": "npm run build",
-    "test": "node --conditions=development --test --experimental-test-coverage --test-coverage-include='src/**' --test-coverage-include='plugins/*/src/**' --test-coverage-exclude='**/*.test.ts' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'src/**/*.test.ts' 'plugins/*/src/**/*.test.ts'",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "lint-staged": {
@@ -57,6 +57,8 @@
     "@lab43/q": "0.7.3",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^22.20.4",
+    "@vitest/coverage-v8": "5.0.2",
+    "@vitest/eslint-plugin": "^1.6.27",
     "eslint": "^10.11.0",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-n": "^18.3.0",
@@ -64,6 +66,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.5.1",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.70.1"
+    "typescript-eslint": "^8.70.1",
+    "vitest": "5.0.2"
   }
 }

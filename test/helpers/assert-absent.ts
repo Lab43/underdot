@@ -1,6 +1,6 @@
-import assert from 'node:assert/strict';
 import { stat } from 'node:fs/promises';
+import { expect } from 'vitest';
 
 export const assertAbsent = async (path: string): Promise<void> => {
-  await assert.rejects(stat(path), { code: 'ENOENT' });
+  await expect(stat(path)).rejects.toMatchObject({ code: 'ENOENT' });
 };

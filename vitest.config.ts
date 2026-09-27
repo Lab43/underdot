@@ -1,0 +1,15 @@
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    include: ['src/**/*.test.ts', 'plugins/*/src/**/*.test.ts'],
+    restoreMocks: true,
+    coverage: {
+      enabled: true,
+      include: ['src/**', 'plugins/*/src/**'],
+      exclude: ['**/*.test.ts'],
+      reporter: ['text'],
+      thresholds: { 100: true },
+    },
+  },
+});

@@ -16,6 +16,4 @@ The tests run the shim from source under type stripping, so only this compiled r
 
 ## The Node floor
 
-`engines` names the oldest Node the package supports, and CI runs the suite on it, but a local run on the current Node proves nothing about the floor. Node versions installed under nvm live in `~/.nvm/versions/node/<version>/bin`. Put that directory first on `PATH` and run `npm test` to run the suite on the floor.
-
-The floor's test runner reports in TAP, where the current release reports in its spec format. A filter that reads the summary lines by their `ℹ` prefix finds nothing on the floor. Its summary lines start with `#` instead.
+`engines` names the oldest Node the package supports, and CI runs the suite on it, but a local run on the current Node proves nothing about the floor. Node versions installed under nvm live in `~/.nvm/versions/node/<version>/bin`. Put that directory first on `PATH` and run `npm test` to run the suite on the floor. Vitest reports the same way on every Node, so a filter written against one release's output reads the floor's too.

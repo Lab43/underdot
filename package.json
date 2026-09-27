@@ -48,6 +48,7 @@
     "*.{ts,js}": "eslint --max-warnings 0"
   },
   "dependencies": {
+    "js-yaml": "^5.4.2",
     "minimatch": "^10.2.6"
   },
   "devDependencies": {

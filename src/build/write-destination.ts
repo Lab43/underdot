@@ -9,8 +9,8 @@ import { runUnits } from './run-units.ts';
 // with forward slashes.
 const collectOutputDirectories = (outputs: Output[]): Set<string> => {
   const directories = new Set<string>();
-  for (const { output } of outputs) {
-    const segments = output.split('/');
+  for (const { outputPath } of outputs) {
+    const segments = outputPath.split('/');
     for (let depth = 1; depth < segments.length; depth += 1) {
       directories.add(segments.slice(0, depth).join('/'));
     }
@@ -36,10 +36,10 @@ const clean = async (directory: string, prefix: string, files: Set<string>, dire
 // A file being replaced stays until its copy overwrites it.
 export const writeDestination = async (source: string, destination: string, outputs: Output[]): Promise<void> => {
   await mkdir(destination, { recursive: true });
-  await clean(destination, '', new Set(outputs.map((output) => output.output)), collectOutputDirectories(outputs));
+  await clean(destination, '', new Set(outputs.map((output) => output.outputPath)), collectOutputDirectories(outputs));
   await runUnits(outputs.map((output) => async () => {
-    const target = join(destination, output.output);
+    const target = join(destination, output.outputPath);
     await mkdir(dirname(target), { recursive: true });
-    await copyFile(join(source, output.source), target);
+    await copyFile(join(source, output.sourcePath), target);
   }));
 };

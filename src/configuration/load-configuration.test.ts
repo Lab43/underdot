@@ -16,6 +16,7 @@ describe('loadConfiguration', () => {
       source: join(directory, 'content'),
       destination: join(directory, 'public'),
       exclude: ['**/*.draft'],
+      plugins: [],
     });
   });
 

@@ -1,14 +1,12 @@
 // spec: docs/specs/configuration.md, Commands
 
 import { build } from '../build/build.ts';
+import { describeError } from '../shared/describe-error.ts';
 import { loadConfiguration } from './load-configuration.ts';
 import { parseCommand } from './parse-command.ts';
 import type { Command } from './parse-command.ts';
 
 const usage = 'Usage: underdot build [--config <path>]';
-
-// The message is the whole report, so nothing is added to it.
-const describeError = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 // Load, build, and report a failure, which includes a configuration that fails to load.
 // spec: docs/specs/build.md, Errors

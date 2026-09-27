@@ -10,8 +10,8 @@ import { walkSource } from '../source-tree/walk-source.ts';
 import { writeDestination } from './write-destination.ts';
 
 const outputs = [
-  { source: 'about/index.html', output: 'about/index.html' },
-  { source: 'index.html', output: 'index.html' },
+  { sourcePath: 'about/index.html', outputPath: 'about/index.html' },
+  { sourcePath: 'index.html', outputPath: 'index.html' },
 ];
 const planned = ['about/index.html', 'index.html'];
 

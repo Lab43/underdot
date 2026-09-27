@@ -93,7 +93,15 @@ export default defineConfig(
   {
     rules: {
       'sort-imports': ['error', { ignoreDeclarationSort: true, ignoreCase: true }],
-      'import-x/order': ['error', { 'newlines-between': 'never', alphabetize: { order: 'asc', caseInsensitive: true } }],
+      // A fixture imports `underdot` as a site does, so it sorts as an external
+      // package. Left to the resolver, it would resolve to this repo's own
+      // dist/ and sort as internal wherever a build has run.
+      'import-x/order': ['error', {
+        'newlines-between': 'never',
+        alphabetize: { order: 'asc', caseInsensitive: true },
+        pathGroups: [{ pattern: 'underdot', group: 'external' }],
+        pathGroupsExcludedImportTypes: ['builtin'],
+      }],
     },
   },
   {

@@ -25,7 +25,6 @@ const parseBlock = (lines: string[]): unknown => {
     return loadAll(lines.join('\n'), { schema })[0];
   } catch (error) {
     // On malformed YAML the parser throws only its own exception, with a mark.
-    /* node:coverage ignore next 3 */
     if (!(error instanceof YAMLException) || error.mark === undefined) {
       throw error;
     }

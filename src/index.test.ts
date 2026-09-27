@@ -1,8 +1,7 @@
 // spec: docs/specs/configuration.md, Programmatic use
 
-import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
-import { describe, test } from 'node:test';
+import { describe, expect, test } from 'vitest';
 import defaultsConfiguration from '../test/fixtures/defaults/underdot.config.ts';
 import { changeDirectory } from '../test/helpers/change-directory.ts';
 import { copyFixture } from '../test/helpers/copy-fixture.ts';
@@ -14,16 +13,16 @@ const defaultsFixture = fixturePath('defaults');
 
 describe('build', () => {
   test('the configuration is resolved inside the build', async () => {
-    await assert.rejects(build({ destination: '..' }, defaultsFixture), {
-      message: `The destination ${dirname(defaultsFixture)} must be inside the project directory ${defaultsFixture}.`,
-    });
+    await expect(build({ destination: '..' }, defaultsFixture)).rejects.toThrow(
+      new Error(`The destination ${dirname(defaultsFixture)} must be inside the project directory ${defaultsFixture}.`),
+    );
   });
 
-  test('the project directory defaults to the working directory', async (t) => {
-    const directory = await copyFixture(t, 'defaults');
-    changeDirectory(t, directory);
+  test('the project directory defaults to the working directory', async () => {
+    const directory = await copyFixture('defaults');
+    changeDirectory(directory);
     await build(defaultsConfiguration);
-    assert.deepEqual(await walkSource(join(directory, 'build')), [
+    expect(await walkSource(join(directory, 'build'))).toStrictEqual([
       '.htaccess',
       '.well-known/security.txt',
       'about/index.html',

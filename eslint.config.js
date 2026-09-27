@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import stylistic from '@stylistic/eslint-plugin';
+import vitest from '@vitest/eslint-plugin';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import importX from 'eslint-plugin-import-x';
 import n from 'eslint-plugin-n';
@@ -112,12 +113,19 @@ export default defineConfig(
   },
   {
     files: ['**/*.test.ts'],
+    plugins: { vitest },
     rules: {
-      '@typescript-eslint/no-floating-promises': ['error', {
-        allowForKnownSafeCalls: [
-          { from: 'package', package: 'node:test', name: ['describe', 'it', 'suite', 'test'] },
-        ],
-      }],
+      ...vitest.configs.recommended.rules,
+      'vitest/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],
+      'vitest/prefer-each': 'error',
+      'vitest/prefer-to-be': 'error',
+      'vitest/prefer-to-have-length': 'error',
+      'vitest/prefer-strict-equal': 'error',
+      'vitest/prefer-equality-matcher': 'error',
+      'vitest/prefer-comparison-matcher': 'error',
+      'vitest/prefer-mock-promise-shorthand': 'error',
+      'vitest/prefer-vi-mocked': 'error',
+      'vitest/prefer-spy-on': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -127,9 +135,9 @@ export default defineConfig(
     },
   },
   {
-    // ESLint reads its configuration from the default export, and a site's
-    // configuration file is its default export (see: docs/specs/configuration.md).
-    files: ['eslint.config.js', 'test/fixtures/**/underdot.config.{ts,js}'],
+    // ESLint and Vitest read their configuration from the default export, and
+    // a site's configuration file is its default export (see: docs/specs/configuration.md).
+    files: ['eslint.config.js', 'vitest.config.ts', 'test/fixtures/**/underdot.config.{ts,js}'],
     rules: { 'import-x/no-default-export': 'off' },
   },
   {

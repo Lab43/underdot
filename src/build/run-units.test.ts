@@ -1,8 +1,7 @@
 // spec: docs/specs/build.md
 
-import assert from 'node:assert/strict';
-import { describe, test } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
+import { describe, expect, test } from 'vitest';
 import { runUnits } from './run-units.ts';
 
 interface FakeUnit {
@@ -45,7 +44,7 @@ describe('runUnits', () => {
     const units = fakeUnits(3);
     const run = runUnits(units.map((unit) => unit.run));
     await settle();
-    assert.equal(started(units), 3);
+    expect(started(units)).toBe(3);
     for (const unit of units) {
       unit.resolve();
     }
@@ -53,22 +52,22 @@ describe('runUnits', () => {
   });
 
   test('an empty list resolves', async () => {
-    await runUnits([]);
+    await expect(runUnits([])).resolves.toBeUndefined();
   });
 
   test('never more than 10 units are in flight, and an 11th starts only after one settles', async () => {
     const units = fakeUnits(25);
     const run = runUnits(units.map((unit) => unit.run));
     await settle();
-    assert.equal(started(units), 10);
+    expect(started(units)).toBe(10);
     units[0]!.resolve();
     await settle();
-    assert.equal(started(units), 11);
+    expect(started(units)).toBe(11);
     for (const unit of units) {
       unit.resolve();
     }
     await run;
-    assert.equal(started(units), 25);
+    expect(started(units)).toBe(25);
   });
 
   test('after one unit rejects, nothing further starts and the first error is thrown once the units in flight settle', async () => {
@@ -76,19 +75,19 @@ describe('runUnits', () => {
     const run = runUnits(units.map((unit) => unit.run));
     const state = watch(run);
     await settle();
-    assert.equal(started(units), 10);
+    expect(started(units)).toBe(10);
 
     const first = new Error('first');
     units[0]!.reject(first);
     await settle();
-    assert.equal(started(units), 10);
-    assert.equal(state.settled(), false);
+    expect(started(units)).toBe(10);
+    expect(state.settled()).toBe(false);
 
     units[1]!.reject(new Error('second'));
     for (const unit of units.slice(2, 10)) {
       unit.resolve();
     }
-    await assert.rejects(run, (error) => error === first);
-    assert.equal(started(units), 10);
+    await expect(run).rejects.toBe(first);
+    expect(started(units)).toBe(10);
   });
 });

@@ -1,13 +1,12 @@
 // spec: docs/specs/source-tree.md, Dotfiles
 
-import assert from 'node:assert/strict';
-import { describe, test } from 'node:test';
+import { describe, expect, test } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { walkSource } from './walk-source.ts';
 
 describe('walkSource', () => {
   test('lists every file with forward slashes, dotfiles and underscore-prefixed paths included, sorted', async () => {
-    assert.deepEqual(await walkSource(fixturePath('defaults/source')), [
+    expect(await walkSource(fixturePath('defaults/source'))).toStrictEqual([
       '.DS_Store',
       '.htaccess',
       '.well-known/.DS_Store',
@@ -25,21 +24,21 @@ describe('walkSource', () => {
 
   test('a root that does not exist is named', async () => {
     const root = fixturePath('defaults/content');
-    await assert.rejects(walkSource(root), { message: `The source root ${root} does not exist.` });
+    await expect(walkSource(root)).rejects.toThrow(new Error(`The source root ${root} does not exist.`));
   });
 
   test('a root that is a file is named', async () => {
     const root = fixturePath('defaults/source/index.html');
-    await assert.rejects(walkSource(root), { message: `The source root ${root} is not a directory.` });
+    await expect(walkSource(root)).rejects.toThrow(new Error(`The source root ${root} is not a directory.`));
   });
 
   test('a failure other than a missing root propagates as raised', async () => {
-    await assert.rejects(walkSource(fixturePath('defaults/source/index.html/nope')), { code: 'ENOTDIR' });
+    await expect(walkSource(fixturePath('defaults/source/index.html/nope'))).rejects.toMatchObject({ code: 'ENOTDIR' });
   });
 
   test('a symlink is neither a file nor a directory', async () => {
-    await assert.rejects(walkSource(fixturePath('symlinked/source')), {
-      message: 'The source entry link.txt is neither a file nor a directory.',
-    });
+    await expect(walkSource(fixturePath('symlinked/source'))).rejects.toThrow(
+      new Error('The source entry link.txt is neither a file nor a directory.'),
+    );
   });
 });

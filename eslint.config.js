@@ -80,6 +80,9 @@ export default defineConfig(
   {
     rules: {
       eqeqeq: ['error', 'always'],
+      // A Vitest fixture must destructure its first argument, so a fixture
+      // with no dependencies takes `{}`.
+      'no-empty-pattern': ['error', { allowObjectPatternsAsParameters: true }],
       curly: ['error', 'all'],
       'func-style': ['error', 'expression'],
       'prefer-arrow-callback': 'error',
@@ -114,6 +117,11 @@ export default defineConfig(
   {
     files: ['**/*.test.ts'],
     plugins: { vitest },
+    settings: {
+      // The plugin only knows a test function imported from vitest itself,
+      // or extended from one. Tests import the extended one from the helper.
+      vitest: { vitestImports: [/\/test\/helpers\/test\.ts$/] },
+    },
     rules: {
       ...vitest.configs.recommended.rules,
       'vitest/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],

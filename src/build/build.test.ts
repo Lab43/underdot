@@ -2,13 +2,13 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, expect, test } from 'vitest';
+import { describe, expect } from 'vitest';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
-import { copyFixture } from '../../test/helpers/copy-fixture.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { test } from '../../test/helpers/test.ts';
 import { resolveConfiguration } from '../configuration/resolve-configuration.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { build } from './build.ts';
@@ -31,8 +31,7 @@ const contents = async (directory: string, paths: string[]): Promise<string[]> =
   Promise.all(paths.map((path) => readFile(join(directory, path), 'utf8')));
 
 describe('build', () => {
-  test('the defaults fixture builds its static files, each byte-equal to its source', async () => {
-    const directory = await copyFixture('defaults');
+  test('the defaults fixture builds its static files, each byte-equal to its source', async ({ directory }) => {
     const destination = join(directory, 'build');
     await build(resolveConfiguration(defaultsConfiguration, directory));
     expect(await list(destination)).toStrictEqual(defaultsFiles);
@@ -40,8 +39,7 @@ describe('build', () => {
     await assertAbsent(join(destination, 'litter'));
   });
 
-  test('building twice produces the same destination', async () => {
-    const directory = await copyFixture('defaults');
+  test('building twice produces the same destination', async ({ directory }) => {
     const destination = join(directory, 'build');
     const configuration = resolveConfiguration(defaultsConfiguration, directory);
     await build(configuration);
@@ -51,16 +49,22 @@ describe('build', () => {
     expect(await contents(destination, defaultsFiles)).toStrictEqual(first);
   });
 
-  test('the excluding fixture builds only what its patterns keep', async () => {
-    const directory = await copyFixture('excluding');
-    await build(resolveConfiguration(excludingConfiguration, directory));
-    expect(await list(join(directory, 'build'))).toStrictEqual(['.DS_Store', 'index.html']);
+  describe('the excluding fixture', () => {
+    test.override({ fixture: 'excluding' });
+
+    test('builds only what its patterns keep', async ({ directory }) => {
+      await build(resolveConfiguration(excludingConfiguration, directory));
+      expect(await list(join(directory, 'build'))).toStrictEqual(['.DS_Store', 'index.html']);
+    });
   });
 
-  test('the templated fixture builds its static files alone: no page is copied and no template is written', async () => {
-    const directory = await copyFixture('templated');
-    await build(resolveConfiguration(templatedConfiguration, directory));
-    expect(await list(join(directory, 'build'))).toStrictEqual(['notes.txt', 'styles/site.css']);
+  describe('the templated fixture', () => {
+    test.override({ fixture: 'templated' });
+
+    test('builds its static files alone: no page is copied and no template is written', async ({ directory }) => {
+      await build(resolveConfiguration(templatedConfiguration, directory));
+      expect(await list(join(directory, 'build'))).toStrictEqual(['notes.txt', 'styles/site.css']);
+    });
   });
 
   test('a frontmatter error names the page and fails before any write', async () => {

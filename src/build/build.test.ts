@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
-import pagesConfiguration from '../../test/fixtures/templated/underdot.config.ts';
+import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { copyFixture } from '../../test/helpers/copy-fixture.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
@@ -60,7 +60,7 @@ describe('build', () => {
 
   test('the templated fixture builds its static files alone: no page is copied and no template is written', async (t) => {
     const directory = await copyFixture(t, 'templated');
-    await build(resolveConfiguration(pagesConfiguration, directory));
+    await build(resolveConfiguration(templatedConfiguration, directory));
     assert.deepEqual(await list(join(directory, 'build')), ['notes.txt', 'styles/site.css']);
   });
 

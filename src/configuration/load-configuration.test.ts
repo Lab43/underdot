@@ -1,9 +1,9 @@
 // spec: docs/specs/configuration.md
 
 import { join } from 'node:path';
-import { describe, expect, test } from 'vitest';
-import { changeDirectory } from '../../test/helpers/change-directory.ts';
+import { describe, expect } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { test } from '../../test/helpers/test.ts';
 import { loadConfiguration } from './load-configuration.ts';
 
 describe('loadConfiguration', () => {
@@ -36,30 +36,34 @@ describe('loadConfiguration', () => {
   });
 
   describe('with no path', () => {
-    const inFixture = (name: string): string => {
-      changeDirectory(fixturePath(name));
-      return process.cwd();
-    };
+    describe('in the ts-config fixture', () => {
+      test.override({ fixture: 'ts-config' });
 
-    test('the file is found in the working directory', async () => {
-      const directory = inFixture('ts-config');
-      const resolved = await loadConfiguration();
-      expect(resolved.projectDirectory).toBe(directory);
-      expect(resolved.source).toBe(join(directory, 'content'));
+      test('the file is found in the working directory', async ({ workingDirectory }) => {
+        const resolved = await loadConfiguration();
+        expect(resolved.projectDirectory).toBe(workingDirectory);
+        expect(resolved.source).toBe(join(workingDirectory, 'content'));
+      });
     });
 
-    test('both files present is an error naming both', async () => {
-      const directory = inFixture('ts-and-js-config');
-      await expect(loadConfiguration()).rejects.toThrow(
-        new Error(`Both ${join(directory, 'underdot.config.ts')} and ${join(directory, 'underdot.config.js')} are present. Keep one.`),
-      );
+    describe('in the ts-and-js-config fixture', () => {
+      test.override({ fixture: 'ts-and-js-config' });
+
+      test('both files present is an error naming both', async ({ workingDirectory }) => {
+        await expect(loadConfiguration()).rejects.toThrow(
+          new Error(`Both ${join(workingDirectory, 'underdot.config.ts')} and ${join(workingDirectory, 'underdot.config.js')} are present. Keep one.`),
+        );
+      });
     });
 
-    test('neither file present is an error naming both names and the directory', async () => {
-      const directory = inFixture('no-config');
-      await expect(loadConfiguration()).rejects.toThrow(
-        new Error(`No underdot.config.ts or underdot.config.js in ${directory}.`),
-      );
+    describe('in the no-config fixture', () => {
+      test.override({ fixture: 'no-config' });
+
+      test('neither file present is an error naming both names and the directory', async ({ workingDirectory }) => {
+        await expect(loadConfiguration()).rejects.toThrow(
+          new Error(`No underdot.config.ts or underdot.config.js in ${workingDirectory}.`),
+        );
+      });
     });
   });
 });

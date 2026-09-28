@@ -5,8 +5,8 @@ import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { describe, expect, onTestFinished, test, vi } from 'vitest';
-import { copyFixture } from '../test/helpers/copy-fixture.ts';
+import { describe, expect, onTestFinished, vi } from 'vitest';
+import { test } from '../test/helpers/test.ts';
 import { runCommand } from './configuration/run-command.ts';
 
 vi.mock('./configuration/run-command.ts');
@@ -30,8 +30,7 @@ describe('underdot', () => {
     expect(process.exitCode).toBe(3);
   });
 
-  test('build exits 0 with nothing on stderr and builds the working directory', async () => {
-    const directory = await copyFixture('defaults');
+  test('build exits 0 with nothing on stderr and builds the working directory', async ({ directory }) => {
     const { stderr } = await runShim(['build'], directory);
     expect(stderr).toBe('');
     await access(join(directory, 'build/index.html'));

@@ -2,9 +2,9 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, expect, test } from 'vitest';
+import { describe, expect } from 'vitest';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
-import { copyFixture } from '../../test/helpers/copy-fixture.ts';
+import { test } from '../../test/helpers/test.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { writeDestination } from './write-destination.ts';
 
@@ -15,16 +15,14 @@ const outputs = [
 const planned = ['about/index.html', 'index.html'];
 
 describe('writeDestination', () => {
-  test('a destination that does not exist is created holding the outputs', async () => {
-    const directory = await copyFixture('defaults');
+  test('a destination that does not exist is created holding the outputs', async ({ directory }) => {
     const destination = join(directory, 'build');
     await writeDestination(join(directory, 'source'), destination, outputs);
     expect(await walkSource(destination)).toStrictEqual(planned);
     expect(await readFile(join(destination, 'about/index.html'), 'utf8')).toBe('about/index.html\n');
   });
 
-  test('everything that is not a planned output is removed', async () => {
-    const directory = await copyFixture('defaults');
+  test('everything that is not a planned output is removed', async ({ directory }) => {
     const destination = join(directory, 'build');
     await mkdir(join(destination, 'old'), { recursive: true });
     await writeFile(join(destination, 'stale.txt'), 'a stale file');
@@ -37,8 +35,7 @@ describe('writeDestination', () => {
     await assertAbsent(join(destination, 'old'));
   });
 
-  test('a planned file already in place is overwritten by its copy', async () => {
-    const directory = await copyFixture('defaults');
+  test('a planned file already in place is overwritten by its copy', async ({ directory }) => {
     const destination = join(directory, 'build');
     await mkdir(destination);
     await writeFile(join(destination, 'index.html'), 'the previous build');
@@ -46,8 +43,7 @@ describe('writeDestination', () => {
     expect(await readFile(join(destination, 'index.html'), 'utf8')).toBe('index.html\n');
   });
 
-  test('no outputs leave the destination empty', async () => {
-    const directory = await copyFixture('defaults');
+  test('no outputs leave the destination empty', async ({ directory }) => {
     const destination = join(directory, 'build');
     await mkdir(destination);
     await writeFile(join(destination, 'stale.txt'), 'a stale file');

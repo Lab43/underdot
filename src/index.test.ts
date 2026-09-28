@@ -1,11 +1,10 @@
 // spec: docs/specs/configuration.md, Programmatic use
 
 import { dirname, join } from 'node:path';
-import { describe, expect, test } from 'vitest';
+import { describe, expect } from 'vitest';
 import defaultsConfiguration from '../test/fixtures/defaults/underdot.config.ts';
-import { changeDirectory } from '../test/helpers/change-directory.ts';
-import { copyFixture } from '../test/helpers/copy-fixture.ts';
 import { fixturePath } from '../test/helpers/fixture-path.ts';
+import { test } from '../test/helpers/test.ts';
 import { build } from './index.ts';
 import { walkSource } from './source-tree/walk-source.ts';
 
@@ -18,11 +17,9 @@ describe('build', () => {
     );
   });
 
-  test('the project directory defaults to the working directory', async () => {
-    const directory = await copyFixture('defaults');
-    changeDirectory(directory);
+  test('the project directory defaults to the working directory', async ({ workingDirectory }) => {
     await build(defaultsConfiguration);
-    expect(await walkSource(join(directory, 'build'))).toStrictEqual([
+    expect(await walkSource(join(workingDirectory, 'build'))).toStrictEqual([
       '.htaccess',
       '.well-known/security.txt',
       'about/index.html',

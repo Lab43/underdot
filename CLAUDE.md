@@ -39,6 +39,7 @@ This project's own:
 - `docs/conventions/principles.md` — cross-cutting rules, including deviations from q's
 - `docs/conventions/documentation.md` — documentation rulings and deviations
 - `docs/conventions/toolchain.md` — the language, module system, and runtime the code is written against
+- `docs/conventions/structure.md` — how the source is divided into modules: what a module holds, what it is named, and where it lives
 - `docs/conventions/testing.md` — rules for writing and running the tests
 
 ### Specs

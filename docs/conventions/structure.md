@@ -6,7 +6,7 @@ Rules for how the source is divided into modules: what a module holds, what it i
 
 Name a module that exports one function after that function, so `load-configuration.ts` exports `loadConfiguration`. Lint holds every module to named exports. Rejected: naming a module after its subject. A subject collects every function about it, and the reader who finishes one function finds another's helpers below it.
 
-An entry that exports nothing is named after what it installs, since it has no function to take a name from, as `src/underdot.ts` is named after the command the `bin` field installs.
+An entry that exports nothing is named after what it installs, since it has no function to take a name from, as `src/underdot.ts` is.
 
 ## Types
 

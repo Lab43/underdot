@@ -19,10 +19,10 @@ const compareOutputs = (a: Output, b: Output): number =>
 
 // Sorted, so a collision names its two sources the same way whichever order
 // they arrived in.
-// spec: docs/specs/source-tree.md
-const collectOutputs = (staticFiles: StaticFile[], pages: RenderedPage[]): Output[] => {
+// spec: docs/specs/source-tree.md, Output paths are unique
+const collectOutputs = (copies: StaticFile[], pages: RenderedPage[]): Output[] => {
   const outputs = [
-    ...staticFiles.filter((file) => !file.private).map(({ sourcePath }) => ({ sourcePath, outputPath: sourcePath })),
+    ...copies.map(({ sourcePath }) => ({ sourcePath, outputPath: sourcePath })),
     ...pages.map(({ sourcePath, outputPath }) => ({ sourcePath, outputPath })),
   ].sort(compareOutputs);
   const sourcePaths = new Map<string, string>();
@@ -65,8 +65,10 @@ const clean = async (directory: string, prefix: string, files: Set<string>, dire
 
 // After a successful run the destination holds exactly the outputs. A file
 // being replaced stays until its output overwrites it.
+// spec: docs/specs/source-tree.md, Underscore prefix
 export const writeDestination = async (source: string, destination: string, staticFiles: StaticFile[], pages: RenderedPage[]): Promise<void> => {
-  const outputs = collectOutputs(staticFiles, pages);
+  const copies = staticFiles.filter((file) => !file.private);
+  const outputs = collectOutputs(copies, pages);
   await mkdir(destination, { recursive: true });
   await clean(destination, '', new Set(outputs.map((output) => output.outputPath)), collectOutputDirectories(outputs));
   const placeOutput = async (outputPath: string): Promise<string> => {
@@ -75,8 +77,8 @@ export const writeDestination = async (source: string, destination: string, stat
     return target;
   };
   await runUnits([
-    ...staticFiles.filter((file) => !file.private).map((file) => async () => {
-      await copyFile(join(source, file.sourcePath), await placeOutput(file.sourcePath));
+    ...copies.map((copy) => async () => {
+      await copyFile(join(source, copy.sourcePath), await placeOutput(copy.sourcePath));
     }),
     ...pages.map((page) => async () => {
       await writeFile(await placeOutput(page.outputPath), page.contents);

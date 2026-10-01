@@ -1,10 +1,11 @@
 // spec: docs/specs/source-tree.md
 
 import { describe, expect, test } from 'vitest';
+import { renderBody } from '../../test/helpers/render-body.ts';
 import { classifySource } from './classify-source.ts';
 
-const tpl = new Set(['tpl']);
-const none = new Set<string>();
+const tpl = new Map([['tpl', { render: renderBody }]]);
+const none = new Map<string, { render: typeof renderBody }>();
 
 describe('classifySource', () => {
   describe('static files', () => {
@@ -54,7 +55,7 @@ describe('classifySource', () => {
       { sourcePath: '.hidden.tpl', directory: '', outputPath: '.hidden/index.html', url: '/.hidden/' },
     ])('$sourcePath is written to $outputPath at $url', ({ sourcePath, directory, outputPath, url }) => {
       expect(classifySource([sourcePath], tpl).pages).toStrictEqual([
-        { sourcePath, directory, extension: 'tpl', outputPath, url },
+        { sourcePath, directory, extension: 'tpl', render: renderBody, outputPath, url },
       ]);
     });
   });
@@ -62,13 +63,13 @@ describe('classifySource', () => {
   describe('templates', () => {
     test('a root template is named _ in the root directory', () => {
       expect(classifySource(['_.tpl'], tpl).templates).toStrictEqual([
-        { sourcePath: '_.tpl', directory: '', extension: 'tpl', name: '_' },
+        { sourcePath: '_.tpl', directory: '', extension: 'tpl', render: renderBody, name: '_' },
       ]);
     });
 
     test('a named template keeps its underscore and its directory', () => {
       expect(classifySource(['blog/_post.tpl'], tpl).templates).toStrictEqual([
-        { sourcePath: 'blog/_post.tpl', directory: 'blog', extension: 'tpl', name: '_post' },
+        { sourcePath: 'blog/_post.tpl', directory: 'blog', extension: 'tpl', render: renderBody, name: '_post' },
       ]);
     });
   });
@@ -84,8 +85,8 @@ describe('classifySource', () => {
   test('each kind preserves the input order', () => {
     expect(classifySource(['b.txt', 'b.tpl', '_includes/x.txt', 'a.txt', 'a.tpl', '_c.txt'], tpl)).toStrictEqual({
       pages: [
-        { sourcePath: 'b.tpl', directory: '', extension: 'tpl', outputPath: 'b/index.html', url: '/b/' },
-        { sourcePath: 'a.tpl', directory: '', extension: 'tpl', outputPath: 'a/index.html', url: '/a/' },
+        { sourcePath: 'b.tpl', directory: '', extension: 'tpl', render: renderBody, outputPath: 'b/index.html', url: '/b/' },
+        { sourcePath: 'a.tpl', directory: '', extension: 'tpl', render: renderBody, outputPath: 'a/index.html', url: '/a/' },
       ],
       templates: [],
       staticFiles: [

@@ -3,7 +3,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describeError } from '../shared/describe-error.ts';
-import type { PageFile, SourceFiles, StaticFile, TemplateFile } from '../source-tree/classify-source.ts';
+import type { PageFile, TemplateFile } from '../source-tree/classify-source.ts';
 import { parseFrontmatter } from '../templates/parse-frontmatter.ts';
 import { runUnits } from './run-units.ts';
 
@@ -21,7 +21,6 @@ export interface Template extends TemplateFile, FileContents {}
 export interface Site {
   pages: Page[];
   templates: Template[];
-  staticFiles: StaticFile[];
 }
 
 // Parse a file's frontmatter. An error names the file.
@@ -40,16 +39,16 @@ const readContents = async (source: string, sourcePath: string): Promise<FileCon
 
 // Read every page and template. Each lands in the slot of its own index, so
 // the result keeps the classification's order whichever read settles first.
-export const readSite = async (source: string, sourceFiles: SourceFiles): Promise<Site> => {
-  const pages = new Array<Page>(sourceFiles.pages.length);
-  const templates = new Array<Template>(sourceFiles.templates.length);
+export const readSite = async (source: string, pageFiles: PageFile[], templateFiles: TemplateFile[]): Promise<Site> => {
+  const pages = new Array<Page>(pageFiles.length);
+  const templates = new Array<Template>(templateFiles.length);
   await runUnits([
-    ...sourceFiles.pages.map((page, index) => async () => {
+    ...pageFiles.map((page, index) => async () => {
       pages[index] = { ...page, ...(await readContents(source, page.sourcePath)) };
     }),
-    ...sourceFiles.templates.map((template, index) => async () => {
+    ...templateFiles.map((template, index) => async () => {
       templates[index] = { ...template, ...(await readContents(source, template.sourcePath)) };
     }),
   ]);
-  return { pages, templates, staticFiles: sourceFiles.staticFiles };
+  return { pages, templates };
 };

@@ -1,10 +1,10 @@
 // spec: docs/specs/plugins.md
 
 import { describe, expect, test } from 'vitest';
+import { renderBody as render } from '../../test/helpers/render-body.ts';
 import { registerPlugins } from './register-plugins.ts';
 import type { Plugin } from './register-plugins.ts';
 
-const render = (body: string): string => body;
 const other = (body: string): string => body.toUpperCase();
 
 describe('registerPlugins', () => {

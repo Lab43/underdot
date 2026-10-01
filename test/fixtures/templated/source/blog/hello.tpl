@@ -2,4 +2,4 @@
 template: post
 title: Hello
 ---
-The hello post.
+The hello post: layout {{ layout }}.

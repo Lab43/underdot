@@ -24,7 +24,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    3. [x] **The `underdot build` command.** The bin entry, argument parsing, the configuration path option, exit status, and how a failure is printed.
 3. [ ] **Pages and templates.** Three plans:
    1. [x] **Plugins and pages.** The exported plugin type with a name and renderers, the `plugins` setting, duplicate plugin names and duplicate extensions as errors, classifying pages and templates by the registered extensions, frontmatter with its reserved keys, page output paths and URLs, and output uniqueness across pages and static files, proven with a fixture renderer.
-   2. [ ] **Templates.** Template resolution and its errors, rendering the chain, variables merged from frontmatter, the built-in variables, and writing rendered pages.
+   2. [x] **Templates.** Template resolution and its errors, rendering the chain, variables merged from frontmatter, the built-in variables, and writing rendered pages.
    3. [ ] **Globals and data files.** The `globals` setting, the `_data` directory, the first layer of the variable merge, and the collision errors.
 4. [ ] **EJS and the render context.** The render context with its reads and logger, and the EJS plugin as the first real renderer.
 5. [ ] **File handlers and helpers.** The cache-busting plugin as their first consumer, and a fixture producer proving emitted files.

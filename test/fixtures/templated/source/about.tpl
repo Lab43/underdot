@@ -1,1 +1,1 @@
-The about page.
+The about page: title {{ title }}.

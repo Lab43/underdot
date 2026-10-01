@@ -1,9 +1,40 @@
 // spec: docs/specs/build.md, Destination
 
-import { copyFile, mkdir, readdir, rm } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import type { Output } from '../source-tree/plan-outputs.ts';
+import type { StaticFile } from '../source-tree/classify-source.ts';
+import type { RenderedPage } from '../templates/render-pages.ts';
 import { runUnits } from './run-units.ts';
+
+interface Output {
+  sourcePath: string;
+  outputPath: string;
+}
+
+// Compare by character code rather than by locale, so every machine sorts alike.
+const compare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+const compareOutputs = (a: Output, b: Output): number =>
+  compare(a.outputPath, b.outputPath) || compare(a.sourcePath, b.sourcePath);
+
+// Sorted, so a collision names its two sources the same way whichever order
+// they arrived in.
+// spec: docs/specs/source-tree.md, Output paths are unique
+const collectOutputs = (copies: StaticFile[], pages: RenderedPage[]): Output[] => {
+  const outputs = [
+    ...copies.map(({ sourcePath }) => ({ sourcePath, outputPath: sourcePath })),
+    ...pages.map(({ sourcePath, outputPath }) => ({ sourcePath, outputPath })),
+  ].sort(compareOutputs);
+  const sourcePaths = new Map<string, string>();
+  for (const { sourcePath, outputPath } of outputs) {
+    const other = sourcePaths.get(outputPath);
+    if (other !== undefined) {
+      throw new Error(`Both ${other} and ${sourcePath} would be written to ${outputPath}.`);
+    }
+    sourcePaths.set(outputPath, sourcePath);
+  }
+  return outputs;
+};
 
 // Every directory the outputs pass through, as a path under the destination
 // with forward slashes.
@@ -32,14 +63,25 @@ const clean = async (directory: string, prefix: string, files: Set<string>, dire
   }
 };
 
-// After a successful run the destination holds exactly the planned outputs.
-// A file being replaced stays until its copy overwrites it.
-export const writeDestination = async (source: string, destination: string, outputs: Output[]): Promise<void> => {
+// After a successful run the destination holds exactly the outputs. A file
+// being replaced stays until its output overwrites it.
+// spec: docs/specs/source-tree.md, Underscore prefix
+export const writeDestination = async (source: string, destination: string, staticFiles: StaticFile[], pages: RenderedPage[]): Promise<void> => {
+  const copies = staticFiles.filter((file) => !file.private);
+  const outputs = collectOutputs(copies, pages);
   await mkdir(destination, { recursive: true });
   await clean(destination, '', new Set(outputs.map((output) => output.outputPath)), collectOutputDirectories(outputs));
-  await runUnits(outputs.map((output) => async () => {
-    const target = join(destination, output.outputPath);
+  const placeOutput = async (outputPath: string): Promise<string> => {
+    const target = join(destination, outputPath);
     await mkdir(dirname(target), { recursive: true });
-    await copyFile(join(source, output.sourcePath), target);
-  }));
+    return target;
+  };
+  await runUnits([
+    ...copies.map((copy) => async () => {
+      await copyFile(join(source, copy.sourcePath), await placeOutput(copy.sourcePath));
+    }),
+    ...pages.map((page) => async () => {
+      await writeFile(await placeOutput(page.outputPath), page.contents);
+    }),
+  ]);
 };

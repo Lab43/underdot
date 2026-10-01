@@ -2,11 +2,11 @@
 
 import { isObject } from '../shared/is-object.ts';
 
-// What a renderer knows about the file it is rendering: its path under the
-// source root, the page's during the page's render and the template's during
-// a template's render.
+// The file being rendered, the page's path during its render and the
+// template's during a template's, and the variables it renders with.
 export interface RenderContext {
   sourcePath: string;
+  variables: Record<string, unknown>;
 }
 
 export type Renderer = (body: string, context: RenderContext) => string | Promise<string>;
@@ -17,15 +17,20 @@ export interface Plugin {
   renderers?: Record<string, Renderer>;
 }
 
+export interface RegisteredRenderer {
+  pluginName: string;
+  render: Renderer;
+}
+
 // The renderers the plugins registered, keyed by extension.
 export interface Registry {
-  renderers: Map<string, { pluginName: string; render: Renderer }>;
+  renderers: Map<string, RegisteredRenderer>;
 }
 
 // Build the registry from the plugins in the order the configuration lists them.
 export const registerPlugins = (plugins: Plugin[]): Registry => {
   const names = new Set<string>();
-  const renderers = new Map<string, { pluginName: string; render: Renderer }>();
+  const renderers = new Map<string, RegisteredRenderer>();
   for (const plugin of plugins) {
     if (names.has(plugin.name)) {
       throw new Error(`Two plugins are named ${plugin.name}.`);

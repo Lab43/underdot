@@ -1,4 +1,5 @@
 ---
 title: Site
 ---
-The root template.
+The root template: title {{ title }}, url {{ _url }}, chain {{ _chain }}.
+{{ _content }}

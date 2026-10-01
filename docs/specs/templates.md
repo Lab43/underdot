@@ -31,10 +31,11 @@ The chain ends at the first template whose default search finds nothing above it
 
 The directory a file searches from is the directory it belongs to (see: docs/specs/source-tree.md, A page and a directory may share a name).
 
-Two failures are build errors that name the file and the template it asked for:
+Three failures are build errors that name the file and the template it asked for:
 
 - A page whose default search finds no `_` template at all. Rationale: a page landing in the output unwrapped is never what a missing template means.
 - A `template: <name>` that no directory on the search path satisfies.
+- A search that finds a template already in the chain, which is what a template naming itself does. Rationale: the chain would otherwise loop, and a build that hangs reports nothing.
 
 Two templates in one directory with the same name and different extensions are a build error naming both. Rationale: `_fancy.ejs` beside `_fancy.md` leaves the search with no rule to pick by.
 
@@ -66,7 +67,7 @@ Three variables exist regardless of frontmatter. Their names start with an under
 
 - `_url`: the page's URL (see: docs/specs/source-tree.md, URLs). It is the same in every file of the page's chain.
 - `_content`: the rendered output of the file directly below in the chain. It exists only in templates, because a page has nothing below it.
-- `_chain`: the frontmatter of each file below in the chain, nearest first, each as written with no merging. Rendering the root of a page that selected `_post` under `_wide`, `_chain[0]` is `_wide`'s frontmatter, `_chain[1]` is `_post`'s, and `_chain[2]` is the page's. In a page, `_chain` is empty. Rationale: the direct child is the most common read, so it sits at index zero, and a template knows its own frontmatter, so the list stops below it.
+- `_chain`: the frontmatter variables of each file below in the chain, nearest first, each without its `template` directive and with no merging. Rendering the root of a page that selected `_post` under `_wide`, `_chain[0]` is `_wide`'s frontmatter, `_chain[1]` is `_post`'s, and `_chain[2]` is the page's. In a page, `_chain` is empty. Rationale: the direct child is the most common read, so it sits at index zero, and a template knows its own frontmatter, so the list stops below it.
 
 A template author reads a frontmatter variable that a page may not have set without an error. How an absent variable reads is the renderer's rule (see: docs/specs/plugins.md, Renderers).
 

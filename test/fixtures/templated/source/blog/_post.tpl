@@ -1,4 +1,5 @@
 ---
 layout: post
 ---
-The post template.
+The post template: layout {{ layout }}, title {{ title }}.
+{{ _content }}

@@ -10,7 +10,7 @@ An entry that exports nothing is named after what it installs, since it has no f
 
 ## Types
 
-Declare a type in the module whose function produces its values, and import it from there wherever it is consumed, so the import graph follows the data flow: `src/source-tree/plan-outputs.ts` declares `Output` and `src/build/write-destination.ts` imports it. Rationale: the code that constructs and checks a value sits with its type, so a reader asking what a field means finds the code that sets it in the same file. Rejected: a central types module, which detaches a type from the code that makes its values and has no function to be named after. The types a site imports are re-exported from `src/index.ts`, which is the one place they gather.
+Declare a type in the module whose function produces its values, and import it from there wherever it is consumed, so the import graph follows the data flow: `src/templates/render-pages.ts` declares `RenderedPage` and `src/build/write-destination.ts` imports it. Rationale: the code that constructs and checks a value sits with its type, so a reader asking what a field means finds the code that sets it in the same file. Rejected: a central types module, which detaches a type from the code that makes its values and has no function to be named after. The types a site imports are re-exported from `src/index.ts`, which is the one place they gather.
 
 ## Directories
 

@@ -8,6 +8,7 @@ import excludingConfiguration from '../../test/fixtures/excluding/underdot.confi
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { renderBody } from '../../test/helpers/render-body.ts';
 import { test } from '../../test/helpers/test.ts';
 import { resolveConfiguration } from '../configuration/resolve-configuration.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
@@ -61,15 +62,21 @@ describe('build', () => {
   describe('the templated fixture', () => {
     test.override({ fixture: 'templated' });
 
-    test('builds its static files alone: no page is copied and no template is written', async ({ directory }) => {
+    test('builds every page through its chain beside its static files, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('templated', 'expected');
       await build(resolveConfiguration(templatedConfiguration, directory));
-      expect(await list(join(directory, 'build'))).toStrictEqual(['notes.txt', 'styles/site.css']);
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
     });
   });
 
   test('a frontmatter error names the page and fails before any write', async () => {
     const directory = fixturePath('bad-frontmatter');
-    const plugins = [{ name: 'fixture', renderers: { tpl: (body: string) => body } }];
+    const plugins = [{ name: 'fixture', renderers: { tpl: renderBody } }];
     await expect(build(resolveConfiguration({ plugins }, directory))).rejects.toThrow(
       new Error('index.tpl: The frontmatter key _title starts with an underscore, which is reserved.'),
     );

@@ -1,4 +1,4 @@
 ---
 template: page
 ---
-The team page.
+The team page: url {{ _url }}.

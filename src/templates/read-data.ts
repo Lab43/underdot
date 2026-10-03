@@ -71,7 +71,6 @@ export const readData = async (source: string, sourcePaths: string[]): Promise<D
   // directory's object is kept so later files can land in it.
   const definers = new Map<string, string>();
   const directories = new Map<string, Record<string, unknown>>();
-  // A value lands in its directory's object, or among the variables at the top level.
   const define = (entries: Record<string, unknown> | undefined, name: string, sourcePath: string, value: unknown): void => {
     if (entries === undefined) {
       variables.push({ name, sourcePath, value });

@@ -14,7 +14,7 @@ describe('renderPages', () => {
     const render = fakeRenderer();
     const page = makePage({ sourcePath: 'index.tpl', render, frontmatter: { title: 'Home' }, body: 'The home page.' });
     const root = makeTemplate({ sourcePath: '_.tpl', render, body: 'The root template.' });
-    await expect(renderPages([{ page, chain: [root] }])).resolves.toStrictEqual([{ sourcePath: 'index.tpl', outputPath: 'index.html', contents: 'rendered _.tpl' }]);
+    await expect(renderPages([{ page, chain: [root] }], {})).resolves.toStrictEqual([{ sourcePath: 'index.tpl', outputPath: 'index.html', contents: 'rendered _.tpl' }]);
     expect(render).toHaveBeenCalledTimes(2);
     expect(render).toHaveBeenNthCalledWith(1, 'The home page.', {
       sourcePath: 'index.tpl',
@@ -31,11 +31,22 @@ describe('renderPages', () => {
     const page = makePage({ sourcePath: 'index.tpl', render, frontmatter: { title: 'Page' } });
     const near = makeTemplate({ sourcePath: '_near.tpl', render, name: '_near', frontmatter: { title: 'Near', color: 'blue', near: true } });
     const root = makeTemplate({ sourcePath: '_.tpl', render, frontmatter: { title: 'Root', color: 'red', root: true } });
-    await renderPages([{ page, chain: [near, root] }]);
+    await renderPages([{ page, chain: [near, root] }], {});
     const merged = { title: 'Page', color: 'blue', near: true, root: true, _url: '/' };
     for (const [, context] of render.mock.calls) {
       expect(context.variables).toMatchObject(merged);
     }
+  });
+
+  test('the globals sit beneath the templates and the page, and every file sees the ones nothing overrides', async () => {
+    const render = fakeRenderer();
+    const page = makePage({ sourcePath: 'index.tpl', render, frontmatter: { title: 'Page' } });
+    const root = makeTemplate({ sourcePath: '_.tpl', render, frontmatter: { color: 'Root' } });
+    await renderPages([{ page, chain: [root] }], { title: 'Global', color: 'Global', siteName: 'Site' });
+    expect(render.mock.calls.map(([, { variables }]) => variables)).toStrictEqual([
+      { title: 'Page', color: 'Root', siteName: 'Site', _url: '/', _chain: [] },
+      { title: 'Page', color: 'Root', siteName: 'Site', _url: '/', _content: 'rendered index.tpl', _chain: [{ title: 'Page' }] },
+    ]);
   });
 
   test('_chain holds the frontmatter of each file below, nearest first, and is empty in the page', async () => {
@@ -44,7 +55,7 @@ describe('renderPages', () => {
     const near = makeTemplate({ sourcePath: '_near.tpl', render, name: '_near', frontmatter: { layout: 'near' } });
     const middle = makeTemplate({ sourcePath: '_middle.tpl', render, name: '_middle', frontmatter: { layout: 'middle' } });
     const root = makeTemplate({ sourcePath: '_.tpl', render, frontmatter: { layout: 'root' } });
-    await renderPages([{ page, chain: [near, middle, root] }]);
+    await renderPages([{ page, chain: [near, middle, root] }], {});
     expect(render.mock.calls.map(([, { variables }]) => variables._chain)).toStrictEqual([
       [],
       [{ title: 'Page' }],
@@ -58,7 +69,7 @@ describe('renderPages', () => {
     const page = makePage({ sourcePath: 'blog/hello.tpl', render, outputPath: 'blog/hello/index.html', url: '/blog/hello/' });
     const post = makeTemplate({ sourcePath: 'blog/_post.tpl', render, name: '_post' });
     const root = makeTemplate({ sourcePath: '_.tpl', render });
-    await renderPages([{ page, chain: [post, root] }]);
+    await renderPages([{ page, chain: [post, root] }], {});
     expect(render.mock.calls.map(([, { variables }]) => variables._url)).toStrictEqual(['/blog/hello/', '/blog/hello/', '/blog/hello/']);
   });
 
@@ -67,7 +78,7 @@ describe('renderPages', () => {
     const renderTemplate = vi.fn<Renderer>((_body, { variables }) => `wrapped ${String(variables._content)}`);
     const page = makePage({ sourcePath: 'index.md', extension: 'md', render: renderMarkdown, body: '# Home' });
     const root = makeTemplate({ sourcePath: '_.tpl', render: renderTemplate });
-    await expect(renderPages([{ page, chain: [root] }])).resolves.toStrictEqual([{ sourcePath: 'index.md', outputPath: 'index.html', contents: 'wrapped from markdown' }]);
+    await expect(renderPages([{ page, chain: [root] }], {})).resolves.toStrictEqual([{ sourcePath: 'index.md', outputPath: 'index.html', contents: 'wrapped from markdown' }]);
     expect(renderMarkdown).toHaveBeenCalledExactlyOnceWith('# Home', expect.objectContaining({ sourcePath: 'index.md' }));
     expect(renderTemplate).toHaveBeenCalledTimes(1);
   });
@@ -79,7 +90,7 @@ describe('renderPages', () => {
     });
     const page = makePage({ sourcePath: 'index.tpl', render });
     const root = makeTemplate({ sourcePath: '_.tpl', render });
-    await expect(renderPages([{ page, chain: [root] }])).resolves.toStrictEqual([{ sourcePath: 'index.tpl', outputPath: 'index.html', contents: 'rendered _.tpl' }]);
+    await expect(renderPages([{ page, chain: [root] }], {})).resolves.toStrictEqual([{ sourcePath: 'index.tpl', outputPath: 'index.html', contents: 'rendered _.tpl' }]);
   });
 
   test('pages come back in their order whichever settles first', async () => {
@@ -91,7 +102,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', render: slow, outputPath: 'a/index.html' });
     const second = makePage({ sourcePath: 'b.tpl', render: fast, outputPath: 'b/index.html' });
     const root = makeTemplate({ sourcePath: '_.tpl', render: (_body, { variables }) => String(variables._content) });
-    await expect(renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }])).resolves.toStrictEqual([
+    await expect(renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {})).resolves.toStrictEqual([
       { sourcePath: 'a.tpl', outputPath: 'a/index.html', contents: 'slow a.tpl' },
       { sourcePath: 'b.tpl', outputPath: 'b/index.html', contents: 'fast b.tpl' },
     ]);
@@ -106,7 +117,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', render, outputPath: 'a/index.html' });
     const second = makePage({ sourcePath: 'b.tpl', render, outputPath: 'b/index.html' });
     const root = makeTemplate({ sourcePath: '_.tpl', render });
-    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }]);
+    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {});
     expect(calls).toStrictEqual(['a.tpl', 'b.tpl', '_.tpl', '_.tpl']);
   });
 
@@ -114,6 +125,6 @@ describe('renderPages', () => {
     const error = new Error('unexpected token');
     const page = makePage({ sourcePath: 'index.tpl', render: () => { throw error; } });
     const root = makeTemplate({ sourcePath: '_.tpl' });
-    await expect(renderPages([{ page, chain: [root] }])).rejects.toBe(error);
+    await expect(renderPages([{ page, chain: [root] }], {})).rejects.toBe(error);
   });
 });

@@ -13,6 +13,7 @@ describe('resolveConfiguration', () => {
       destination: '/site/build',
       exclude: ['**/.DS_Store'],
       plugins: [],
+      globals: {},
     });
   });
 
@@ -22,12 +23,14 @@ describe('resolveConfiguration', () => {
       destination: 'out/site',
       exclude: ['**/*.draft'],
       plugins: [{ name: 'first' }, { name: 'second' }],
+      globals: { siteName: 'Site', team: ['Ada'] },
     }, project)).toStrictEqual({
       projectDirectory: project,
       source: '/site/content',
       destination: '/site/out/site',
       exclude: ['**/*.draft'],
       plugins: [{ name: 'first' }, { name: 'second' }],
+      globals: { siteName: 'Site', team: ['Ada'] },
     });
   });
 
@@ -111,6 +114,18 @@ describe('resolveConfiguration', () => {
     test('a plugin given as a string is rejected', () => {
       expect(() => resolveConfiguration({ plugins: ['markdown'] }, project)).toThrow(
         new Error('Each plugin must be an object with a name.'),
+      );
+    });
+
+    test('globals must be an object', () => {
+      expect(() => resolveConfiguration({ globals: [['siteName', 'Site']] }, project)).toThrow(
+        new Error('The globals setting must be an object.'),
+      );
+    });
+
+    test('a global starting with an underscore is reserved', () => {
+      expect(() => resolveConfiguration({ globals: { siteName: 'Site', _site: {} } }, project)).toThrow(
+        new Error('The global _site starts with an underscore, which is reserved.'),
       );
     });
   });

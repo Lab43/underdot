@@ -19,17 +19,17 @@ interface RenderedBody {
   body: string;
 }
 
-const mergeVariables = ({ page, chain }: PageChain): Variables => {
-  const variables: Variables = {};
+const mergeVariables = (globals: Variables, { page, chain }: PageChain): Variables => {
+  const variables: Variables = { ...globals };
   for (const template of chain.toReversed()) {
     Object.assign(variables, template.frontmatter);
   }
   return { ...variables, ...page.frontmatter, _url: page.url };
 };
 
-const renderBody = async (pageChain: PageChain): Promise<RenderedBody> => {
+const renderBody = async (globals: Variables, pageChain: PageChain): Promise<RenderedBody> => {
   const { page, chain } = pageChain;
-  const variables = mergeVariables(pageChain);
+  const variables = mergeVariables(globals, pageChain);
   const body = await page.render(page.body, { sourcePath: page.sourcePath, variables: { ...variables, _chain: [] } });
   return { page, chain, variables, body };
 };
@@ -50,7 +50,7 @@ const renderChain = async ({ page, chain, variables, body }: RenderedBody): Prom
 // Every body renders before any chain, so a template can read any page's
 // rendered body.
 // spec: docs/specs/build.md, Order of work
-export const renderPages = async (pageChains: PageChain[]): Promise<RenderedPage[]> => {
-  const renderedBodies = await mapUnits(pageChains, renderBody);
+export const renderPages = async (pageChains: PageChain[], globals: Variables): Promise<RenderedPage[]> => {
+  const renderedBodies = await mapUnits(pageChains, (pageChain) => renderBody(globals, pageChain));
   return mapUnits(renderedBodies, renderChain);
 };

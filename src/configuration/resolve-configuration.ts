@@ -9,6 +9,7 @@ export interface Configuration {
   destination?: string;
   exclude?: string[];
   plugins?: Plugin[];
+  globals?: Record<string, unknown>;
 }
 
 export interface ResolvedConfiguration {
@@ -17,11 +18,12 @@ export interface ResolvedConfiguration {
   destination: string;
   exclude: string[];
   plugins: Plugin[];
+  globals: Record<string, unknown>;
 }
 
 // Every setting the configuration knows, held to the type's keys in both
 // directions so the unknown-setting check cannot drift from the type.
-const settingNames = { source: true, destination: true, exclude: true, plugins: true } satisfies Record<keyof Configuration, true>;
+const settingNames = { source: true, destination: true, exclude: true, plugins: true, globals: true } satisfies Record<keyof Configuration, true>;
 const settings: ReadonlySet<string> = new Set(Object.keys(settingNames));
 
 const defaults: Required<Configuration> = {
@@ -29,6 +31,7 @@ const defaults: Required<Configuration> = {
   destination: 'build',
   exclude: ['**/.DS_Store'],
   plugins: [],
+  globals: {},
 };
 
 const isStringArray = (value: unknown): value is string[] =>
@@ -84,6 +87,15 @@ const checkSettings: SettingsCheck = (configuration) => {
   if (configuration.plugins !== undefined && !configuration.plugins.every(isPlugin)) {
     throw new Error('Each plugin must be an object with a name.');
   }
+  if (configuration.globals !== undefined && !isObject(configuration.globals)) {
+    throw new Error('The globals setting must be an object.');
+  }
+  if (configuration.globals !== undefined) {
+    const reserved = Object.keys(configuration.globals).find((name) => name.startsWith('_'));
+    if (reserved !== undefined) {
+      throw new Error(`The global ${reserved} starts with an underscore, which is reserved.`);
+    }
+  }
 };
 
 export const resolveConfiguration = (configuration: unknown, projectDirectory: string): ResolvedConfiguration => {
@@ -96,8 +108,9 @@ export const resolveConfiguration = (configuration: unknown, projectDirectory: s
   const destination = resolve(projectDirectory, configuration.destination ?? defaults.destination);
   const exclude = configuration.exclude ?? [...defaults.exclude];
   const plugins = configuration.plugins ?? [...defaults.plugins];
+  const globals = configuration.globals ?? { ...defaults.globals };
 
   checkPlacement(projectDirectory, source, destination);
 
-  return { projectDirectory, source, destination, exclude, plugins };
+  return { projectDirectory, source, destination, exclude, plugins, globals };
 };

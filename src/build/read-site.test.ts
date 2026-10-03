@@ -35,7 +35,7 @@ describe('readSite', () => {
       ...sourceFiles.templates[0],
       frontmatter: { title: 'Site' },
       template: undefined,
-      body: 'The root template: title {{ title }}, url {{ _url }}, chain {{ _chain }}.\n{{ _content }}\n',
+      body: 'The root template: title {{ title }}, siteName {{ siteName }}, year {{ site.year }}, url {{ _url }}, chain {{ _chain }}.\n{{ _content }}\n',
     });
     expect(post?.frontmatter).toStrictEqual({ layout: 'post' });
   });

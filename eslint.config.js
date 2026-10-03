@@ -143,9 +143,10 @@ export default defineConfig(
     },
   },
   {
-    // ESLint and Vitest read their configuration from the default export, and
-    // a site's configuration file is its default export (see: docs/specs/configuration.md).
-    files: ['eslint.config.js', 'vitest.config.ts', 'test/fixtures/**/underdot.config.{ts,js}'],
+    // ESLint and Vitest read their configuration from the default export.
+    // A site's configuration file is its default export. A data module's
+    // default export is its value.
+    files: ['eslint.config.js', 'vitest.config.ts', 'test/fixtures/**/underdot.config.{ts,js}', 'test/fixtures/**/source/_data/**/*.{ts,js}'],
     rules: { 'import-x/no-default-export': 'off' },
   },
   {

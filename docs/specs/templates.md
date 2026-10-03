@@ -59,7 +59,19 @@ The built-in variables (see: Built-in variables) are added to the set and can co
 
 ## Data files
 
-A file in the `_data` directory at the source root defines one global variable named after the file, with the file's parsed contents as its value: `_data/team.json` defines `team`. A subdirectory defines an object holding its files, so `_data/team/leads.json` defines `team.leads`. A file and a directory with one name at the same level are a build error naming both. JSON and YAML files parse as data. A JavaScript module's default export is the value, so data can be computed. A variable defined both by a data file and by the configuration's globals is a build error naming both, and so is a data file whose name starts with an underscore, because the variable it would define is reserved (see: Reserved keys). Rationale: a site's structured content changes as often as its pages, so it lives in the source tree where the dev server watches it and the build can tell which pages read it, and never behind the configuration where neither can see it.
+A file in the `_data` directory at the source root defines one global variable named after the file, with the file's parsed contents as its value: `_data/team.json` defines `team`. A subdirectory defines an object holding its files, so `_data/team/leads.json` defines `team.leads`. Rationale: a site's structured content changes as often as its pages, so it lives in the source tree where the dev server watches it and the build can tell which pages read it, and never behind the configuration where neither can see it.
+
+A JSON file parses as data. A JavaScript or TypeScript module's default export is the value, so data can be computed. Any other file under `_data` is a build error naming it. Rationale: a file placed to define a variable that silently defines nothing is indistinguishable from one that had no effect.
+
+A data file or directory whose name starts with an underscore is a build error naming it, because the variable it would define is reserved (see: Reserved keys).
+
+Three collisions are build errors naming both sides:
+
+- Two files at one level with one name and different extensions.
+- A file and a directory at one level with one name.
+- A variable defined both by a data file and by the configuration's globals (see: docs/specs/configuration.md, Globals).
+
+Rationale: the build has no rule to pick by, as it has none for two templates with one name (see: Template resolution).
 
 ## Built-in variables
 

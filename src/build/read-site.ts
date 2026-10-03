@@ -2,7 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describeError } from '../shared/describe-error.ts';
+import { attributeError } from '../shared/attribute-error.ts';
 import type { PageFile, TemplateFile } from '../source-tree/classify-source.ts';
 import { parseFrontmatter } from '../templates/parse-frontmatter.ts';
 import { runUnits } from './run-units.ts';
@@ -30,7 +30,7 @@ const parseContents = (sourcePath: string, text: string): FileContents => {
     const { keys, template, body } = parseFrontmatter(text);
     return { frontmatter: keys, template, body };
   } catch (error) {
-    throw new Error(`${sourcePath}: ${describeError(error)}`, { cause: error });
+    throw attributeError(sourcePath, error);
   }
 };
 

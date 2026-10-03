@@ -2,7 +2,7 @@
 
 import { access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { importDefault } from '../shared/import-default.ts';
 import { resolveConfiguration } from './resolve-configuration.ts';
 import type { ResolvedConfiguration } from './resolve-configuration.ts';
 
@@ -45,7 +45,5 @@ const checkConfigurationFile = async (path: string): Promise<string> => {
 
 export const loadConfiguration = async (path?: string): Promise<ResolvedConfiguration> => {
   const file = path === undefined ? await findConfigurationFile(process.cwd()) : await checkConfigurationFile(path);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- an import of a path known only at runtime is typed any
-  const configuration: unknown = (await import(pathToFileURL(file).href)).default;
-  return resolveConfiguration(configuration, dirname(file));
+  return resolveConfiguration(await importDefault(file), dirname(file));
 };

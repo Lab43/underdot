@@ -7,7 +7,9 @@ export type Renderer = (body: string, context: RenderContext) => string | Promis
 
 export interface Plugin {
   name: string;
-  // Keyed by the extension without its dot: `{ md: render }`.
+  /**
+   * Keyed by the extension without its dot: `{ md: render }`.
+   */
   renderers?: Record<string, Renderer>;
 }
 
@@ -16,12 +18,16 @@ export interface RegisteredRenderer {
   render: Renderer;
 }
 
-// The renderers the plugins registered, keyed by extension.
+/**
+ * The renderers the plugins registered, keyed by extension.
+ */
 export interface Registry {
   renderers: Map<string, RegisteredRenderer>;
 }
 
-// Build the registry from the plugins in the order the configuration lists them.
+/**
+ * Build the registry from the plugins in the order the configuration lists them.
+ */
 export const registerPlugins = (plugins: Plugin[]): Registry => {
   const names = new Set<string>();
   const renderers = new Map<string, RegisteredRenderer>();

@@ -97,13 +97,13 @@ export default defineConfig(
   {
     rules: {
       'sort-imports': ['error', { ignoreDeclarationSort: true, ignoreCase: true }],
-      // A fixture imports `underdot` as a site does, so it sorts as an external
-      // package. Left to the resolver, it would resolve to this repo's own
-      // dist/ and sort as internal wherever a build has run.
+      // A fixture imports `underdot` and the plugins as a site does, so they
+      // sort as external packages. Left to the resolver, they would resolve
+      // inside this repo and sort as internal.
       'import-x/order': ['error', {
         'newlines-between': 'never',
         alphabetize: { order: 'asc', caseInsensitive: true },
-        pathGroups: [{ pattern: 'underdot', group: 'external' }],
+        pathGroups: [{ pattern: 'underdot', group: 'external' }, { pattern: 'underdot-*', group: 'external' }],
         pathGroupsExcludedImportTypes: ['builtin'],
       }],
     },

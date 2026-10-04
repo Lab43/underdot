@@ -17,8 +17,10 @@ export interface TemplateFile {
   directory: string;
   extension: string;
   render: Renderer;
-  // The file name without its extension, `_` or `_post`, which a page's
-  // `template: post` directive selects.
+  /**
+   * The file name without its extension, `_` or `_post`, which a page's
+   * `template: post` directive selects.
+   */
   name: string;
 }
 
@@ -27,7 +29,9 @@ export interface StaticFile {
   private: boolean;
 }
 
-// The files the source holds, by kind.
+/**
+ * The files the source holds, by kind.
+ */
 export interface SourceFiles {
   pages: PageFile[];
   templates: TemplateFile[];
@@ -57,7 +61,9 @@ const planOutput = (directory: string, name: string): string => {
 // The output path with a leading slash and a trailing `index.html` removed.
 const deriveUrl = (outputPath: string): string => `/${outputPath.replace(/index\.html$/, '')}`;
 
-// Classify every path by the extensions that have a renderer.
+/**
+ * Classify every path by the extensions that have a renderer.
+ */
 export const classifySource = (sourcePaths: string[], renderers: ReadonlyMap<string, { render: Renderer }>): SourceFiles => {
   const sourceFiles: SourceFiles = { pages: [], templates: [], staticFiles: [] };
   for (const sourcePath of sourcePaths) {

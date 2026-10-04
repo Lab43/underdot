@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
+import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
@@ -67,6 +68,22 @@ describe('build', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('templated', 'expected');
       await build(resolveConfiguration(templatedConfiguration, directory));
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
+    });
+  });
+
+  describe('the ejs fixture', () => {
+    test.override({ fixture: 'ejs' });
+
+    // spec: docs/specs/ejs.md
+    test('builds every page through EJS, its includes and data among them, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('ejs', 'expected');
+      await build(resolveConfiguration(ejsConfiguration, directory));
       const paths = await list(destination);
       expect(paths).toStrictEqual(await list(expected));
       for (const path of paths) {

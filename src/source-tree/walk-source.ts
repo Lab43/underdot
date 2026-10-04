@@ -23,8 +23,10 @@ const checkRoot = async (root: string): Promise<void> => {
   }
 };
 
-// Every file under the root as its path relative to the root with forward
-// slashes, sorted by code unit so the listing is the same on every machine.
+/**
+ * Every file under the root as its path relative to the root with forward
+ * slashes, sorted by code unit so the listing is the same on every machine.
+ */
 export const walkSource = async (root: string): Promise<string[]> => {
   await checkRoot(root);
   // The promise form lists a symlink as neither file nor directory and never

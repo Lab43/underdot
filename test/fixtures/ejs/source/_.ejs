@@ -1,0 +1,14 @@
+---
+title: Site
+---
+<!doctype html>
+<html>
+  <head>
+    <title><%= title %> | <%= site.name %></title>
+    <%- include('head') -%>
+  </head>
+  <body>
+    <%- _content -%>
+    <%- include('/_includes/footer', { year: site.year }) -%>
+  </body>
+</html>

@@ -33,6 +33,7 @@ Conventions come in three tiers: q's own, the conventions of any installed exten
 `underdot` — Rules for writing a site built on Underdot: its configuration, source tree, templates, and plugins.
 
 - `underdot conventions/configuration.md` — rules for writing a site's Underdot configuration file
+- `underdot conventions/ejs.md` — rules for writing a site's EJS pages, templates, and partials
 
 This project's own:
 
@@ -52,10 +53,11 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 - `docs/specs/build.md` — what one build guarantees: how the destination relates to the source, the order of work, when work is skipped, and what a failure does
 - `docs/specs/dev-server.md` — what a development session gives an author: one command that builds, serves locally, rebuilds on change, and reloads the browser
 - `docs/specs/configuration.md` — how a site tells Underdot what to build and how it is routed: the configuration file, its settings, and the commands and programmatic entry points that consume it
+- `docs/specs/ejs.md` — what the EJS plugin commits to: how a file renders with EJS, what a template can read, how an include finds its partial, and the one option a site configures
 
 ### Guides
 
 How to use and operate Underdot, rather than how to write its code (source: @lab43/q conventions/documentation.md, Taxonomy).
 
 - `docs/guides/migrating-from-v1.md` — what to change in a site built on Underdot v1 so it builds on v2, each entry pointing at the spec section that decided it
-- `docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand: the compiled command, the published package, and the runtimes the package supports
+- `docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support

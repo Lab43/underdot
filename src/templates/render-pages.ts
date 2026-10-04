@@ -49,8 +49,10 @@ const renderChain = async (
   return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content };
 };
 
-// Every body renders before any chain, so a template can read any page's
-// rendered body.
+/**
+ * Every body renders before any chain, so a template can read any page's
+ * rendered body.
+ */
 // spec: docs/specs/build.md, Order of work
 export const renderPages = async (pageChains: PageChain[], globals: Variables, makeContext: MakeRenderContext): Promise<RenderedPage[]> => {
   const renderedBodies = await mapUnits(pageChains, (pageChain) => renderBody(globals, makeContext, pageChain));

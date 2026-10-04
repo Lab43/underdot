@@ -20,8 +20,10 @@ const runBuildCommand = async ({ configurationPath }: Command): Promise<number> 
   }
 };
 
-// Run the command line: the arguments after the script name go in, and the
-// exit status comes back for the shim to assign, so nothing here exits.
+/**
+ * Run the command line: the arguments after the script name go in, and the
+ * exit status comes back for the shim to assign, so nothing here exits.
+ */
 export const runCommand = async (args: string[]): Promise<number> => {
   let command: Command;
   try {

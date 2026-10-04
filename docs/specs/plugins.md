@@ -81,9 +81,9 @@ A plugin that keeps state across units, such as a table of hashes filled by a fi
 
 ## Errors
 
-A plugin reports a failure by throwing. There is no error return value. The build catches the throw and attributes it, so a plugin never writes its own name or the file it was working on into the message. A plugin never terminates the process. Rationale: only the build knows which unit was running, and a plugin that exits skips the attributed report and ends a dev-server session that should have waited for the next change.
+A plugin reports a failure by throwing. There is no error return value. The build catches the throw and attributes it, so a plugin never writes its own name or the file it was working on into the message. What the engine a plugin wraps reports passes through as it is, the file and line of a failure included. Rationale: the engine's report is the engine's and not a message the plugin wrote, and for a failure inside a partial the engine is the only party that knows the partial. A plugin never terminates the process. Rationale: only the build knows which unit was running, and a plugin that exits skips the attributed report and ends a dev-server session that should have waited for the next change.
 
-A thrown error fails the unit it happened in and stops the build (see: docs/specs/build.md, Errors). The report names the plugin, the unit, and the file. For a render it names the file in the chain that was rendering when the throw happened, since a helper called from a template fails on the template's line. A renderer's syntax error carries the line and column the engine reports.
+A thrown error fails the unit it happened in and stops the build (see: docs/specs/build.md, Errors). The report names the plugin, the unit, and the file. For a render it names the file in the chain that was rendering when the throw happened, since a helper called from a template fails on the template's line. A renderer's error carries the location the engine reports.
 
 An error thrown while a plugin is set up fails the run before any unit starts. Rationale: an invalid option is caught once rather than on the first file that exercises it.
 

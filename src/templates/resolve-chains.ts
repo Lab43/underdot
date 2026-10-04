@@ -3,7 +3,9 @@
 import { dirname, join } from 'node:path/posix';
 import type { Page, Template } from '../build/read-site.ts';
 
-// A page with its chain, nearest template first.
+/**
+ * A page with its chain, nearest template first.
+ */
 export interface PageChain {
   page: Page;
   chain: Template[];

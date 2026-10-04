@@ -2,7 +2,9 @@
 
 import type { DataVariable } from './read-data.ts';
 
-// The configuration's globals with every data variable added under its name.
+/**
+ * The configuration's globals with every data variable added under its name.
+ */
 export const defineGlobals = (globals: Record<string, unknown>, dataVariables: DataVariable[]): Record<string, unknown> => {
   const defined = { ...globals };
   for (const { name, sourcePath, value } of dataVariables) {

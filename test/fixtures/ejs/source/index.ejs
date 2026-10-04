@@ -1,0 +1,13 @@
+---
+title: Home
+description: The home page
+---
+<h1><%= title %></h1>
+<p>[<%= subtitle %>][<%= locals.subtitle %>]</p>
+<ul>
+  <%_ for (const lead of team.leads) { -%>
+  <li><%= lead %></li>
+  <%_ } -%>
+</ul>
+<p><%- JSON.stringify(team) %> <%= Math.max(1, 2) %></p>
+<p><%- '<em>raw</em>' %> <%= '<em>raw</em>' %></p>

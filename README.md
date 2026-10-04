@@ -27,7 +27,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    2. [x] **Templates.** Template resolution and its errors, rendering the chain, variables merged from frontmatter, the built-in variables, and writing rendered pages.
    3. [x] **Globals and data files.** The `globals` setting, the `_data` directory, the first layer of the variable merge, and the collision errors.
 4. [ ] **EJS and the render context.** Two plans:
-   1. [ ] **The render context.** The file being rendered and its directory, reading a file under the source root with relative paths resolved against that file and absolute paths against the source root, reading another page's rendered body by URL with the page-body error naming both pages, and the logger, proven with the fixture renderer. Reading handled output and emitting files arrive with step 5.
+   1. [x] **The render context.** The file being rendered and its directory, reading a file under the source root with relative paths resolved against that file and absolute paths against the source root, and reading another page's rendered body by URL with the page-body error naming both pages, proven with the fixture renderer. Reading handled output and emitting files arrive with step 5.
    2. [ ] **The EJS plugin.** The first workspace package, the renderer, the unset-variable rule, includes resolved through the render context, the configured views directories, its spec written inside the plan, and its site-facing conventions.
 5. [ ] **File handlers and helpers.** The cache-busting plugin as their first consumer, and a fixture producer proving emitted files.
 6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.

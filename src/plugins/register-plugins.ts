@@ -1,13 +1,7 @@
 // spec: docs/specs/plugins.md
 
 import { isObject } from '../shared/is-object.ts';
-
-// The file being rendered, the page's path during its render and the
-// template's during a template's, and the variables it renders with.
-export interface RenderContext {
-  sourcePath: string;
-  variables: Record<string, unknown>;
-}
+import type { RenderContext } from './bind-render-context.ts';
 
 export type Renderer = (body: string, context: RenderContext) => string | Promise<string>;
 

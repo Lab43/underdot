@@ -4,7 +4,7 @@ What a plugin can do to a build and what it owes the build in return. Underdot i
 
 ## Plugin identity and order
 
-Every plugin has a name. Errors, log lines, and dependency records name the plugin they came from. Two plugins with one name in a site's configuration is a build error. Rationale: a site combines several plugins, and a failure that cannot say which one produced it sends the author reading every plugin.
+Every plugin has a name. Errors and dependency records name the plugin they came from. Two plugins with one name in a site's configuration is a build error. Rationale: a site combines several plugins, and a failure that cannot say which one produced it sends the author reading every plugin.
 
 The configuration lists plugins in order (see: docs/specs/configuration.md, Plugins). Order decides the sequence file handlers run in and the sequence page hooks run in. Nothing else about a plugin depends on its position.
 
@@ -30,11 +30,14 @@ Renderers and helpers receive a render context for the file being rendered. It c
 - The variables the file renders with, as merged (see: docs/specs/templates.md, Variables), the built-ins among them (see: docs/specs/templates.md, Built-in variables), and the `_chain` view.
 - The build's read operations: read a file under the source root, read the handled output of a static file by its output path (see: File handlers), and read the rendered body of another page by its URL. Rationale: a cache-busting helper needs the hash of the CSS as it will be served, not as it sits in source, and an archive page needs each post's body as rendered.
 - The build's emit operation (see: Emitted files).
-- A logger.
 
 Every read through the context is recorded as an input of the render (see: Dependencies).
 
-Reading another page's rendered body is available while a template renders, never while a page's body renders. A page body that reads another page's body is a build error naming both pages. Rationale: every page body renders before any template does, so a template reads a body that exists, while bodies render in no defined order and one reading another would need cycle detection for a composition that belongs in a template anyway.
+A read through the context returns synchronously. Rationale: helpers return synchronously (see: Template helpers) and an engine's include hook is synchronous, so an asynchronous read would be unusable by the two callers that need it.
+
+A read of a file resolves its path per the templates spec (see: docs/specs/templates.md, Relative paths). A path at which no file is yields no value rather than failing. Rationale: a renderer searches the file's own directory and then each configured directory with plain reads, and an absent file reads the way an unset variable does. A file the configuration excludes is absent to a read (see: docs/specs/configuration.md, Excluded files). A path that resolves above the source root is a build error naming the file. Rationale: no site means it, and a read outside the source is the read the plugin contract forbids (see: Reading and writing).
+
+Reading another page's rendered body is available while a template renders, never while a page's body renders. A page body that reads another page's body is a build error naming both pages. Rationale: every page body renders before any template does, so a template reads a body that exists, while bodies render in no defined order and one reading another would need cycle detection for a composition that belongs in a template anyway. Reading the body of a URL no page has is a build error naming the file and the URL. Rationale: nothing searches for a page the way a renderer searches for an include, and a listing that names a page the site lacks is an author error worth stopping for.
 
 ## File handlers
 
@@ -84,4 +87,4 @@ A thrown error fails the unit it happened in and stops the build (see: docs/spec
 
 An error thrown while a plugin is set up fails the run before any unit starts. Rationale: an invalid option is caught once rather than on the first file that exercises it.
 
-A plugin warns through the context's logger. A warning fails nothing.
+There is no warning. A condition worth reporting is an error, and a condition not worth stopping for is not reported. Rationale: a warning that fails nothing is read by nobody, so a deploy build ships the condition it described, and the fix for an error is a rebuild away (see: docs/specs/build.md, Errors).

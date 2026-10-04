@@ -62,6 +62,7 @@ describe('build', () => {
   describe('the templated fixture', () => {
     test.override({ fixture: 'templated' });
 
+    // spec: docs/specs/plugins.md, Render context
     test('builds every page through its chain beside its static files, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('templated', 'expected');

@@ -2,6 +2,8 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+// Source paths are posix whatever the platform, and only the disk read
+// takes a platform path.
 import { dirname, join as joinPosix } from 'node:path/posix';
 
 // What a renderer or helper receives for the file being rendered, the page's

@@ -16,26 +16,26 @@ describe('readSite', () => {
     const sourceFiles = classifySource(await walkSource(source), renderers);
     const site = await readSite(source, sourceFiles.pages, sourceFiles.templates);
 
-    expect(site.pages.map((page) => page.sourcePath)).toStrictEqual(['404.tpl', 'about.tpl', 'about/team.tpl', 'blog/hello.tpl', 'index.tpl']);
-    expect(site.templates.map((template) => template.sourcePath)).toStrictEqual(['_.tpl', '_page.tpl', 'blog/_.tpl', 'blog/_post.tpl']);
+    expect(site.pages.map((page) => page.sourcePath)).toStrictEqual(['404.tpl', 'about.tpl', 'about/team.tpl', 'blog/hello.tpl', 'blog/index.tpl', 'index.tpl']);
+    expect(site.templates.map((template) => template.sourcePath)).toStrictEqual(['_.tpl', '_page.tpl', 'blog/_.tpl', 'blog/_archive.tpl', 'blog/_post.tpl']);
 
-    const [notFound, about, , hello, home] = site.pages;
+    const [notFound, about, , hello, , home] = site.pages;
     expect(home).toStrictEqual({
-      ...sourceFiles.pages[4],
+      ...sourceFiles.pages[5],
       frontmatter: { title: 'Home', date: new Date('2024-01-02T00:00:00Z') },
       template: undefined,
       body: 'The home page: date {{ date }}.\n',
     });
     expect(hello).toStrictEqual({ ...sourceFiles.pages[3], frontmatter: { title: 'Hello' }, template: 'post', body: 'The hello post: layout {{ layout }}.\n' });
-    expect(about).toStrictEqual({ ...sourceFiles.pages[1], frontmatter: {}, template: undefined, body: 'The about page: title {{ title }}.\n' });
+    expect(about).toStrictEqual({ ...sourceFiles.pages[1], frontmatter: {}, template: undefined, body: 'The about page: title {{ title }}.\nThe about include: [{{> missing.txt }}]\n' });
     expect(notFound?.body).toBe('The not-found page: url {{ _url }}.\n');
 
-    const [root, , , post] = site.templates;
+    const [root, , , , post] = site.templates;
     expect(root).toStrictEqual({
       ...sourceFiles.templates[0],
       frontmatter: { title: 'Site' },
       template: undefined,
-      body: 'The root template: title {{ title }}, siteName {{ siteName }}, year {{ site.year }}, url {{ _url }}, chain {{ _chain }}.\n{{ _content }}\n',
+      body: 'The root template: title {{ title }}, siteName {{ siteName }}, year {{ site.year }}, url {{ _url }}, chain {{ _chain }}.\nThe root include: {{> _partial.txt }}\n{{ _content }}\n',
     });
     expect(post?.frontmatter).toStrictEqual({ layout: 'post' });
   });

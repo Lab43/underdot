@@ -2,6 +2,7 @@
 
 import { mapUnits } from '../build/map-units.ts';
 import type { Page, Template } from '../build/read-site.ts';
+import type { MakeRenderContext } from '../plugins/bind-render-context.ts';
 import type { PageChain } from './resolve-chains.ts';
 
 export interface RenderedPage {
@@ -27,21 +28,22 @@ const mergeVariables = (globals: Variables, { page, chain }: PageChain): Variabl
   return { ...variables, ...page.frontmatter, _url: page.url };
 };
 
-const renderBody = async (globals: Variables, pageChain: PageChain): Promise<RenderedBody> => {
+const renderBody = async (globals: Variables, makeContext: MakeRenderContext, pageChain: PageChain): Promise<RenderedBody> => {
   const { page, chain } = pageChain;
   const variables = mergeVariables(globals, pageChain);
-  const body = await page.render(page.body, { sourcePath: page.sourcePath, variables: { ...variables, _chain: [] } });
+  const body = await page.render(page.body, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined));
   return { page, chain, variables, body };
 };
 
-const renderChain = async ({ page, chain, variables, body }: RenderedBody): Promise<RenderedPage> => {
+const renderChain = async (
+  makeContext: MakeRenderContext,
+  bodies: ReadonlyMap<string, string>,
+  { page, chain, variables, body }: RenderedBody,
+): Promise<RenderedPage> => {
   let below = [page.frontmatter];
   let content = body;
   for (const template of chain) {
-    content = await template.render(template.body, {
-      sourcePath: template.sourcePath,
-      variables: { ...variables, _content: content, _chain: below },
-    });
+    content = await template.render(template.body, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies));
     below = [template.frontmatter, ...below];
   }
   return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content };
@@ -50,7 +52,8 @@ const renderChain = async ({ page, chain, variables, body }: RenderedBody): Prom
 // Every body renders before any chain, so a template can read any page's
 // rendered body.
 // spec: docs/specs/build.md, Order of work
-export const renderPages = async (pageChains: PageChain[], globals: Variables): Promise<RenderedPage[]> => {
-  const renderedBodies = await mapUnits(pageChains, (pageChain) => renderBody(globals, pageChain));
-  return mapUnits(renderedBodies, renderChain);
+export const renderPages = async (pageChains: PageChain[], globals: Variables, makeContext: MakeRenderContext): Promise<RenderedPage[]> => {
+  const renderedBodies = await mapUnits(pageChains, (pageChain) => renderBody(globals, makeContext, pageChain));
+  const bodies = new Map(renderedBodies.map(({ page, body }) => [page.url, body]));
+  return mapUnits(renderedBodies, (renderedBody) => renderChain(makeContext, bodies, renderedBody));
 };

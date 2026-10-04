@@ -3,7 +3,8 @@
 import { build as buildSite } from './build/build.ts';
 import { resolveConfiguration } from './configuration/resolve-configuration.ts';
 import type { Configuration } from './configuration/resolve-configuration.ts';
-import type { Plugin, RenderContext, Renderer } from './plugins/register-plugins.ts';
+import type { RenderContext } from './plugins/bind-render-context.ts';
+import type { Plugin, Renderer } from './plugins/register-plugins.ts';
 
 export type { Configuration, Plugin, RenderContext, Renderer };
 

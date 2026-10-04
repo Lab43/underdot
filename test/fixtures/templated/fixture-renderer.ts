@@ -1,4 +1,4 @@
-import type { Plugin } from 'underdot';
+import type { Plugin, RenderContext } from 'underdot';
 
 const lookup = (variables: Record<string, unknown>, path: string): unknown => {
   let value: unknown = variables;
@@ -14,10 +14,24 @@ const lookup = (variables: Record<string, unknown>, path: string): unknown => {
 // Anything but a string prints as JSON, which is the same on every machine.
 const show = (value: unknown): string => (value === undefined ? '' : typeof value === 'string' ? value : JSON.stringify(value));
 
+// `{{ path }}` is a variable, `{{> path }}` a file, and `{{@ url }}` a
+// page's body.
+const evaluate = (context: RenderContext, sigil: string, argument: string): unknown => {
+  switch (sigil) {
+    case '>':
+      return context.readFile(argument);
+    case '@':
+      return context.readBody(argument);
+    default:
+      return lookup(context.variables, argument);
+  }
+};
+
 // A plugin local to this site.
 export const fixtureRenderer = (): Plugin => ({
   name: 'fixture',
   renderers: {
-    tpl: (body, { variables }) => body.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_match, path: string) => show(lookup(variables, path))),
+    tpl: (body, context) =>
+      body.replace(/\{\{\s*([>@]?)\s*(.+?)\s*\}\}/g, (_match, sigil: string, argument: string) => show(evaluate(context, sigil, argument))),
   },
 });

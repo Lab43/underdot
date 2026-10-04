@@ -2,6 +2,7 @@
 
 import { removeExcludedFiles } from '../configuration/remove-excluded-files.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
+import { bindRenderContext } from '../plugins/bind-render-context.ts';
 import { registerPlugins } from '../plugins/register-plugins.ts';
 import { classifySource } from '../source-tree/classify-source.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
@@ -19,6 +20,9 @@ export const build = async ({ source, destination, exclude, plugins, globals }: 
   const { pages, templates, staticFiles } = classifySource(paths, renderers);
   const dataVariables = await readData(source, paths);
   const site = await readSite(source, pages, templates);
-  const renderedPages = await renderPages(resolveChains(site.pages, site.templates), defineGlobals(globals, dataVariables));
+  // Every walked file is readable, those inside private directories included.
+  // spec: docs/specs/source-tree.md, Underscore prefix
+  const makeContext = bindRenderContext(source, new Set(paths));
+  const renderedPages = await renderPages(resolveChains(site.pages, site.templates), defineGlobals(globals, dataVariables), makeContext);
   await writeDestination(source, destination, staticFiles, renderedPages);
 };

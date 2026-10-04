@@ -63,8 +63,10 @@ const clean = async (directory: string, prefix: string, files: Set<string>, dire
   }
 };
 
-// After a successful run the destination holds exactly the outputs. A file
-// being replaced stays until its output overwrites it.
+/**
+ * After a successful run the destination holds exactly the outputs. A file
+ * being replaced stays until its output overwrites it.
+ */
 // spec: docs/specs/source-tree.md, Underscore prefix
 export const writeDestination = async (source: string, destination: string, staticFiles: StaticFile[], pages: RenderedPage[]): Promise<void> => {
   const copies = staticFiles.filter((file) => !file.private);

@@ -7,8 +7,10 @@ import { mapUnits } from '../build/map-units.ts';
 import { attributeError } from '../shared/attribute-error.ts';
 import { importDefault } from '../shared/import-default.ts';
 
-// One global a data file or a data directory defines, with the path of
-// whichever defines it.
+/**
+ * One global a data file or a data directory defines, with the path of
+ * whichever defines it.
+ */
 export interface DataVariable {
   name: string;
   sourcePath: string;

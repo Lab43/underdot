@@ -13,7 +13,9 @@ import { resolveChains } from '../templates/resolve-chains.ts';
 import { readSite } from './read-site.ts';
 import { writeDestination } from './write-destination.ts';
 
-// One build from a resolved configuration.
+/**
+ * One build from a resolved configuration.
+ */
 export const build = async ({ source, destination, exclude, plugins, globals }: ResolvedConfiguration): Promise<void> => {
   const { renderers } = registerPlugins(plugins);
   const paths = removeExcludedFiles(await walkSource(source), exclude);

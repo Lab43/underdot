@@ -1,6 +1,6 @@
 # Driving manual
 
-How to bring Underdot up and exercise it by hand: the compiled command, the published package, and the runtimes the package supports.
+How to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support.
 
 ## The compiled command
 
@@ -12,7 +12,18 @@ The tests run the shim from source under type stripping, so only this compiled r
 
 ## The published package
 
-`npm pack --dry-run` lists the files the package publishes but never the manifest, so it cannot show the `bin` field. To check the manifest, pack for real into a scratch directory with `npm pack --pack-destination <dir>` and read `package/package.json` out of the tarball. Packing runs the build first through `prepack`.
+`npm pack --dry-run` lists the files the package publishes but never the manifest, so it cannot show the `bin` field. To check the manifest, pack for real into a scratch directory with `npm pack --pack-destination <dir>` and read `package/package.json` out of the tarball. Packing runs the build first through `prepack`, and packs `dist/` as it stands, so the output of a module that has since moved is still there beside its new location until `dist/` is deleted and rebuilt.
+
+## A site on the published packages
+
+The compiled command cannot resolve `underdot-ejs` from a scratch copy that installs nothing, so a site that uses a plugin is driven on the packed packages. That is also the one run that proves a plugin's `dist`, its `exports` map without the `development` condition, and its peer dependency.
+
+1. Pack the core and the plugin into a scratch directory: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace underdot-ejs --pack-destination <dir>`. Each pack runs its package's `prepack` build.
+2. Copy `test/fixtures/ejs/` to a second scratch directory.
+3. In the copy, run `npm install <dir>/underdot-2.0.0-alpha.0.tgz <dir>/underdot-ejs-2.0.0-alpha.0.tgz`.
+4. In the copy, run `npx underdot build`. It exits 0, and `diff -r <copy>/build test/fixtures/ejs/expected` shows nothing.
+
+The copy's `node_modules/underdot-ejs/dist/index.js` imports `ejs` and nothing under `src/`.
 
 ## The Node floor
 

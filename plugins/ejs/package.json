@@ -1,0 +1,40 @@
+{
+  "name": "underdot-ejs",
+  "version": "2.0.0-alpha.0",
+  "description": "EJS templates for Underdot",
+  "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lab43/underdot.git",
+    "directory": "plugins/ejs"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prepack": "tsc -b tsconfig.build.json"
+  },
+  "dependencies": {
+    "ejs": "^6.0.1"
+  },
+  "peerDependencies": {
+    "underdot": "^2.0.0-alpha.0"
+  },
+  "//": "src/ejs-options.d.ts patches @types/ejs with the two EJS 6 options. Delete it once a newer @types/ejs declares them.",
+  "devDependencies": {
+    "@types/ejs": "^3.1.5",
+    "underdot": "file:../.."
+  }
+}

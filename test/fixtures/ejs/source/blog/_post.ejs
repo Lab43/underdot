@@ -1,0 +1,9 @@
+---
+layout: post
+---
+<article class="<%= layout %>">
+  <%- _content -%>
+<%# The path climbing out of this directory is what this include proves.
+    exception: underdot conventions/ejs.md, Include a shared partial by name -%>
+  <%- include('../_includes/byline', { author }) -%>
+</article>

@@ -30,11 +30,18 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **Data files move into `source/_data/`.** A build script that read a JSON file and passed it as a global drops that code, and the file moves to `source/_data/<name>.json`, where it defines the variable `<name>` (see: docs/specs/templates.md, Data files).
 
 - **A global no longer overrides a template's frontmatter.** The order is globals, then templates from the root down, then the page. A site that relied on a global winning over a template's frontmatter moves the value into the page or the template (see: docs/specs/templates.md, Variables).
-- **Relative paths in a template resolve against the template's own directory.** v1 resolved them against the page being rendered. A helper path, or an include that names a path, that only worked because of the page's location is rewritten relative to the template, or made absolute. An include that names a partial without a path, resolved through the EJS plugin's `views` directories, keeps working unchanged (see: docs/specs/templates.md, Relative paths).
+- **Relative paths in a template resolve against the template's own directory.** v1 resolved them against the page being rendered. A helper path, or an include that names a path, that only worked because of the page's location is rewritten relative to the template, or made absolute. An include that names a partial without a path keeps working once `views` is written relative to the source root, as The EJS plugin below describes (see: docs/specs/templates.md, Relative paths).
 - **`content` is now `_content`.** Every `<%- content %>` in a template becomes `<%- _content %>`. Built-in variables all start with an underscore, and a frontmatter key starting with an underscore is an error (see: docs/specs/templates.md, Reserved keys).
 - **A template reading a value meant for it from a page it did not directly wrap reads `_chain[0]` instead.** The merged variables give the page's value, and `_chain` gives each file's own (see: docs/specs/templates.md, Variables).
 - **`dirname` is no longer a variable.** A template that built a path from `dirname` hands the relative path to a helper instead. The helper's read through the render context resolves it against the file being rendered (see: docs/specs/plugins.md, Render context).
 - **`locals.title` can become `title`.** An unset variable reads as absent instead of throwing, so the `locals.` prefix is no longer needed. Existing uses keep working (see: docs/specs/templates.md, Built-in variables).
+
+## The EJS plugin
+
+- **The plugin is imported from `underdot-ejs` and called with its options.** `import { ejs } from 'underdot-ejs'` in the configuration, and `ejs({ views: [...] })` in its plugin list (see: docs/specs/ejs.md, Options).
+- **`views` entries are directories under the source root.** v1 took paths from the project directory, as `source/_includes`. v2 takes `_includes`. The rendering file's own directory is searched without being listed, and a partial anywhere under the source root is named with a leading slash, as `include('/_includes/header')` (see: docs/specs/ejs.md, Options).
+- **`ext` is gone.** A site that registered another extension for EJS renames those files to `.ejs` (see: docs/specs/ejs.md, Options).
+- **Other EJS options no longer pass through.** A site that set `delimiter`, `rmWhitespace`, or `root` drops them. `root` is the source root in both versions (see: docs/specs/ejs.md, Options).
 
 ## Plugin authors
 
@@ -42,7 +49,7 @@ Every plugin is rewritten for v2. The registrations keep their roles, and these 
 
 - **A plugin has a name.** Give it one. Errors and dependency records cite it (see: docs/specs/plugins.md, Plugin identity and order).
 - **Helpers and renderers receive a render context instead of the metadata object.** The context carries the path of the file being rendered, the merged variables with `_url` among them, and the build's read and emit operations. A helper that resolved a relative path against `metadata.dirname` hands it to the context's read, which resolves it against the file being rendered, the template's own file when a template is rendering (see: docs/specs/plugins.md, Render context).
-- **A renderer must let a template read an unset variable without throwing.** The EJS plugin, for one, supplies every referenced name so `title` works where only `locals.title` did (see: docs/specs/plugins.md, Renderers).
+- **A renderer must let a template read an unset variable without throwing.** The EJS plugin, for one, resolves every name a template reads, so `title` works where only `locals.title` did (see: docs/specs/plugins.md, Renderers).
 - **State shared between a file handler and a helper goes through the build.** A handler that stored hashes or optimized SVGs in a closure for a helper to read drops that table. The helper reads the file's handled output through the context, so the build learns that the page depends on the file (see: docs/specs/plugins.md, Dependencies).
 - **`enqueueFile` becomes emit, with inputs.** An emitted file names its producer's inputs by reading them through the context, and the producer runs only when an input changed. A helper that resized images on every build now resizes only when the source image or its parameters changed (see: docs/specs/plugins.md, Emitted files).
 - **A wrapped tool's own reads are declared.** A handler wrapping a compiler that follows imports itself, as Sass does, declares the imported files as inputs of its output (see: docs/specs/plugins.md, Reading and writing).

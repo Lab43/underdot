@@ -6,8 +6,10 @@ import { join } from 'node:path';
 // takes a platform path.
 import { dirname, join as joinPosix } from 'node:path/posix';
 
-// What a renderer or helper receives for the file being rendered, the page's
-// path during its render and the template's during a template's.
+/**
+ * What a renderer or helper receives for the file being rendered, the page's
+ * path during its render and the template's during a template's.
+ */
 export interface RenderContext {
   sourcePath: string;
   variables: Record<string, unknown>;
@@ -18,15 +20,19 @@ export interface RenderContext {
   readBody: (url: string) => string;
 }
 
-// Makes the context for one file. The bodies are those rendered so far, and
-// none while a page's own body renders.
+/**
+ * Makes the context for one file. The bodies are those rendered so far, and
+ * none while a page's own body renders.
+ */
 export type MakeRenderContext = (
   sourcePath: string,
   variables: Record<string, unknown>,
   bodies: ReadonlyMap<string, string> | undefined,
 ) => RenderContext;
 
-// Bind what the build lends every render. The result makes a context per file.
+/**
+ * Bind what the build lends every render. The result makes a context per file.
+ */
 export const bindRenderContext = (source: string, sourcePaths: ReadonlySet<string>): MakeRenderContext =>
   (sourcePath, variables, bodies) => {
     const readFile = (reference: string): string | undefined => {

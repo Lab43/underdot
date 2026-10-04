@@ -33,7 +33,9 @@ const parseBlock = (lines: string[]): unknown => {
   }
 };
 
-// Split a page or template into its frontmatter and its body.
+/**
+ * Split a page or template into its frontmatter and its body.
+ */
 export const parseFrontmatter = (text: string): Frontmatter => {
   const lines = text.split('\n');
   // The block opens only when the file's first line is a delimiter.

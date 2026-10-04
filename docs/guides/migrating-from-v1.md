@@ -16,6 +16,8 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **The destination is cleaned.** After a build the destination holds only what the build produced. A file that lives in the destination without a source, such as something a host wrote into a deployed directory, is deleted. Check the committed destination for such files before the first v2 build and move anything worth keeping into the source tree (see: docs/specs/build.md, Destination).
 - **A failed build exits non-zero.** v1 stopped at the first error but exited with status zero. A deploy script that could not tell a failed build from a good one now can (see: docs/specs/build.md, Errors).
 
+- **`underdot-cname` is gone.** Put the `CNAME` file in the source root. A static file is written to the destination as it is (see: docs/specs/source-tree.md, Output paths).
+
 ## Dev server
 
 - **`server.js` and the live-reload script are deleted.** The dev command builds, serves, watches, and reloads the browser. A site that ran `nodemon` against the source drops that too (see: docs/specs/dev-server.md).

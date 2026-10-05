@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 ---
 
 # File handlers and template helpers

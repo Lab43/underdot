@@ -1,0 +1,39 @@
+{
+  "name": "underdot-helpers",
+  "version": "2.0.0-alpha.0",
+  "description": "Template helpers for Underdot",
+  "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lab43/underdot.git",
+    "directory": "plugins/helpers"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prepack": "tsc -b tsconfig.build.json"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "date-fns": "^4.4.0"
+  },
+  "peerDependencies": {
+    "underdot": "^2.0.0-alpha.0"
+  },
+  "devDependencies": {
+    "underdot": "file:../.."
+  }
+}

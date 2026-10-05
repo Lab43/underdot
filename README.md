@@ -32,7 +32,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
 5. [ ] **File handlers and helpers.** Four plans:
    1. [x] **The mechanisms.** File handlers and template helpers, proven with fixture plugins.
    2. [x] **The cache-busting plugin.** The first consumer of handlers' output and helpers.
-   3. [ ] **The template helpers plugin.** The helpers a site calls from its templates: date formatting, an active-link check, and a file-existence check through the render context.
+   3. [x] **The template helpers plugin.** The helpers a site calls from its templates: date formatting, an active-link check, and a file-existence check through the render context.
    4. [ ] **The SVGO plugin.** A file handler optimizing SVGs, and a helper inlining the handled output.
 6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.
 7. [ ] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.

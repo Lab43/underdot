@@ -50,6 +50,13 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **The plugin is imported from `underdot-bust` and called with no rule.** `import { bust } from 'underdot-bust'` in the configuration, and `bust()` in its plugin list. The glob that selected the files to hash is gone, because the helper hashes whichever output it is asked for. Every `busted(` in a template becomes `bust(` (see: docs/specs/bust.md, The helper).
 - **Every busted link changes once in the first v2 build.** `?h=` followed by an MD5 becomes `?v=` followed by eight characters of a SHA-256 (see: docs/specs/bust.md, The helper), and a relative reference comes back as the output's absolute URL rather than as written (see: docs/specs/bust.md, References). Expect them in a committed destination's diff.
 
+## The helpers plugin
+
+- **The plugin is imported from `underdot-helpers` and called with no options.** `import { helpers } from 'underdot-helpers'` in the configuration, and `helpers()` in its plugin list. The three helpers keep their names (see: docs/specs/helpers.md, The plugin).
+- **`formatDate` takes a date and a format and nothing else.** A third argument is dropped. It formats in UTC, so a date-only value prints as written on every machine, where v1 printed the machine's local date. A destination committed from a build west of Greenwich sees its dates move a day later in the first v2 build (see: docs/specs/helpers.md, formatDate).
+- **A link to the current page is `active` alone.** It is no longer `active parent`, and the home link is no longer `parent` on every page. Attribute values are escaped, so a value escaped by hand is written raw (see: docs/specs/helpers.md, activeLink).
+- **`fileExists` resolves a relative reference against the file rendering it.** v1 took every path from the source root. Write a reference with a leading slash, or relative to the template. It answers for the served output, so a file a handler renames is checked by its output name (see: docs/specs/helpers.md, fileExists).
+
 ## Plugin authors
 
 Every plugin is rewritten for v2. The registrations keep their roles, and these are the changes that alter what a plugin does rather than how it is spelled.

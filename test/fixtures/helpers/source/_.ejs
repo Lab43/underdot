@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <%_ if (fileExists('/styles/site.css')) { -%>
+    <link rel="stylesheet" href="/styles/site.css">
+    <%_ } -%>
+    <%_ if (fileExists('/styles/print.css')) { -%>
+    <link rel="stylesheet" href="/styles/print.css" media="print">
+    <%_ } -%>
+  </head>
+  <body>
+    <nav>
+      <%- activeLink('/', 'Home') %>
+      <%- activeLink('/blog/', 'Blog', { class: 'nav' }, 'li') %>
+      <%- activeLink('/about/', 'About', { id: 'about', title: 'Say "hi" & <wave>' }) %>
+    </nav>
+    <%- _content -%>
+  </body>
+</html>

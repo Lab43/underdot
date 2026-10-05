@@ -7,6 +7,7 @@ import bustConfiguration from '../../test/fixtures/bust/underdot.config.ts';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
+import helpersConfiguration from '../../test/fixtures/helpers/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
@@ -101,6 +102,22 @@ describe('build', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('bust', 'expected');
       await build(resolveConfiguration(bustConfiguration, directory));
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
+    });
+  });
+
+  describe('the helpers fixture', () => {
+    test.override({ fixture: 'helpers' });
+
+    // spec: docs/specs/helpers.md
+    test('marks each link, formats the date, and guards each include on the served output, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('helpers', 'expected');
+      await build(resolveConfiguration(helpersConfiguration, directory));
       const paths = await list(destination);
       expect(paths).toStrictEqual(await list(expected));
       for (const path of paths) {

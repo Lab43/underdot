@@ -34,6 +34,7 @@ Conventions come in three tiers: q's own, the conventions of any installed exten
 
 - `underdot conventions/configuration.md` — rules for writing a site's Underdot configuration file
 - `underdot conventions/ejs.md` — rules for writing a site's EJS pages, templates, and partials
+- `underdot conventions/templates.md` — rules for writing a site's pages and templates in any engine
 
 This project's own:
 
@@ -55,6 +56,7 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 - `docs/specs/configuration.md` — how a site tells Underdot what to build and how it is routed: the configuration file, its settings, and the commands and programmatic entry points that consume it
 - `docs/specs/ejs.md` — what the EJS plugin commits to: how a file renders with EJS, what a template can read, how an include finds its partial, and the one option a site configures
 - `docs/specs/bust.md` — what the bust plugin commits to: the one helper it registers, how a reference to a static file resolves, the link the helper returns, and the options the plugin takes
+- `docs/specs/helpers.md` — what the helpers plugin commits to: the three helpers it registers, what each takes and returns, and the errors each raises
 
 ### Guides
 

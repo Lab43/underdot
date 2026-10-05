@@ -4,17 +4,20 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { renderBody } from '../../test/helpers/render-body.ts';
+import type { Helper } from '../plugins/register-plugins.ts';
 import { classifySource } from '../source-tree/classify-source.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { readSite } from './read-site.ts';
 
 const renderers = new Map([['tpl', { render: renderBody }]]);
+const none = new Map<string, { pluginName: string; helper: Helper }>();
+const here: Helper = (context) => context.sourcePath;
 
 describe('readSite', () => {
   test('the templated fixture yields its pages and templates in classification order, each with its contents', async () => {
     const source = join(fixturePath('templated'), 'source');
     const sourceFiles = classifySource(await walkSource(source), renderers);
-    const site = await readSite(source, sourceFiles.pages, sourceFiles.templates);
+    const site = await readSite(source, sourceFiles.pages, sourceFiles.templates, none);
 
     expect(site.pages.map((page) => page.sourcePath)).toStrictEqual(['404.tpl', 'about.tpl', 'about/team.tpl', 'blog/hello.tpl', 'blog/index.tpl', 'index.tpl']);
     expect(site.templates.map((template) => template.sourcePath)).toStrictEqual(['_.tpl', '_page.tpl', 'blog/_.tpl', 'blog/_archive.tpl', 'blog/_post.tpl']);
@@ -27,7 +30,7 @@ describe('readSite', () => {
       body: 'The home page: date {{ date }}.\n',
     });
     expect(hello).toStrictEqual({ ...sourceFiles.pages[3], frontmatter: { title: 'Hello' }, template: 'post', body: 'The hello post: layout {{ layout }}.\n' });
-    expect(about).toStrictEqual({ ...sourceFiles.pages[1], frontmatter: {}, template: undefined, body: 'The about page: title {{ title }}.\nThe about include: [{{> missing.txt }}]\n' });
+    expect(about).toStrictEqual({ ...sourceFiles.pages[1], frontmatter: {}, template: undefined, body: 'The about page: title {{ title }}, here {{ here }}.\nThe about include: [{{> missing.txt }}]\nThe about output: {{ handled /extra/plain.html }}\n' });
     expect(notFound?.body).toBe('The not-found page: url {{ _url }}.\n');
 
     const [root, , , , post] = site.templates;
@@ -35,7 +38,7 @@ describe('readSite', () => {
       ...sourceFiles.templates[0],
       frontmatter: { title: 'Site' },
       template: undefined,
-      body: 'The root template: title {{ title }}, siteName {{ siteName }}, year {{ site.year }}, url {{ _url }}, chain {{ _chain }}.\nThe root include: {{> _partial.txt }}\n{{ _content }}\n',
+      body: 'The root template: title {{ title }}, siteName {{ siteName }}, year {{ site.year }}, url {{ _url }}, chain {{ _chain }}, here {{ here }}.\nThe root include: {{> _partial.txt }}\nThe root output: {{ handled _partial.text }}\n{{ _content }}\n',
     });
     expect(post?.frontmatter).toStrictEqual({ layout: 'post' });
   });
@@ -44,8 +47,16 @@ describe('readSite', () => {
   test("a frontmatter error names the file ahead of the parser's message", async () => {
     const source = join(fixturePath('bad-frontmatter'), 'source');
     const { pages, templates } = classifySource(['index.tpl'], renderers);
-    await expect(readSite(source, pages, templates)).rejects.toThrow(
+    await expect(readSite(source, pages, templates, none)).rejects.toThrow(
       new Error('index.tpl: The frontmatter key _title starts with an underscore, which is reserved.'),
     );
+  });
+
+  // spec: docs/specs/plugins.md, Template helpers
+  test("a frontmatter key sharing a helper's name fails naming the file and the plugin", async () => {
+    const source = join(fixturePath('templated'), 'source');
+    const { pages, templates } = classifySource(await walkSource(source), renderers);
+    const helpers = new Map([['date', { pluginName: 'tools', helper: here }]]);
+    await expect(readSite(source, pages, templates, helpers)).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
   });
 });

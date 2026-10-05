@@ -9,25 +9,28 @@ const none = new Map<string, { render: typeof renderBody }>();
 
 describe('classifySource', () => {
   describe('static files', () => {
-    test('an ordinary file and a dotfile are static and not private', () => {
-      expect(classifySource(['index.html', '.htaccess'], tpl).staticFiles).toStrictEqual([
-        { sourcePath: 'index.html', private: false },
-        { sourcePath: '.htaccess', private: false },
-      ]);
+    test('an ordinary file and a dotfile are static', () => {
+      expect(classifySource(['index.html', '.htaccess'], tpl).staticFiles).toStrictEqual([{ sourcePath: 'index.html' }, { sourcePath: '.htaccess' }]);
     });
 
-    test('an underscore-prefixed file is static and private, at the root or below', () => {
-      expect(classifySource(['_private.txt', 'a/_private.txt'], tpl).staticFiles).toStrictEqual([
-        { sourcePath: '_private.txt', private: true },
-        { sourcePath: 'a/_private.txt', private: true },
-      ]);
+    test('an underscore-prefixed file is static, at the root or below', () => {
+      expect(classifySource(['_private.txt', 'a/_private.txt'], tpl).staticFiles).toStrictEqual([{ sourcePath: '_private.txt' }, { sourcePath: 'a/_private.txt' }]);
+    });
+
+    // spec: docs/specs/source-tree.md, Underscore prefix
+    test('a file inside an underscore-prefixed directory is static whatever its extension', () => {
+      expect(classifySource(['_includes/header.tpl', '_includes/header.html', 'a/_b/c.txt', 'a/_b/c.tpl'], tpl)).toStrictEqual({
+        pages: [],
+        templates: [],
+        staticFiles: [{ sourcePath: '_includes/header.tpl' }, { sourcePath: '_includes/header.html' }, { sourcePath: 'a/_b/c.txt' }, { sourcePath: 'a/_b/c.tpl' }],
+      });
     });
 
     test('a file whose last extension has no renderer is static', () => {
       expect(classifySource(['notes.tpl.bak'], tpl)).toStrictEqual({
         pages: [],
         templates: [],
-        staticFiles: [{ sourcePath: 'notes.tpl.bak', private: false }],
+        staticFiles: [{ sourcePath: 'notes.tpl.bak' }],
       });
     });
 
@@ -35,11 +38,7 @@ describe('classifySource', () => {
       expect(classifySource(['index.tpl', '_.tpl', 'notes.txt'], none)).toStrictEqual({
         pages: [],
         templates: [],
-        staticFiles: [
-          { sourcePath: 'index.tpl', private: false },
-          { sourcePath: '_.tpl', private: true },
-          { sourcePath: 'notes.txt', private: false },
-        ],
+        staticFiles: [{ sourcePath: 'index.tpl' }, { sourcePath: '_.tpl' }, { sourcePath: 'notes.txt' }],
       });
     });
   });
@@ -74,14 +73,6 @@ describe('classifySource', () => {
     });
   });
 
-  test('a file inside an underscore-prefixed directory is not classified', () => {
-    expect(classifySource(['_includes/header.tpl', '_includes/header.html', 'a/_b/c.txt'], tpl)).toStrictEqual({
-      pages: [],
-      templates: [],
-      staticFiles: [],
-    });
-  });
-
   test('each kind preserves the input order', () => {
     expect(classifySource(['b.txt', 'b.tpl', '_includes/x.txt', 'a.txt', 'a.tpl', '_c.txt'], tpl)).toStrictEqual({
       pages: [
@@ -89,11 +80,7 @@ describe('classifySource', () => {
         { sourcePath: 'a.tpl', directory: '', extension: 'tpl', render: renderBody, outputPath: 'a/index.html', url: '/a/' },
       ],
       templates: [],
-      staticFiles: [
-        { sourcePath: 'b.txt', private: false },
-        { sourcePath: 'a.txt', private: false },
-        { sourcePath: '_c.txt', private: true },
-      ],
+      staticFiles: [{ sourcePath: 'b.txt' }, { sourcePath: '_includes/x.txt' }, { sourcePath: 'a.txt' }, { sourcePath: '_c.txt' }],
     });
   });
 });

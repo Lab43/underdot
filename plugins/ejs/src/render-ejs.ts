@@ -14,19 +14,20 @@ const ejsNames: ReadonlySet<PropertyKey> = new Set(['__append', '__line', 'escap
  * through the context, in the including file's directory and then the views.
  */
 export const renderEjs = (body: string, context: RenderContext, views: string[]): string => {
-  const render = (text: string, sourcePath: string, variables: Variables): string => {
+  const render = (text: string, fileContext: RenderContext): string => {
+    const { sourcePath, variables } = fileContext;
     const directory = dirname(sourcePath);
 
-    // An include inside a partial resolves against the partial's directory,
-    // not the including file's.
+    // A partial renders as the file being rendered, so an include inside it
+    // resolves against the partial's directory, not the including file's.
     // spec: docs/specs/templates.md, Relative paths
     const include = (reference: string, data: Variables = {}): string => {
       const file = extname(reference) === '' ? `${reference}.ejs` : reference;
       const candidates = file.startsWith('/') ? [file] : [directory, ...views].map((base) => `/${join(base, file)}`);
       for (const candidate of candidates) {
-        const partial = context.readFile(candidate);
+        const partial = fileContext.readFile(candidate);
         if (partial !== undefined) {
-          return render(partial, candidate.slice(1), { ...variables, ...data });
+          return render(partial, fileContext.enterFile(candidate, { ...variables, ...data }));
         }
       }
       if (file.startsWith('/')) {
@@ -46,5 +47,5 @@ export const renderEjs = (body: string, context: RenderContext, views: string[])
     return ejs.compile(text, { filename: sourcePath, unsafePrototypeLocals: true, legacyInclude: false })(locals);
   };
 
-  return render(body, context.sourcePath, context.variables);
+  return render(body, context);
 };

@@ -30,14 +30,14 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    1. [x] **The render context.** The file being rendered and its directory, reading a file under the source root with relative paths resolved against that file and absolute paths against the source root, and reading another page's rendered body by URL with the page-body error naming both pages, proven with the fixture renderer. Reading handled output and emitting files arrive with step 5.
    2. [x] **The EJS plugin.** The first workspace package, the renderer, the unset-variable rule, includes resolved through the render context, the configured views directories, its spec written inside the plan, and its site-facing conventions.
 5. [ ] **File handlers and helpers.** Four plans:
-   1. [ ] **The mechanisms.** File handlers, template helpers, and emitted files, proven with fixture plugins.
-   2. [ ] **The cache-busting plugin.** The first consumer of all three.
+   1. [x] **The mechanisms.** File handlers and template helpers, proven with fixture plugins.
+   2. [ ] **The cache-busting plugin.** The first consumer of handlers' output and helpers.
    3. [ ] **The template helpers plugin.** The helpers a site calls from its templates: date formatting, an active-link check, and a file-existence check through the render context.
    4. [ ] **The SVGO plugin.** A file handler optimizing SVGs, and a helper inlining the handled output.
 6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.
 7. [ ] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.
 8. [ ] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
-9. [ ] **Srcset plugin.** Responsive images as emitted derivatives with producers.
+9. [ ] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.
 10. [ ] **Markdown plugin.**
 11. [ ] **Sass plugin.**
 12. [ ] **PostCSS plugin.** A file handler over CSS, chained after Sass by plugin order.

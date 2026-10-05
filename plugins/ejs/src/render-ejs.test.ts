@@ -16,6 +16,7 @@ const files: Record<string, string> = {
   '/_includes/footer.ejs': 'footer <%= year %> <%= name %> <%- include("./copyright") %>',
   '/_includes/copyright.ejs': '© <%= year %>',
   '/_includes/bad.ejs': '<%= nope.deep %>',
+  '/_includes/where.ejs': 'at <%= here() %>',
   '/_partials/footer.ejs': 'partials footer',
 };
 
@@ -25,12 +26,23 @@ interface Case {
   views?: string[];
 }
 
+// A context over the files above. An entered file's context carries the
+// variables given and a `here` helper bound to the entered path.
+const makeContext = (sourcePath: string, variables: Record<string, unknown>, readFile: RenderContext['readFile']): RenderContext => ({
+  sourcePath,
+  variables,
+  readFile,
+  readOutput: () => undefined,
+  readBody: () => '',
+  enterFile: (reference, entered) => makeContext(reference.slice(1), { ...entered, here: () => reference.slice(1) }, readFile),
+});
+
 // Render with a context over the files above. The renderer resolves every
 // reference itself, so the context only ever sees an absolute one.
 const render = (body: string, { sourcePath = 'index.ejs', variables = {}, views = [] }: Case = {}): string => {
   const readFile = vi.fn((reference: string) => files[reference]);
   try {
-    return renderEjs(body, { sourcePath, variables, readFile, readBody: () => '' }, views);
+    return renderEjs(body, makeContext(sourcePath, variables, readFile), views);
   } finally {
     for (const [reference] of readFile.mock.calls) {
       expect(reference).toMatch(/^\//);
@@ -72,6 +84,10 @@ describe('renderEjs', () => {
 
     test('a scriptlet can declare a const and a let', () => {
       expect(render('<% const a = 1; let b = 2; b += 1; %><%= a + b %>')).toBe('4');
+    });
+
+    test('a function among the variables is called by its name', () => {
+      expect(render('<%= shout("hi") %>', { variables: { shout: (word: string) => word.toUpperCase() } })).toBe('HI');
     });
 
     test("a var assigned in a scriptlet leaves the context's variables unchanged", () => {
@@ -118,6 +134,14 @@ describe('renderEjs', () => {
       expect(render("<%- include('/_includes/footer', { year: 2024 }) %>", { variables })).toBe('footer 2024 Site © 2024');
     });
 
+    // spec: docs/specs/plugins.md, Template helpers
+    test('a partial renders as the file being rendered, entered with the merged variables', () => {
+      const context = makeContext('blog/post.ejs', { year: 2000, name: 'Site' }, (reference) => files[reference]);
+      const enterFile = vi.spyOn(context, 'enterFile');
+      expect(renderEjs("<%- include('/_includes/where', { year: 2024 }) %>", context, [])).toBe('at _includes/where.ejs');
+      expect(enterFile).toHaveBeenCalledExactlyOnceWith('/_includes/where.ejs', { year: 2024, name: 'Site' });
+    });
+
     test('a partial reads a variable no file set as nothing', () => {
       expect(render("<%- include('/_includes/head') %>")).toBe('views head[]');
     });
@@ -138,14 +162,9 @@ describe('renderEjs', () => {
     });
 
     test("an error the context's read throws propagates", () => {
-      const context: RenderContext = {
-        sourcePath: 'index.ejs',
-        variables: {},
-        readFile: () => {
-          throw new Error('index.ejs reads /../secret.ejs, which is above the source root.');
-        },
-        readBody: () => '',
-      };
+      const context = makeContext('index.ejs', {}, () => {
+        throw new Error('index.ejs reads /../secret.ejs, which is above the source root.');
+      });
       expect(() => renderEjs("<%- include('/../secret') %>", context, [])).toThrow('index.ejs reads /../secret.ejs, which is above the source root.');
     });
 

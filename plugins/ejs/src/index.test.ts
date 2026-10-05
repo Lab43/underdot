@@ -5,12 +5,16 @@ import { describe, expect, test } from 'vitest';
 import { ejs } from './index.ts';
 import type { EjsOptions } from './index.ts';
 
-const context: RenderContext = {
-  sourcePath: 'index.ejs',
-  variables: {},
+const makeContext = (sourcePath: string, variables: Record<string, unknown>): RenderContext => ({
+  sourcePath,
+  variables,
   readFile: (reference) => (reference === '/_includes/head.ejs' ? 'the head' : undefined),
+  readOutput: () => undefined,
   readBody: () => '',
-};
+  enterFile: (reference, entered) => makeContext(reference.slice(1), entered),
+});
+
+const context = makeContext('index.ejs', {});
 
 // A render through the renderer the plugin registers.
 const render = (body: string, options?: EjsOptions) => ejs(options).renderers!.ejs!(body, context);

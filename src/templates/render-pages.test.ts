@@ -11,7 +11,14 @@ import { renderPages } from './render-pages.ts';
 const fakeRenderer = (): ReturnType<typeof vi.fn<Renderer>> => vi.fn<Renderer>((_body, { sourcePath }) => `rendered ${sourcePath}`);
 
 // A context of the file's fields alone, with operations that do nothing.
-const makeContext: MakeRenderContext = (sourcePath, variables) => ({ sourcePath, variables, readFile: () => undefined, readBody: () => '' });
+const makeContext: MakeRenderContext = (sourcePath, variables, bodies) => ({
+  sourcePath,
+  variables,
+  readFile: () => undefined,
+  readOutput: () => undefined,
+  readBody: () => '',
+  enterFile: (reference, entered) => makeContext(reference, entered, bodies),
+});
 
 describe('renderPages', () => {
   test("the page renders with its variables, then the template with the page's output as _content", async () => {

@@ -4,3 +4,6 @@ node_modules
 .claude/worktrees/
 dist/
 *.tsbuildinfo
+# Finder's litter, except what a fixture commits to prove the default exclude pattern.
+.DS_Store
+!test/fixtures/**/.DS_Store

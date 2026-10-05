@@ -38,6 +38,13 @@ export const runHandlers = async (file: HandledFile, handlers: RegisteredHandler
         throw new Error(`The handler ${pluginName} registers for ${glob} must return an array of files.`);
       }
       for (const { outputPath, contents } of outputs) {
+        // A returned path is plain, and its contents are text or bytes.
+        if (typeof outputPath !== 'string' || outputPath.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) {
+          throw new Error(`The handler ${pluginName} registers for ${glob} returned a file at ${JSON.stringify(outputPath)}, which is not a plain path under the destination.`);
+        }
+        if (typeof contents !== 'string' && !(contents instanceof Uint8Array)) {
+          throw new Error(`The handler ${pluginName} registers for ${glob} returned ${outputPath} with contents that are neither text nor bytes.`);
+        }
         handled.push({ outputPath, contents: Buffer.from(contents) });
       }
     }

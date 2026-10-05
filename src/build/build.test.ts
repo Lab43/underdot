@@ -3,6 +3,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import bustConfiguration from '../../test/fixtures/bust/underdot.config.ts';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
@@ -84,6 +85,22 @@ describe('build', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('ejs', 'expected');
       await build(resolveConfiguration(ejsConfiguration, directory));
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
+    });
+  });
+
+  describe('the bust fixture', () => {
+    test.override({ fixture: 'bust' });
+
+    // spec: docs/specs/bust.md
+    test('busts each link with the hash of the handled output, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('bust', 'expected');
+      await build(resolveConfiguration(bustConfiguration, directory));
       const paths = await list(destination);
       expect(paths).toStrictEqual(await list(expected));
       for (const path of paths) {

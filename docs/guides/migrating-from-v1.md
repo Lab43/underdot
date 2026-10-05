@@ -28,7 +28,7 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 
 ## Templates and variables
 
-- **A frontmatter key cannot share a registered helper's name.** A page with a key named like a helper, `srcset` or `busted` say, renames the key (see: docs/specs/plugins.md, Template helpers).
+- **A frontmatter key cannot share a registered helper's name.** A page with a key named like a helper, `srcset` or `bust` say, renames the key (see: docs/specs/plugins.md, Template helpers).
 - **Data files move into `source/_data/`.** A build script that read a JSON file and passed it as a global drops that code, and the file moves to `source/_data/<name>.json`, where it defines the variable `<name>` (see: docs/specs/templates.md, Data files).
 
 - **A global no longer overrides a template's frontmatter.** The order is globals, then templates from the root down, then the page. A site that relied on a global winning over a template's frontmatter moves the value into the page or the template (see: docs/specs/templates.md, Variables).
@@ -44,6 +44,11 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **`views` entries are directories under the source root.** v1 took paths from the project directory, as `source/_includes`. v2 takes `_includes`. The rendering file's own directory is searched without being listed, and a partial anywhere under the source root is named with a leading slash, as `include('/_includes/header')` (see: docs/specs/ejs.md, Options).
 - **`ext` is gone.** A site that registered another extension for EJS renames those files to `.ejs` (see: docs/specs/ejs.md, Options).
 - **Other EJS options no longer pass through.** A site that set `delimiter`, `rmWhitespace`, or `root` drops them. `root` is the source root in both versions (see: docs/specs/ejs.md, Options).
+
+## The bust plugin
+
+- **The plugin is imported from `underdot-bust` and called with no rule.** `import { bust } from 'underdot-bust'` in the configuration, and `bust()` in its plugin list. The glob that selected the files to hash is gone, because the helper hashes whichever output it is asked for. Every `busted(` in a template becomes `bust(` (see: docs/specs/bust.md, The helper).
+- **Every busted link changes once in the first v2 build.** `?h=` followed by an MD5 becomes `?v=` followed by eight characters of a SHA-256 (see: docs/specs/bust.md, The helper), and a relative reference comes back as the output's absolute URL rather than as written (see: docs/specs/bust.md, References). Expect them in a committed destination's diff.
 
 ## Plugin authors
 

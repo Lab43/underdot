@@ -31,7 +31,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    2. [x] **The EJS plugin.** The first workspace package, the renderer, the unset-variable rule, includes resolved through the render context, the configured views directories, its spec written inside the plan, and its site-facing conventions.
 5. [ ] **File handlers and helpers.** Four plans:
    1. [x] **The mechanisms.** File handlers and template helpers, proven with fixture plugins.
-   2. [ ] **The cache-busting plugin.** The first consumer of handlers' output and helpers.
+   2. [x] **The cache-busting plugin.** The first consumer of handlers' output and helpers.
    3. [ ] **The template helpers plugin.** The helpers a site calls from its templates: date formatting, an active-link check, and a file-existence check through the render context.
    4. [ ] **The SVGO plugin.** A file handler optimizing SVGs, and a helper inlining the handled output.
 6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.

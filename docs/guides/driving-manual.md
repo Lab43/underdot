@@ -16,14 +16,14 @@ The tests run the shim from source under type stripping, so only this compiled r
 
 ## A site on the published packages
 
-The compiled command cannot resolve `underdot-ejs` from a scratch copy that installs nothing, so a site that uses a plugin is driven on the packed packages. That is also the one run that proves a plugin's `dist`, its `exports` map without the `development` condition, and its peer dependency.
+The compiled command cannot resolve `underdot-ejs` or `underdot-bust` from a scratch copy that installs nothing, so a site that uses a plugin is driven on the packed packages. That is also the one run that proves a plugin's `dist`, its `exports` map without the `development` condition, and its peer dependency. The `bust` fixture uses both plugins, so one run proves both.
 
-1. Pack the core and the plugin into a scratch directory: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace underdot-ejs --pack-destination <dir>`. Each pack runs its package's `prepack` build.
-2. Copy `test/fixtures/ejs/` to a second scratch directory.
-3. In the copy, run `npm install <dir>/underdot-2.0.0-alpha.0.tgz <dir>/underdot-ejs-2.0.0-alpha.0.tgz`.
-4. In the copy, run `npx underdot build`. It exits 0, and `diff -r <copy>/build test/fixtures/ejs/expected` shows nothing.
+1. Pack the core and the plugins into a scratch directory: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace underdot-ejs --pack-destination <dir>` and `npm pack --workspace underdot-bust --pack-destination <dir>`. Each pack runs its package's `prepack` build.
+2. Copy `test/fixtures/bust/` to a second scratch directory.
+3. In the copy, run `npm install <dir>/underdot-2.0.0-alpha.0.tgz <dir>/underdot-ejs-2.0.0-alpha.0.tgz <dir>/underdot-bust-2.0.0-alpha.0.tgz`.
+4. In the copy, run `npx underdot build`. It exits 0, and `diff -r <copy>/build test/fixtures/bust/expected` shows nothing.
 
-The copy's `node_modules/underdot-ejs/dist/index.js` imports `ejs` and nothing under `src/`.
+The copy's `node_modules/underdot-ejs/dist/index.js` imports `ejs` and nothing under `src/`, and its `node_modules/underdot-bust/dist/index.js` imports nothing under `src/`.
 
 ## The Node floor
 

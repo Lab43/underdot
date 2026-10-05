@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generator: Sketch 3.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+  <title>Mail</title>
+  <desc>Created with Sketch.</desc>
+  <style>
+    .envelope { fill: #000000; }
+  </style>
+  <g id="icon" stroke="none">
+    <path class="envelope" d="M2,4 L22,4 L22,20 L2,20 Z" id="envelope"></path>
+  </g>
+</svg>

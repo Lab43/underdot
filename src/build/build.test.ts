@@ -8,6 +8,7 @@ import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.
 import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import helpersConfiguration from '../../test/fixtures/helpers/underdot.config.ts';
+import svgoConfiguration from '../../test/fixtures/svgo/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
@@ -118,6 +119,22 @@ describe('build', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('helpers', 'expected');
       await build(resolveConfiguration(helpersConfiguration, directory));
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
+    });
+  });
+
+  describe('the svgo fixture', () => {
+    test.override({ fixture: 'svgo' });
+
+    // spec: docs/specs/svgo.md
+    test('optimizes every SVG and inlines a private one, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('svgo', 'expected');
+      await build(resolveConfiguration(svgoConfiguration, directory));
       const paths = await list(destination);
       expect(paths).toStrictEqual(await list(expected));
       for (const path of paths) {

@@ -57,6 +57,14 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **A link to the current page is `active` alone.** It is no longer `active parent`, and the home link is no longer `parent` on every page. Attribute values are escaped, so a value escaped by hand is written raw (see: docs/specs/helpers.md, activeLink).
 - **`fileExists` resolves a relative reference against the file rendering it.** v1 took every path from the source root. Write a reference with a leading slash, or relative to the template. It answers for the served output, so a file a handler renames is checked by its output name (see: docs/specs/helpers.md, fileExists).
 
+## The SVGO plugin
+
+- **The plugin is imported from `underdot-svgo` and called with no rule.** `import { svgo } from 'underdot-svgo'` in the configuration, and `svgo()` in its plugin list. The glob that selected the files is gone, because every SVG under the source root is optimized (see: docs/specs/svgo.md, The handler).
+- **The plugin list is the one option, in svgo 4's shape, and the usual v1 list is now the default.** A v1 configuration of `inlineStyles: false`, `removeViewBox: false`, `prefixIds: true`, and `removeTitle: false` drops the `plugins` option entirely: the first and third are the default, and the preset now keeps `viewBox` and `<title>` on its own. Every other svgo 1 option is dropped. A site that needs another list writes `svgo({ plugins })`, a list of names or `{ name, params }` objects, which replaces the default rather than extending it (see: docs/specs/svgo.md, Options).
+- **Every SVG's bytes change once in the first v2 build.** svgo 4 optimizes differently from svgo 1. Expect them in a committed destination's diff (see: docs/specs/svgo.md, The handler).
+- **Every `svgo(` in a template becomes `inlineSvg(`** (see: docs/specs/svgo.md, The helper).
+- **`inlineSvg` fails the build for a reference no file is at, and resolves a relative reference against the file rendering it.** v1 printed nothing for a missing file, and resolved a relative reference against the page. Write a reference with a leading slash, or relative to the template (see: docs/specs/svgo.md, The helper).
+
 ## Plugin authors
 
 Every plugin is rewritten for v2. The registrations keep their roles, and these are the changes that alter what a plugin does rather than how it is spelled.

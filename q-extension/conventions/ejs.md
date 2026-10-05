@@ -4,7 +4,7 @@ Rules for writing a site's EJS pages, templates, and partials.
 
 ## Print HTML with the raw tag
 
-Print `_content`, and what a helper that returns markup returns, `activeLink` from `underdot-helpers` among them, with `<%- %>`, never `<%= %>`. Rationale: `_content` is the rendered output of the file below in the chain and a helper's markup is HTML already, so the escaping tag would show the markup as text.
+Print `_content`, and what a helper that returns markup returns, `activeLink` from `underdot-helpers` and `inlineSvg` from `underdot-svgo` among them, with `<%- %>`, never `<%= %>`. Rationale: `_content` is the rendered output of the file below in the chain and a helper's markup is HTML already, so the escaping tag would show the markup as text.
 
 ## Include a shared partial by name
 

@@ -10,15 +10,15 @@ Every file under the source directory is exactly one of three things:
 - A **template**: a file whose extension has a registered renderer and whose name starts with an underscore.
 - A **static file**: any other file.
 
-Classification is by path alone. A file's contents never change what it is. Renderers are registered by plugins (see: docs/specs/plugins.md, Renderers), so which extensions make a page is the site's choice. A file the configuration excludes is not classified at all (see: docs/specs/configuration.md, Excluded files).
+Classification is by path alone. A file's contents never change what it is. Renderers are registered by plugins (see: docs/specs/plugins.md, Renderers), so which extensions make a page is the site's choice. A file inside an underscore-prefixed directory is a static file whatever its extension (see: Underscore prefix). A file the configuration excludes is not classified at all (see: docs/specs/configuration.md, Excluded files).
 
 ## Underscore prefix
 
 A file or directory whose name starts with an underscore is private to the build:
 
 - It is never written to the destination.
-- Files inside an underscore-prefixed directory are not classified. They are neither pages, templates, nor static files.
-- An underscore-prefixed static file still passes through file handlers (see: docs/specs/plugins.md, File handlers). Rationale: a site keeps SVGs and Sass partials under the prefix so a plugin can inline or import them without the raw file reaching the output.
+- A file inside an underscore-prefixed directory is a static file, whatever its extension. The extension that would make it a page or a template elsewhere makes nothing of it there.
+- An underscore-prefixed static file, and every file inside an underscore-prefixed directory, still passes through file handlers (see: docs/specs/plugins.md, File handlers). Rationale: a site keeps SVGs and Sass partials under the prefix, a directory of them as often as a file, so a plugin can inline or import them without the raw file reaching the output.
 - Renderers and plugins may read any file under the source directory, underscore-prefixed or not, including files inside underscore-prefixed directories. Rationale: template includes live in `_includes`.
 
 ## Dotfiles
@@ -38,7 +38,7 @@ Every page has a `url`: its output path relative to the destination, with a lead
 
 ## Output paths are unique
 
-Two sources that would write the same destination path are a build error that names both sources. This covers two pages with one URL, such as `about.ejs` beside `about/index.ejs` or `about.ejs` beside `about.md`, and a static file colliding with a file handler's renamed output. Rationale: silently keeping one of them makes the output depend on traversal order.
+Two sources that would write the same destination path are a build error that names both sources. This covers two pages with one URL, such as `about.ejs` beside `about/index.ejs` or `about.ejs` beside `about.md`, and a static file colliding with a file handler's renamed output. One source that would write a path twice, as a handler's split can, is the same error naming that source once. Rationale: silently keeping one of them makes the output depend on traversal order.
 
 ## A page and a directory may share a name
 

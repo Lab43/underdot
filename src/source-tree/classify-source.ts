@@ -26,7 +26,6 @@ export interface TemplateFile {
 
 export interface StaticFile {
   sourcePath: string;
-  private: boolean;
 }
 
 /**
@@ -68,14 +67,12 @@ export const classifySource = (sourcePaths: string[], renderers: ReadonlyMap<str
   const sourceFiles: SourceFiles = { pages: [], templates: [], staticFiles: [] };
   for (const sourcePath of sourcePaths) {
     const directory = findDirectory(sourcePath);
-    if (directory.split('/').some(isPrivate)) {
-      continue;
-    }
-    const fileName = basename(sourcePath);
     const extension = extname(sourcePath).slice(1);
     const renderer = renderers.get(extension);
-    if (renderer === undefined) {
-      sourceFiles.staticFiles.push({ sourcePath, private: isPrivate(fileName) });
+    // A file inside a private directory is static whatever its extension, so
+    // a handler reaches it and no render does.
+    if (renderer === undefined || directory.split('/').some(isPrivate)) {
+      sourceFiles.staticFiles.push({ sourcePath });
       continue;
     }
     const { render } = renderer;

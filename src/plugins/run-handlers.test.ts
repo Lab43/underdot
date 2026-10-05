@@ -4,7 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 import { describe, expect, test, vi } from 'vitest';
 import type { FileHandler, RegisteredHandler } from './register-plugins.ts';
 import { runHandlers } from './run-handlers.ts';
-import type { HandledFile } from './run-handlers.ts';
+import type { HandledFile, HandlerOutput } from './run-handlers.ts';
 
 const file = (outputPath: string, text: string): HandledFile => ({ outputPath, contents: Buffer.from(text) });
 
@@ -76,6 +76,27 @@ describe('runHandlers', () => {
     const forgetful = (() => undefined) as unknown as FileHandler;
     await expect(runHandlers(file('a.txt', 'x'), [handler('**/*.txt', forgetful, 'sloppy')])).rejects.toThrow(
       new Error('The handler sloppy registers for **/*.txt must return an array of files.'),
+    );
+  });
+
+  test('a handler returning the Buffer it received passes', async () => {
+    const original = file('a.txt', 'x');
+    await expect(runHandlers(original, [handler('**/*.txt', ({ outputPath, contents }) => [{ outputPath, contents }])])).resolves.toStrictEqual([original]);
+  });
+
+  test.each(['../x', '/x', 'a/./b', 'a//b', 'a/b/', '', 42])('an output path of %j fails naming the plugin and the glob', async (outputPath) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript site can return
+    const output = { outputPath, contents: 'x' } as unknown as HandlerOutput;
+    await expect(runHandlers(file('a.txt', 'x'), [handler('**/*.txt', () => [output], 'sloppy')])).rejects.toThrow(
+      new Error(`The handler sloppy registers for **/*.txt returned a file at ${JSON.stringify(outputPath)}, which is not a plain path under the destination.`),
+    );
+  });
+
+  test.each([undefined, 42])('contents of %j fail naming the plugin and the glob', async (contents) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript site can return
+    const output = { outputPath: 'a.txt', contents } as unknown as HandlerOutput;
+    await expect(runHandlers(file('a.txt', 'x'), [handler('**/*.txt', () => [output], 'sloppy')])).rejects.toThrow(
+      new Error('The handler sloppy registers for **/*.txt returned a.txt with contents that are neither text nor bytes.'),
     );
   });
 

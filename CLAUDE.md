@@ -54,6 +54,7 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 - `docs/specs/dev-server.md` — what a development session gives an author: one command that builds, serves locally, rebuilds on change, and reloads the browser
 - `docs/specs/configuration.md` — how a site tells Underdot what to build and how it is routed: the configuration file, its settings, and the commands and programmatic entry points that consume it
 - `docs/specs/ejs.md` — what the EJS plugin commits to: how a file renders with EJS, what a template can read, how an include finds its partial, and the one option a site configures
+- `docs/specs/bust.md` — what the bust plugin commits to: the one helper it registers, how a reference to a static file resolves, the link the helper returns, and the options the plugin takes
 
 ### Guides
 

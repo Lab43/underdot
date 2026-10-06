@@ -1,0 +1,9 @@
+<h1><%= title %></h1>
+<%- _content -%>
+<%_ for (const post of posts.toSorted((a, b) => b.date - a.date)) { -%>
+<article>
+  <h2><a href="<%= post._url %>"><%= post.title %></a></h2>
+  <p class="date"><%= post.date.toISOString().slice(0, 10) %></p>
+  <%- pageBody(post._url) -%>
+</article>
+<%_ } -%>

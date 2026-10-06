@@ -65,6 +65,13 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **Every `svgo(` in a template becomes `inlineSvg(`** (see: docs/specs/svgo.md, The helper).
 - **`inlineSvg` fails the build for a reference no file is at, and resolves a relative reference against the file rendering it.** v1 printed nothing for a missing file, and resolved a relative reference against the page. Write a reference with a leading slash, or relative to the template (see: docs/specs/svgo.md, The helper).
 
+## The collections plugin
+
+- **The plugin is imported from `underdot-collections` and called with a map.** `import { collections } from 'underdot-collections'` in the configuration, and `collections({ posts: 'posts' })` in its plugin list: each key is the collection's name and each value its directory, in place of `{ name, directory }` (see: docs/specs/collections.md, Options).
+- **An item is the page's frontmatter plus `_url`.** `slug` is gone. A sibling file's path, such as `` `/${slug}.jpg` ``, is built from `_url` with the trailing slash removed, as the Pages and URLs section says (see: docs/specs/collections.md, Collections).
+- **`content` becomes `pageBody(post._url)`, called from the template.** It reads the post's body as rendered. A partial that read `content` from the spread item takes the body as a parameter instead (see: docs/specs/collections.md, pageBody).
+- **The collection is frozen.** `posts.sort(...)` becomes `posts.toSorted(...)`. A template that assigned onto an item copies it first, since in EJS the assignment is now ignored (see: docs/specs/collections.md, Collections).
+
 ## Plugin authors
 
 Every plugin is rewritten for v2. The registrations keep their roles, and these are the changes that alter what a plugin does rather than how it is spelled.
@@ -77,5 +84,5 @@ Every plugin is rewritten for v2. The registrations keep their roles, and these 
 - **A wrapped tool's own reads are declared.** A handler wrapping a compiler that follows imports itself, as Sass does, declares the imported files as inputs of its output (see: docs/specs/plugins.md, Reading and writing).
 - **No direct filesystem access.** Read source files through the context, never with `fs`, and never write to the destination. A helper that checked whether a file exists asks the context (see: docs/specs/plugins.md, Reading and writing).
 - **Tree handlers become page hooks.** A plugin registers one `pageHook`, a function that receives every page's URL, output path, source path, and frontmatter as written, the `template` directive apart, and never rendered content. It returns an object of the globals it defines (see: docs/specs/plugins.md, Page hooks).
-- **Collection items no longer carry `content`.** A template that embedded each item's body, as an archive or full-content feed does, reads the body through the render context at render time, so editing one post re-renders that post and the archive and nothing else. A collection plugin can wrap that read in a helper (see: docs/specs/plugins.md, Render context).
+- **Collection items no longer carry `content`.** A template that embedded each item's body, as an archive or full-content feed does, reads the body through the render context at render time, so editing one post re-renders that post and the archive and nothing else. The collections plugin wraps that read in `pageBody` (see: docs/specs/collections.md, pageBody).
 

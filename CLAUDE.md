@@ -58,6 +58,7 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 - `docs/specs/bust.md` — what the bust plugin commits to: the one helper it registers, how a reference to a static file resolves, the link the helper returns, and the options the plugin takes
 - `docs/specs/helpers.md` — what the helpers plugin commits to: the three helpers it registers, what each takes and returns, and the errors each raises
 - `docs/specs/svgo.md` — what the SVGO plugin commits to: the file handler that optimizes every SVG, the one helper that inlines an optimized SVG into a page, and the one option the plugin takes
+- `docs/specs/collections.md` — what the collections plugin commits to: the page hook that defines a global per collection, the list of the pages below a directory, and the one helper that reads a page's rendered body into a template
 
 ### Guides
 

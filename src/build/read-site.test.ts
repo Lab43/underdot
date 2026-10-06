@@ -9,7 +9,7 @@ import { classifySource } from '../source-tree/classify-source.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { readSite } from './read-site.ts';
 
-const renderers = new Map([['tpl', { render: renderBody }]]);
+const renderers = new Map([['tpl', { pluginName: 'fixture', render: renderBody }]]);
 const none = new Map<string, { pluginName: string; helper: Helper }>();
 const here: Helper = (context) => context.sourcePath;
 
@@ -19,7 +19,7 @@ describe('readSite', () => {
     const sourceFiles = classifySource(await walkSource(source), renderers);
     const site = await readSite(source, sourceFiles.pages, sourceFiles.templates, none);
 
-    expect(site.pages.map((page) => page.sourcePath)).toStrictEqual(['404.tpl', 'about.tpl', 'about/team.tpl', 'blog/hello.tpl', 'blog/index.tpl', 'index.tpl']);
+    expect(site.pages.map((page) => page.sourcePath)).toStrictEqual(['404.tpl', 'about.tpl', 'about/team.tpl', 'blog/hello.tpl', 'blog/index.tpl', 'index.tpl', 'pages.tpl']);
     expect(site.templates.map((template) => template.sourcePath)).toStrictEqual(['_.tpl', '_page.tpl', 'blog/_.tpl', 'blog/_archive.tpl', 'blog/_post.tpl']);
 
     const [notFound, about, , hello, , home] = site.pages;

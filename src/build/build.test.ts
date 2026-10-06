@@ -15,6 +15,7 @@ import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { renderBody } from '../../test/helpers/render-body.ts';
 import { test } from '../../test/helpers/test.ts';
 import { resolveConfiguration } from '../configuration/resolve-configuration.ts';
+import type { Plugin } from '../plugins/register-plugins.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { build } from './build.ts';
 
@@ -149,6 +150,41 @@ describe('build', () => {
     await expect(build(resolveConfiguration({ plugins }, directory))).rejects.toThrow(
       new Error('index.tpl: The frontmatter key _title starts with an underscore, which is reserved.'),
     );
+    await assertAbsent(join(directory, 'build'));
+  });
+
+  // spec: docs/specs/plugins.md, Errors
+  test("a helper's throw names the template that was rendering and the helper's plugin, and fails before any write", async () => {
+    const directory = fixturePath('templated');
+    // Only the root template calls the helper, so the report is the same
+    // whichever page's chain renders first.
+    const plugins: Plugin[] = [
+      {
+        name: 'fixture',
+        renderers: {
+          tpl: (body, { sourcePath, variables }) => {
+            const { boom } = variables;
+            if (sourcePath === '_.tpl' && typeof boom === 'function') {
+              boom();
+            }
+            return body;
+          },
+        },
+      },
+      { name: 'tools', helpers: { boom: () => { throw new Error('boom'); } } },
+    ];
+    await expect(build(resolveConfiguration({ plugins }, directory))).rejects.toThrow(new Error('Rendering _.tpl failed in tools: boom'));
+    await assertAbsent(join(directory, 'build'));
+  });
+
+  // spec: docs/specs/plugins.md, Page hooks
+  test("a page hook's throw names the plugin and fails before any write", async () => {
+    const directory = fixturePath('templated');
+    const plugins: Plugin[] = [
+      { name: 'fixture', renderers: { tpl: renderBody } },
+      { name: 'listing', pageHook: () => { throw new Error('boom'); } },
+    ];
+    await expect(build(resolveConfiguration({ plugins }, directory))).rejects.toThrow(new Error('Running the page hook failed in listing: boom'));
     await assertAbsent(join(directory, 'build'));
   });
 

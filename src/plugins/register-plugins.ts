@@ -3,6 +3,7 @@
 import { isObject } from '../shared/is-object.ts';
 import type { RenderContext } from './bind-render-context.ts';
 import type { HandledFile, HandlerOutput } from './run-handlers.ts';
+import type { HookPage } from './run-page-hooks.ts';
 
 export type Renderer = (body: string, context: RenderContext) => string | Promise<string>;
 
@@ -20,6 +21,13 @@ export type FileHandler = (file: HandledFile) => HandlerOutput[] | Promise<Handl
  */
 export type Helper = (context: RenderContext, ...args: unknown[]) => unknown;
 
+/**
+ * A function the build calls once with every page, after every static file
+ * is handled and before any page renders. Each key of the object it returns
+ * defines a global.
+ */
+export type PageHook = (pages: readonly HookPage[]) => Record<string, unknown> | Promise<Record<string, unknown>>;
+
 export interface Plugin {
   name: string;
   /**
@@ -35,6 +43,10 @@ export interface Plugin {
    * `{ 'styles/*.scss': compile }`.
    */
   handlers?: Record<string, FileHandler>;
+  /**
+   * The one page hook a plugin registers.
+   */
+  pageHook?: PageHook;
 }
 
 export interface RegisteredRenderer {
@@ -53,14 +65,20 @@ export interface RegisteredHandler {
   handle: FileHandler;
 }
 
+export interface RegisteredHook {
+  pluginName: string;
+  hook: PageHook;
+}
+
 /**
  * What the plugins registered: renderers keyed by extension, helpers by name,
- * and handlers in the order they run.
+ * and handlers and hooks each in the order they run.
  */
 export interface Registry {
   renderers: Map<string, RegisteredRenderer>;
   helpers: Map<string, RegisteredHelper>;
   handlers: RegisteredHandler[];
+  hooks: RegisteredHook[];
 }
 
 /**
@@ -71,6 +89,7 @@ export const registerPlugins = (plugins: Plugin[]): Registry => {
   const renderers = new Map<string, RegisteredRenderer>();
   const helpers = new Map<string, RegisteredHelper>();
   const handlers: RegisteredHandler[] = [];
+  const hooks: RegisteredHook[] = [];
   for (const plugin of plugins) {
     if (names.has(plugin.name)) {
       throw new Error(`Two plugins are named ${plugin.name}.`);
@@ -120,6 +139,12 @@ export const registerPlugins = (plugins: Plugin[]): Registry => {
         handlers.push({ pluginName: plugin.name, glob, handle });
       }
     }
+    if (plugin.pageHook !== undefined) {
+      if (typeof plugin.pageHook !== 'function') {
+        throw new Error(`The page hook of ${plugin.name} is not a function.`);
+      }
+      hooks.push({ pluginName: plugin.name, hook: plugin.pageHook });
+    }
   }
-  return { renderers, helpers, handlers };
+  return { renderers, helpers, handlers, hooks };
 };

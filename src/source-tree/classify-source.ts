@@ -1,13 +1,13 @@
 // spec: docs/specs/source-tree.md
 
 import { basename, dirname, extname } from 'node:path/posix';
-import type { Renderer } from '../plugins/register-plugins.ts';
+import type { RegisteredRenderer } from '../plugins/register-plugins.ts';
 
 export interface PageFile {
   sourcePath: string;
   directory: string;
   extension: string;
-  render: Renderer;
+  renderer: RegisteredRenderer;
   outputPath: string;
   url: string;
 }
@@ -16,7 +16,7 @@ export interface TemplateFile {
   sourcePath: string;
   directory: string;
   extension: string;
-  render: Renderer;
+  renderer: RegisteredRenderer;
   /**
    * The file name without its extension, `_` or `_post`, which a page's
    * `template: post` directive selects.
@@ -63,7 +63,7 @@ const deriveUrl = (outputPath: string): string => `/${outputPath.replace(/index\
 /**
  * Classify every path by the extensions that have a renderer.
  */
-export const classifySource = (sourcePaths: string[], renderers: ReadonlyMap<string, { render: Renderer }>): SourceFiles => {
+export const classifySource = (sourcePaths: string[], renderers: ReadonlyMap<string, RegisteredRenderer>): SourceFiles => {
   const sourceFiles: SourceFiles = { pages: [], templates: [], staticFiles: [] };
   for (const sourcePath of sourcePaths) {
     const directory = findDirectory(sourcePath);
@@ -75,13 +75,12 @@ export const classifySource = (sourcePaths: string[], renderers: ReadonlyMap<str
       sourceFiles.staticFiles.push({ sourcePath });
       continue;
     }
-    const { render } = renderer;
     const name = basename(sourcePath, `.${extension}`);
     if (isPrivate(name)) {
-      sourceFiles.templates.push({ sourcePath, directory, extension, render, name });
+      sourceFiles.templates.push({ sourcePath, directory, extension, renderer, name });
     } else {
       const outputPath = planOutput(directory, name);
-      sourceFiles.pages.push({ sourcePath, directory, extension, render, outputPath, url: deriveUrl(outputPath) });
+      sourceFiles.pages.push({ sourcePath, directory, extension, renderer, outputPath, url: deriveUrl(outputPath) });
     }
   }
   return sourceFiles;

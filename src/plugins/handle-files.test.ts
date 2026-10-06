@@ -11,7 +11,7 @@ import type { Output } from './handle-files.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 
 const source = join(fixturePath('templated'), 'source');
-const renderers = new Map([['tpl', { render: renderBody }]]);
+const renderers = new Map([['tpl', { pluginName: 'fixture', render: renderBody }]]);
 
 const copy = (sourcePath: string): Output => ({ sourcePath, outputPath: sourcePath, contents: undefined });
 const handled = (sourcePath: string, outputPath: string, text: string): Output => ({ sourcePath, outputPath, contents: Buffer.from(text) });

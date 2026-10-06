@@ -34,7 +34,9 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    2. [x] **The cache-busting plugin.** The first consumer of handlers' output and helpers.
    3. [x] **The template helpers plugin.** The helpers a site calls from its templates: date formatting, an active-link check, and a file-existence check through the render context.
    4. [x] **The SVGO plugin.** A file handler optimizing SVGs, and a helper inlining the handled output.
-6. [ ] **Page hooks and error attribution.** The collections plugin as their first consumer.
+6. [ ] **Page hooks and error attribution.** Two plans:
+   1. [x] **Page hooks and error attribution.** The `pageHook` registration, one per plugin, seeing every page and returning the globals it defines, and a plugin's failure reported naming the plugin, the unit, and the file, proven with fixture plugins.
+   2. [ ] **The collections plugin.** A page hook defining a collection of pages, and a helper reading a page's rendered body.
 7. [ ] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.
 8. [ ] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
 9. [ ] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.

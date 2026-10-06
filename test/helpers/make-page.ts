@@ -4,7 +4,7 @@ import { renderBody } from './render-body.ts';
 export const makePage = (fields: Partial<Page> & { sourcePath: string }): Page => ({
   directory: '',
   extension: 'tpl',
-  render: renderBody,
+  renderer: { pluginName: 'fixture', render: renderBody },
   outputPath: 'index.html',
   url: '/',
   frontmatter: {},

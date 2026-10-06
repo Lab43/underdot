@@ -1,6 +1,7 @@
 // spec: docs/specs/plugins.md, File handlers
 
 import { matchGlob } from '../shared/match-glob.ts';
+import { attributePluginError } from './attribute-plugin-error.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 
 /**
@@ -22,9 +23,10 @@ export interface HandlerOutput {
 
 /**
  * Run one file through every handler whose glob matches it, in order. What a
- * handler returns is what the next matching handler receives.
+ * handler returns is what the next matching handler receives. A throw names
+ * the source path, the file the author edits.
  */
-export const runHandlers = async (file: HandledFile, handlers: RegisteredHandler[]): Promise<HandledFile[]> => {
+export const runHandlers = async (sourcePath: string, file: HandledFile, handlers: RegisteredHandler[]): Promise<HandledFile[]> => {
   let files = [file];
   for (const { pluginName, glob, handle } of handlers) {
     const handled: HandledFile[] = [];
@@ -33,7 +35,13 @@ export const runHandlers = async (file: HandledFile, handlers: RegisteredHandler
         handled.push(current);
         continue;
       }
-      const outputs = await handle(current);
+      let outputs: HandlerOutput[];
+      // spec: docs/specs/plugins.md, Errors
+      try {
+        outputs = await handle(current);
+      } catch (error) {
+        throw attributePluginError(`Handling ${sourcePath}`, pluginName, error);
+      }
       if (!Array.isArray(outputs)) {
         throw new Error(`The handler ${pluginName} registers for ${glob} must return an array of files.`);
       }

@@ -30,7 +30,7 @@ export const handleFiles = async (source: string, staticFiles: StaticFile[], han
     if (!handlers.some(({ glob }) => matchGlob(sourcePath, glob))) {
       return [{ sourcePath, outputPath: sourcePath, contents: undefined }];
     }
-    const handled = await runHandlers({ outputPath: sourcePath, contents: await readFile(join(source, sourcePath)) }, handlers);
+    const handled = await runHandlers(sourcePath, { outputPath: sourcePath, contents: await readFile(join(source, sourcePath)) }, handlers);
     return handled.map(({ outputPath, contents }) => ({ sourcePath, outputPath, contents }));
   });
   return outputs.flat();

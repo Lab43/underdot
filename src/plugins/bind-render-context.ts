@@ -5,8 +5,22 @@ import { join } from 'node:path';
 // Source paths are posix whatever the platform, and only the disk read
 // takes a platform path.
 import { dirname, join as joinPosix } from 'node:path/posix';
+import { describeError } from '../shared/describe-error.ts';
 import type { Output } from './handle-files.ts';
 import type { RegisteredHelper } from './register-plugins.ts';
+
+/**
+ * A throw from a helper, tagged with the plugin the helper belongs to. The
+ * message is the throw's own, and the throw is the cause.
+ */
+export class PluginError extends Error {
+  readonly pluginName: string;
+
+  constructor(pluginName: string, cause: unknown) {
+    super(describeError(cause), { cause });
+    this.pluginName = pluginName;
+  }
+}
 
 /**
  * What a renderer or helper receives for the file being rendered, the page's
@@ -115,8 +129,17 @@ export const bindRenderContext = (
     // A helper's name wins over a variable handed in under it.
     const contextVariables = { ...variables };
     const context: RenderContext = { sourcePath, variables: contextVariables, readFile, readOutput, readBody, enterFile };
-    for (const [name, { helper }] of helpers) {
-      contextVariables[name] = (...args: unknown[]): unknown => helper(context, ...args);
+    // A throw is tagged with the helper's plugin. An engine rethrows the same
+    // object with the file and line added, so the tag survives its rewrite.
+    // spec: docs/specs/plugins.md, Errors
+    for (const [name, { pluginName, helper }] of helpers) {
+      contextVariables[name] = (...args: unknown[]): unknown => {
+        try {
+          return helper(context, ...args);
+        } catch (error) {
+          throw error instanceof PluginError ? error : new PluginError(pluginName, error);
+        }
+      };
     }
     return context;
   };

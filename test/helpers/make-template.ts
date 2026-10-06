@@ -4,7 +4,7 @@ import { renderBody } from './render-body.ts';
 export const makeTemplate = (fields: Partial<Template> & { sourcePath: string }): Template => ({
   directory: '',
   extension: 'tpl',
-  render: renderBody,
+  renderer: { pluginName: 'fixture', render: renderBody },
   name: '_',
   frontmatter: {},
   template: undefined,

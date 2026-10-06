@@ -3,7 +3,7 @@
 import { join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
-import { bindRenderContext } from './bind-render-context.ts';
+import { bindRenderContext, PluginError } from './bind-render-context.ts';
 import type { Output } from './handle-files.ts';
 import type { Helper } from './register-plugins.ts';
 
@@ -60,6 +60,31 @@ describe('bindRenderContext', () => {
     test("a helper's name wins over a variable handed in under it", () => {
       const context = bindRenderContext(source, sourcePaths, helpers, outputs)('index.tpl', { here: 'shadow' }, bodies);
       expect(call(context.variables, 'here')).toBe('index.tpl');
+    });
+  });
+
+  // spec: docs/specs/plugins.md, Errors
+  describe("a helper's throw", () => {
+    const bind = (helper: Helper, pluginName = 'tools') =>
+      bindRenderContext(source, sourcePaths, new Map([['fail', { pluginName, helper }]]), outputs)('index.tpl', variables, bodies);
+
+    test("an Error comes out as a PluginError carrying the helper's plugin, the message, and the Error as cause", () => {
+      const cause = new Error('boom');
+      const context = bind(() => { throw cause; });
+      expect(() => call(context.variables, 'fail')).toThrow(PluginError);
+      expect(() => call(context.variables, 'fail')).toThrow(expect.objectContaining({ pluginName: 'tools', message: 'boom', cause }));
+    });
+
+    test("a thrown string is the PluginError's message", () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- the throw a JavaScript helper can make
+      const context = bind(() => { throw 'boom'; });
+      expect(() => call(context.variables, 'fail')).toThrow(expect.objectContaining({ pluginName: 'tools', message: 'boom', cause: 'boom' }));
+    });
+
+    test('a PluginError of another plugin comes out as it is', () => {
+      const tagged = new PluginError('inner', new Error('boom'));
+      const context = bind(() => { throw tagged; });
+      expect(() => call(context.variables, 'fail')).toThrow(tagged);
     });
   });
 

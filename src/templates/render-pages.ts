@@ -2,7 +2,9 @@
 
 import { mapUnits } from '../build/map-units.ts';
 import type { Page, Template } from '../build/read-site.ts';
-import type { MakeRenderContext } from '../plugins/bind-render-context.ts';
+import { attributePluginError } from '../plugins/attribute-plugin-error.ts';
+import { PluginError } from '../plugins/bind-render-context.ts';
+import type { MakeRenderContext, RenderContext } from '../plugins/bind-render-context.ts';
 import type { PageChain } from './resolve-chains.ts';
 
 export interface RenderedPage {
@@ -28,10 +30,22 @@ const mergeVariables = (globals: Variables, { page, chain }: PageChain): Variabl
   return { ...variables, ...page.frontmatter, _url: page.url };
 };
 
+// A throw names the file that was rendering and the plugin whose function
+// threw: the helper's where a helper tagged it, the renderer's otherwise.
+// spec: docs/specs/plugins.md, Errors
+const render = async (file: Page | Template, context: RenderContext): Promise<string> => {
+  try {
+    return await file.renderer.render(file.body, context);
+  } catch (error) {
+    const pluginName = error instanceof PluginError ? error.pluginName : file.renderer.pluginName;
+    throw attributePluginError(`Rendering ${file.sourcePath}`, pluginName, error);
+  }
+};
+
 const renderBody = async (globals: Variables, makeContext: MakeRenderContext, pageChain: PageChain): Promise<RenderedBody> => {
   const { page, chain } = pageChain;
   const variables = mergeVariables(globals, pageChain);
-  const body = await page.render(page.body, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined));
+  const body = await render(page, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined));
   return { page, chain, variables, body };
 };
 
@@ -43,7 +57,7 @@ const renderChain = async (
   let below = [page.frontmatter];
   let content = body;
   for (const template of chain) {
-    content = await template.render(template.body, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies));
+    content = await render(template, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies));
     below = [template.frontmatter, ...below];
   }
   return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content };

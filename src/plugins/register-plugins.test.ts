@@ -3,7 +3,7 @@
 import { describe, expect, test } from 'vitest';
 import { renderBody as render } from '../../test/helpers/render-body.ts';
 import { registerPlugins } from './register-plugins.ts';
-import type { FileHandler, Helper, Plugin } from './register-plugins.ts';
+import type { FileHandler, Helper, PageHook, Plugin } from './register-plugins.ts';
 
 const other = (body: string): string => body.toUpperCase();
 
@@ -13,14 +13,17 @@ const shout: Helper = (_context, word) => String(word).toUpperCase();
 const keep: FileHandler = (file) => [file];
 const drop: FileHandler = () => [];
 
-const empty = { renderers: new Map(), helpers: new Map(), handlers: [] };
+const empty = { renderers: new Map(), helpers: new Map(), handlers: [], hooks: [] };
+
+const listing: PageHook = (pages) => ({ pages });
+const count: PageHook = (pages) => ({ count: pages.length });
 
 describe('registerPlugins', () => {
   test('no plugins yield an empty registry', () => {
     expect(registerPlugins([])).toStrictEqual(empty);
   });
 
-  test('a plugin with neither renderers, helpers, nor handlers registers nothing', () => {
+  test('a plugin with neither renderers, helpers, handlers, nor a page hook registers nothing', () => {
     expect(registerPlugins([{ name: 'quiet' }])).toStrictEqual(empty);
   });
 
@@ -148,6 +151,30 @@ describe('registerPlugins', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript site can pass
       const plugin = { name: 'broken', handlers: { '**/*.css': 'handle' } } as unknown as Plugin;
       expect(() => registerPlugins([plugin])).toThrow(new Error('The handler broken registers for **/*.css is not a function.'));
+    });
+  });
+
+  // spec: docs/specs/plugins.md, Page hooks
+  describe('page hooks', () => {
+    test("two plugins' hooks are listed under their names in plugin order", () => {
+      const plugins: Plugin[] = [
+        { name: 'listing', renderers: { md: render }, pageHook: listing },
+        { name: 'counting', pageHook: count },
+      ];
+      expect(registerPlugins(plugins)).toStrictEqual({
+        ...empty,
+        renderers: new Map([['md', { pluginName: 'listing', render }]]),
+        hooks: [
+          { pluginName: 'listing', hook: listing },
+          { pluginName: 'counting', hook: count },
+        ],
+      });
+    });
+
+    test('a page hook that is not a function fails naming the plugin', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript site can pass
+      const plugin = { name: 'broken', pageHook: { pages: [] } } as unknown as Plugin;
+      expect(() => registerPlugins([plugin])).toThrow(new Error('The page hook of broken is not a function.'));
     });
   });
 });

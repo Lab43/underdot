@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 ---
 
 # Page hooks and error attribution

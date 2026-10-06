@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import bustConfiguration from '../../test/fixtures/bust/underdot.config.ts';
+import collectionsConfiguration from '../../test/fixtures/collections/underdot.config.ts';
 import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.ts';
 import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
@@ -136,6 +137,22 @@ describe('build', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('svgo', 'expected');
       await build(resolveConfiguration(svgoConfiguration, directory));
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
+    });
+  });
+
+  describe('the collections fixture', () => {
+    test.override({ fixture: 'collections' });
+
+    // spec: docs/specs/collections.md
+    test('lists the posts in source-path order and embeds each body sorted by date, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('collections', 'expected');
+      await build(resolveConfiguration(collectionsConfiguration, directory));
       const paths = await list(destination);
       expect(paths).toStrictEqual(await list(expected));
       for (const path of paths) {

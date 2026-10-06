@@ -1,0 +1,9 @@
+---
+title: Posts
+---
+<h1><%= title %></h1>
+<ul>
+<%_ for (const post of posts) { -%>
+  <li><a href="<%= post._url %>"><%= post.title %></a></li>
+<%_ } -%>
+</ul>

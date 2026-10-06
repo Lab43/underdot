@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 ---
 
 # The collections plugin

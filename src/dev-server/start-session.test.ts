@@ -97,7 +97,7 @@ describe('startSession', () => {
   test('a busy explicit port fails the start', async ({ directory, start, stdout }) => {
     const { url } = await start();
     await expect(startSession({ load: loader(directory), port: Number(new URL(url).port) })).rejects.toMatchObject({ code: 'EADDRINUSE' });
-    expect(stdout).toHaveLength(stdout.filter((line) => !line.startsWith('Built')).length + Number(stdout.at(-1)?.startsWith('Built') ?? false));
+    expect(stdout.filter((line) => line.startsWith('Serving'))).toHaveLength(1);
   });
 
   test('close without a build in flight returns', async ({ directory, stdout }) => {

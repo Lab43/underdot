@@ -30,7 +30,12 @@ const runDevCommand = async ({ configurationPath, port, https }: Extract<Command
   try {
     const file = await locateConfiguration(configurationPath);
     let reloads = 0;
-    await startSession({ load: () => loadConfiguration(file, String(reloads++)), configurationFile: file, port, https });
+    await startSession({
+      load: () => loadConfiguration(file, String(reloads++)),
+      configurationFile: file,
+      port,
+      https,
+    });
     return 0;
   } catch (error) {
     process.stderr.write(`${describeError(error)}\n`);

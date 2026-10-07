@@ -54,15 +54,18 @@ describe('runCommand', () => {
   describe('dev', () => {
     test('starts a session on the located file with the port and the HTTPS flag, loading the file as it stands', async ({ stderr, stdout, workingDirectory }) => {
       expect(await runCommand(['dev', '--port', '0'])).toBe(0);
-      expect(stderr).toStrictEqual([]);
-      const file = join(workingDirectory, 'underdot.config.ts');
-      expect(startSession).toHaveBeenCalledWith({ load: expect.any(Function), configurationFile: file, port: 0, https: false });
-      const { load } = vi.mocked(startSession).mock.calls[0]![0];
-      await writeFile(file, "export default { source: 'content' };\n");
-      expect((await load()).source).toBe(join(workingDirectory, 'content'));
-      expect(stdout[0]).toMatch(/^Serving http:\/\/localhost:\d+\/\n$/);
       const session = await vi.mocked(startSession).mock.results[0]!.value;
-      await session.close();
+      try {
+        expect(stderr).toStrictEqual([]);
+        const file = join(workingDirectory, 'underdot.config.ts');
+        expect(startSession).toHaveBeenCalledWith({ load: expect.any(Function), configurationFile: file, port: 0, https: false });
+        const { load } = vi.mocked(startSession).mock.calls[0]![0];
+        await writeFile(file, "export default { source: 'content' };\n");
+        expect((await load()).source).toBe(join(workingDirectory, 'content'));
+        expect(stdout[0]).toMatch(/^Serving http:\/\/localhost:\d+\/\n$/);
+      } finally {
+        await session.close();
+      }
     });
 
     describe('in the no-config fixture', () => {

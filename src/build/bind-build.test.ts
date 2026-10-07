@@ -381,6 +381,14 @@ describe('bindBuild', () => {
       await bindBuild(resolveConfiguration(sassConfiguration, directory))();
       await expectDestination(destination, expected);
     });
+
+    // spec: docs/specs/sass.md, Imports
+    test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
+      await writeFile(join(directory, 'source/styles/site.scss'), "@use '../../outside';\n");
+      await expect(bindBuild(resolveConfiguration(sassConfiguration, directory))()).rejects.toThrow(
+        new Error('Handling styles/site.scss failed in sass: The handler declares "../outside.scss", which is not a plain path under the source root.'),
+      );
+    });
   });
 
   // spec: docs/specs/srcset.md

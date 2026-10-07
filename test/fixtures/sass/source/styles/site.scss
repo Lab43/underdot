@@ -1,0 +1,12 @@
+@use 'vars';
+@use '_sass/mixins';
+@use 'parts';
+
+body {
+  color: vars.$accent;
+}
+
+.page {
+  @include mixins.centered;
+  max-width: vars.$measure;
+}

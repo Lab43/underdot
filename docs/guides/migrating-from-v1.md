@@ -90,6 +90,12 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **Headings no longer carry an `id`.** A link to a heading's anchor needs that heading written as HTML with the `id` (see: docs/specs/markdown.md, Rendering).
 - **Every rendered page's bytes change once in the first v2 build.** marked is newer, and an email autolink is now a readable `mailto:` link rather than character references scrambled differently on every build. The bytes change again on a marked upgrade. Expect both in a committed destination's diff (see: docs/specs/markdown.md, Rendering).
 
+## The Sass plugin
+
+- **The plugin is imported from `underdot-sass` and called with no options.** `import { sass } from 'underdot-sass'` in the configuration, and `sass()` in its plugin list. Every v1 option is dropped, and every `.scss` file under the source root is compiled (see: docs/specs/sass.md, Options).
+- **An import from outside the source root fails the build.** A stylesheet that imported a file from `node_modules` or beside the project copies it under the source root, in an underscore directory such as `_sass/` so it is never written (see: docs/specs/sass.md, Imports).
+- **Sass's warnings print and the build continues.** A deprecation shows in the terminal on every build that compiles the stylesheet, until the stylesheet is updated (see: docs/specs/sass.md, Errors and warnings).
+
 ## Plugin authors
 
 Every plugin is rewritten for v2. The registrations keep their roles, and these are the changes that alter what a plugin does rather than how it is spelled.

@@ -1,0 +1,10 @@
+{
+  "name": "markdown-site",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "underdot": "^2.0.0-alpha.0",
+    "underdot-ejs": "^2.0.0-alpha.0",
+    "underdot-md": "^2.0.0-alpha.0"
+  }
+}

@@ -10,6 +10,7 @@ import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.
 import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import helpersConfiguration from '../../test/fixtures/helpers/underdot.config.ts';
+import markdownConfiguration from '../../test/fixtures/markdown/underdot.config.ts';
 import srcsetConfiguration from '../../test/fixtures/srcset/underdot.config.ts';
 import svgoConfiguration from '../../test/fixtures/svgo/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
@@ -393,6 +394,18 @@ describe('bindBuild', () => {
         produced: ['images/photo-200.webp', 'images/photo-300.jpg', 'images/photo-450.jpg'],
         written: ['images/photo-200.webp', 'images/photo-300.jpg', 'images/photo-450.jpg', 'images/photo.jpg'],
       }));
+    });
+  });
+
+  describe('the markdown fixture', () => {
+    test.override({ fixture: 'markdown' });
+
+    // spec: docs/specs/markdown.md
+    test('renders a Markdown page inside an EJS template and a frontmatter value through the helper, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('markdown', 'expected');
+      await bindBuild(resolveConfiguration(markdownConfiguration, directory))();
+      await expectDestination(destination, expected);
     });
   });
 

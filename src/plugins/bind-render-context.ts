@@ -196,7 +196,6 @@ export const bindRenderContext = (
         // consult the descriptor trap above and define a non-writable property.
         set: (target, key, value) => Reflect.set(target, key, value),
       });
-      // The renderer entering the partial is the one rendering it.
       return makeContext(referencedPath, layered, bodies, observe, emits, attribution);
     };
 

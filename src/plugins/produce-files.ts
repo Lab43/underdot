@@ -104,7 +104,6 @@ export const produceFiles = async (
       if (kind === 'parameters') {
         return parametersHash;
       }
-      // A file a handler after the emitting plugin declared.
       if (kind === 'file') {
         return files.get(name)?.hash;
       }

@@ -12,6 +12,9 @@ const makeContext = (sourcePath: string, variables: Record<string, unknown>): Re
   readOutput: () => undefined,
   readBody: () => '',
   enterFile: (reference, entered) => makeContext(reference.slice(1), entered),
+  emit: () => {
+    throw new Error('This test never emits.');
+  },
 });
 
 const context = makeContext('index.ejs', {});

@@ -52,9 +52,22 @@ All file handling for a build completes before any page renders. Rationale: help
 
 ## Emitted files
 
-A plugin emits a file into the destination by naming its output path and supplying a producer that yields the contents. Emitting is available from helpers during a render. An emitted file passes through the file handlers of the plugins after the emitting plugin, and then falls under the source tree's output rules like any other file.
+A helper emits a file into the destination with three arguments: the file's output path, its parameters, and a producer that yields its contents. The parameters are the values the contents depend on beyond what the producer reads, such as a width, and together with the path they identify the file. Two parameter values are the same inputs when `node:v8` serializes them alike, so the order of an object's keys counts.
 
-Two emits of one path with the same inputs in one build are one output. Rationale: an image helper called from several pages asks for the same derivative each time. Two emits of one path with different inputs are a uniqueness error naming both (see: docs/specs/source-tree.md, Output paths are unique).
+Only a helper emits. An emit through the context a renderer receives, or through the context of a partial it enters, is a build error naming the file. Rationale: a helper is bound to its plugin, which is what tells the build whose file handlers follow the emit.
+
+The producer runs after the renders, with a context of its own. Its one operation reads a static file's handled output by its output path, with no leading slash and no resolution against any file, and yields no value for a path no output has. Rationale: a file two pages emit is one output, so it must not depend on which page's directory a read resolved against. The producer returns the contents as text or bytes, and may do so asynchronously.
+
+An emitted file passes through the file handlers of the plugins after the emitting plugin, and then falls under the source tree's output rules like any other file.
+
+Two emits of one path with the same inputs in one build are one output. Rationale: an image helper called from several pages asks for the same derivative each time. Two emits of one path with different parameters are a uniqueness error naming both files (see: docs/specs/source-tree.md, Output paths are unique). Two emits of one path by two plugins are an error naming both plugins.
+
+Each of the following is a build error naming the file and the path, as the File handlers section states for a handler's output:
+
+- an output path that is not a string, or has a leading slash or an empty, `.`, or `..` segment
+- a producer that is not a function
+- parameters `node:v8` cannot serialize
+- a producer that returns neither text nor bytes, which names the plugin in place of the file
 
 The producer runs only when the emitted file's inputs have changed since it last ran (see: Dependencies). Rationale: resizing every image on every rebuild is the largest cost a dev loop can carry, and a producer whose inputs are unchanged has nothing new to say.
 
@@ -72,7 +85,7 @@ A tool a plugin wraps may read files on its own, as a stylesheet compiler follow
 
 ## Dependencies
 
-The build treats each of these as a unit of work with inputs: handling one static file, running one page hook, rendering one page, and producing one emitted file. A unit's inputs are everything it read through the context, every file it declared, and for a render the pages and templates of its chain and the globals it read. The build reruns a unit when any input changed and otherwise reuses its previous result (see: docs/specs/build.md, Incremental builds).
+The build treats each of these as a unit of work with inputs: handling one static file, running one page hook, rendering one page, and producing one emitted file. A unit's inputs are everything it read through the context, every file it declared, for a render the pages and templates of its chain and the globals it read, and for an emitted file its parameters. The build reruns a unit when any input changed and otherwise reuses its previous result (see: docs/specs/build.md, Incremental builds).
 
 A plugin's obligations follow from that:
 

@@ -33,6 +33,10 @@ describe('findVersion', () => {
     expect(findVersion(versions, 'pages', '')).toBeUndefined();
   });
 
+  test('the parameters have no version, since no render observes them', () => {
+    expect(findVersion(versions, 'parameters', '')).toBeUndefined();
+  });
+
   test("the globals' version changes when any global's version does", () => {
     const changed: Versions = { ...versions, globals: new Map([['site', 'site1'], ['team', 'team2']]), allGlobals: 'site:site1\nteam:team2' };
     expect(findVersion(changed, 'globals', '')).not.toBe(findVersion(versions, 'globals', ''));

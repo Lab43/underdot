@@ -11,6 +11,9 @@ const context: RenderContext = {
   readOutput: () => undefined,
   readBody: () => '',
   enterFile: () => context,
+  emit: () => {
+    throw new Error('This test never emits.');
+  },
 };
 
 const midnight = new Date('2024-01-02T00:00:00.000Z');

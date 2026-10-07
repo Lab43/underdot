@@ -1,14 +1,18 @@
 // spec: docs/specs/plugins.md
 
+import { hash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 // Source paths are posix whatever the platform, and only the disk read
 // takes a platform path.
 import { dirname, join as joinPosix } from 'node:path/posix';
+import { serialize } from 'node:v8';
 import type { FileTable } from '../build/hash-files.ts';
 import type { Observe } from '../build/reuse-unit.ts';
 import { describeError } from '../shared/describe-error.ts';
+import { isPlainPath } from '../shared/is-plain-path.ts';
 import type { Output } from './handle-files.ts';
+import type { ProducerContext } from './produce-files.ts';
 import type { RegisteredHelper } from './register-plugins.ts';
 
 /**
@@ -22,6 +26,25 @@ export class PluginError extends Error {
     super(describeError(cause), { cause });
     this.pluginName = pluginName;
   }
+}
+
+/**
+ * Makes an emitted file's contents, as text or bytes, from what it reads
+ * through its context.
+ */
+export type Producer = (context: ProducerContext) => Promise<string | Uint8Array>;
+
+/**
+ * A file a helper handed the build to produce: the plugin and the file that
+ * emitted it, where it goes, the SHA-256 of its serialized parameters, and
+ * its producer.
+ */
+export interface EmittedFile {
+  pluginName: string;
+  sourcePath: string;
+  outputPath: string;
+  parametersHash: string;
+  produce: Producer;
 }
 
 /**
@@ -57,18 +80,26 @@ export interface RenderContext {
    * has already read.
    */
   enterFile: (reference: string, data: Record<string, unknown>) => RenderContext;
+  /**
+   * Hand the build a file to produce at an output path. The path and the
+   * parameters identify the file, and the producer runs after the renders,
+   * only when either or what it read changed. Only a helper may emit.
+   */
+  emit: (outputPath: string, parameters: unknown, produce: Producer) => void;
 }
 
 /**
  * Makes the context for one file. The bodies are those rendered so far, and
  * none while a page's own body renders. Every read through the context, the
- * variables included, is reported to `observe` as an input of the render.
+ * variables included, is reported to `observe` as an input of the render,
+ * and every file a helper emits is pushed onto `emits`.
  */
 export type MakeRenderContext = (
   sourcePath: string,
   variables: Record<string, unknown>,
   bodies: ReadonlyMap<string, string> | undefined,
   observe: Observe,
+  emits: EmittedFile[],
 ) => RenderContext;
 
 /**
@@ -83,7 +114,7 @@ export const bindRenderContext = (
 ): MakeRenderContext => {
   // The last output of a path, the only one there is once the write succeeds.
   const outputsByPath = new Map(outputs.map((output) => [output.outputPath, output]));
-  const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe) => {
+  const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits) => {
     // A relative reference resolves against the file's directory and an
     // absolute one against the source root.
     // spec: docs/specs/templates.md, Relative paths
@@ -157,7 +188,7 @@ export const bindRenderContext = (
         // consult the descriptor trap above and define a non-writable property.
         set: (target, key, value) => Reflect.set(target, key, value),
       });
-      return makeContext(referencedPath, layered, bodies, observe);
+      return makeContext(referencedPath, layered, bodies, observe, emits);
     };
 
     // A throw is tagged with the helper's plugin. An engine rethrows the same
@@ -165,9 +196,27 @@ export const bindRenderContext = (
     // spec: docs/specs/plugins.md, Errors
     const boundHelpers = new Map<string, (...args: unknown[]) => unknown>();
     for (const [name, { pluginName, helper }] of helpers) {
+      // An emit is the helper's plugin's, so the build knows whose handlers
+      // follow it. The parameters are hashed here, so a value the build cannot
+      // compare fails on the line that emitted it.
+      const emit = (outputPath: string, parameters: unknown, produce: Producer): void => {
+        if (!isPlainPath(outputPath)) {
+          throw new Error(`${sourcePath} emits ${JSON.stringify(outputPath)}, which is not a plain path under the destination.`);
+        }
+        if (typeof produce !== 'function') {
+          throw new Error(`${sourcePath} emits ${outputPath} with a producer that is not a function.`);
+        }
+        let serialized: Buffer;
+        try {
+          serialized = serialize(parameters);
+        } catch (error) {
+          throw new Error(`${sourcePath} emits ${outputPath} with parameters the build cannot serialize: ${describeError(error)}`, { cause: error });
+        }
+        emits.push({ pluginName, sourcePath, outputPath, parametersHash: hash('sha256', serialized, 'hex'), produce });
+      };
       boundHelpers.set(name, (...args: unknown[]): unknown => {
         try {
-          return helper(context, ...args);
+          return helper({ ...context, emit }, ...args);
         } catch (error) {
           throw error instanceof PluginError ? error : new PluginError(pluginName, error);
         }
@@ -223,6 +272,10 @@ export const bindRenderContext = (
       readOutput,
       readBody,
       enterFile,
+      // Only the copy a helper receives can emit.
+      emit: (outputPath) => {
+        throw new Error(`${sourcePath} emits ${outputPath} outside a helper, which only a helper can do.`);
+      },
     };
     return context;
   };

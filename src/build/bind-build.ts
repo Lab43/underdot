@@ -5,6 +5,8 @@ import type { ResolvedConfiguration } from '../configuration/resolve-configurati
 import { bindRenderContext } from '../plugins/bind-render-context.ts';
 import { handleFiles } from '../plugins/handle-files.ts';
 import type { Output } from '../plugins/handle-files.ts';
+import { produceFiles } from '../plugins/produce-files.ts';
+import type { EmittedOutput } from '../plugins/produce-files.ts';
 import { registerPlugins } from '../plugins/register-plugins.ts';
 import { runPageHooks } from '../plugins/run-page-hooks.ts';
 import type { HookGlobal } from '../plugins/run-page-hooks.ts';
@@ -51,9 +53,10 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
   const hookRecords: UnitRecords<HookGlobal[]> = new Map();
   const bodyRecords: UnitRecords<RenderedBody> = new Map();
   const pageRecords: UnitRecords<RenderedPage> = new Map();
+  const producedRecords: UnitRecords<EmittedOutput[]> = new Map();
   const written = new Map<string, string>();
   return async () => {
-    const { renderers, helpers, handlers, hooks } = registerPlugins(plugins);
+    const { pluginNames, renderers, helpers, handlers, hooks } = registerPlugins(plugins);
     const paths = removeExcludedFiles(await walkSource(source), exclude);
     files = await hashFiles(source, paths, files);
     const { pages, templates, staticFiles } = classifySource(paths, renderers);
@@ -74,7 +77,7 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
     // Every walked file is readable, those inside private directories included.
     // spec: docs/specs/source-tree.md, Underscore prefix
     const makeContext = bindRenderContext(source, files, helpers, outputs);
-    const renderedPages = await renderPages(
+    const { pages: renderedPages, emits } = await renderPages(
       resolveChains(site.pages, site.templates),
       definedGlobals,
       makeContext,
@@ -82,6 +85,7 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
       bodyRecords,
       pageRecords,
     );
-    await writeDestination(source, destination, outputs, renderedPages, written);
+    const emitted = await produceFiles(source, destination, emits, handlers, pluginNames, outputs, written, producedRecords);
+    await writeDestination(source, destination, outputs, emitted, renderedPages, written);
   };
 };

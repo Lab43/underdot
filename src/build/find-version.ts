@@ -5,7 +5,8 @@ import type { InputKind, Version } from './reuse-unit.ts';
 
 /**
  * The current version of one input of a render. No render observes the
- * pages, which the hook phase versions on its own.
+ * pages or the parameters, which the hook phase and the produce phase each
+ * version on their own.
  */
 export const findVersion = (versions: Versions, kind: InputKind, name: string): Version => {
   switch (kind) {
@@ -22,6 +23,7 @@ export const findVersion = (versions: Versions, kind: InputKind, name: string): 
     case 'chain':
       return versions.chains.get(name);
     case 'pages':
+    case 'parameters':
       return undefined;
   }
 };

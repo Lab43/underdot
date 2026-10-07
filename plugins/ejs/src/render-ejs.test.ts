@@ -36,6 +36,9 @@ const makeContext = (sourcePath: string, variables: Record<string, unknown>, rea
   readOutput: () => undefined,
   readBody: () => '',
   enterFile: (reference, data) => makeContext(reference.slice(1), { ...variables, ...data, here: () => reference.slice(1) }, readFile),
+  emit: () => {
+    throw new Error('This test never emits.');
+  },
 });
 
 // Render with a context over the files above. The renderer resolves every

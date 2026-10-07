@@ -3,6 +3,8 @@
 import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { Output } from '../plugins/handle-files.ts';
+import type { EmittedOutput } from '../plugins/produce-files.ts';
+import { compareStrings } from '../shared/compare-strings.ts';
 import type { RenderedPage } from '../templates/render-pages.ts';
 import { runUnits } from './run-units.ts';
 import type { Unit } from './run-units.ts';
@@ -13,17 +15,14 @@ interface PlannedFile {
   hash: string;
 }
 
-// Compare by character code rather than by locale, so every machine sorts alike.
-const compare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
 const comparePlannedFiles = (a: PlannedFile, b: PlannedFile): number =>
-  compare(a.outputPath, b.outputPath) || compare(a.sourcePath, b.sourcePath);
+  compareStrings(a.outputPath, b.outputPath) || compareStrings(a.sourcePath, b.sourcePath);
 
 // Sorted, so a collision names its two sources the same way whichever order
 // they arrived in.
 // spec: docs/specs/source-tree.md, Output paths are unique
-const planFiles = (outputs: Output[], pages: RenderedPage[]): PlannedFile[] => {
-  const planned: PlannedFile[] = [...outputs, ...pages].map(({ sourcePath, outputPath, hash }) => ({ sourcePath, outputPath, hash })).sort(comparePlannedFiles);
+const planFiles = (files: PlannedFile[]): PlannedFile[] => {
+  const planned: PlannedFile[] = files.map(({ sourcePath, outputPath, hash }) => ({ sourcePath, outputPath, hash })).sort(comparePlannedFiles);
   const sourcePaths = new Map<string, string>();
   for (const { sourcePath, outputPath } of planned) {
     const other = sourcePaths.get(outputPath);
@@ -81,22 +80,26 @@ const clean = async (
 };
 
 /**
- * After a successful run the destination holds exactly the public outputs and
- * the pages. A file being replaced stays until its output overwrites it. A
- * file in place whose hash is the one last written there is left alone, and
- * `written` is kept true to the disk across builds.
+ * After a successful run the destination holds exactly the public outputs,
+ * the public emitted outputs, and the pages. A file being replaced stays until
+ * its output overwrites it. A file in place whose hash is the one last written
+ * there is left alone, and `written` is kept true to the disk across builds.
+ * An emitted output's bytes are dropped once it is in place.
  */
 // spec: docs/specs/source-tree.md, Underscore prefix
 export const writeDestination = async (
   source: string,
   destination: string,
   outputs: Output[],
+  emitted: EmittedOutput[],
   pages: RenderedPage[],
   written: Map<string, string>,
 ): Promise<void> => {
   // An output path with a segment starting with an underscore is never written.
-  const publicOutputs = outputs.filter(({ outputPath }) => !outputPath.split('/').some((segment) => segment.startsWith('_')));
-  const planned = planFiles(publicOutputs, pages);
+  const isPublic = ({ outputPath }: { outputPath: string }): boolean => !outputPath.split('/').some((segment) => segment.startsWith('_'));
+  const publicOutputs = outputs.filter(isPublic);
+  const publicEmitted = emitted.filter(isPublic);
+  const planned = planFiles([...publicOutputs, ...publicEmitted, ...pages]);
   await mkdir(destination, { recursive: true });
   const present = new Set<string>();
   await clean(destination, '', new Set(planned.map((file) => file.outputPath)), collectDirectories(planned), present, written);
@@ -119,6 +122,16 @@ export const writeDestination = async (
       }
       return writeFile(target, output.contents);
     })),
+    ...publicEmitted.map((output): Unit => async () => {
+      await place(output, (target) => {
+        // Only a file found whole in the destination is reused without its bytes.
+        if (output.contents === undefined) {
+          throw new Error(`${output.outputPath} was produced in an earlier build and is missing from the destination, so it cannot be written again.`);
+        }
+        return writeFile(target, output.contents);
+      })();
+      output.contents = undefined;
+    }),
     ...pages.map((page) => place(page, (target) => writeFile(target, page.contents))),
   ]);
 };

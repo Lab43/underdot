@@ -40,8 +40,8 @@ describe('readSite', () => {
       body: 'The home page: date {{ date }}.\n',
     });
     expect(hello).toStrictEqual({ ...sourceFiles.pages[3], frontmatter: { title: 'Hello' }, template: 'post', body: 'The hello post: layout {{ layout }}.\n' });
-    expect(about).toStrictEqual({ ...sourceFiles.pages[1], frontmatter: {}, template: undefined, body: 'The about page: title {{ title }}, here {{ here }}.\nThe about include: [{{> missing.txt }}]\nThe about output: {{ handled /extra/plain.html }}\n' });
-    expect(notFound?.body).toBe('The not-found page: url {{ _url }}.\n');
+    expect(about).toStrictEqual({ ...sourceFiles.pages[1], frontmatter: {}, template: undefined, body: 'The about page: title {{ title }}, here {{ here }}.\nThe about include: [{{> missing.txt }}]\nThe about output: {{ handled /extra/plain.html }}\nThe about derived: {{ derived /notes.text txt }} {{ derived /notes.text text }}\n' });
+    expect(notFound?.body).toBe('The not-found page: url {{ _url }}.\nThe not-found derived: {{ derived /notes.text txt }}\n');
 
     const [root, , , , post] = site.templates;
     expect(root).toStrictEqual({

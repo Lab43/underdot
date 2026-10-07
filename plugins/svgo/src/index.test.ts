@@ -26,6 +26,9 @@ const context: RenderContext = {
   readOutput: (reference) => (reference === '/_icons/mail.svg' ? Buffer.from(optimizedIcon) : undefined),
   readBody: () => '',
   enterFile: () => context,
+  emit: () => {
+    throw new Error('This test never emits.');
+  },
 };
 
 // The icon through the handler the plugin registers, awaited because a

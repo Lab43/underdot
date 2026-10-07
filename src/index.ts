@@ -5,12 +5,13 @@ import { resolveConfiguration } from './configuration/resolve-configuration.ts';
 import type { Configuration } from './configuration/resolve-configuration.ts';
 import { startSession } from './dev-server/start-session.ts';
 import type { Session } from './dev-server/start-session.ts';
-import type { RenderContext } from './plugins/bind-render-context.ts';
+import type { Producer, RenderContext } from './plugins/bind-render-context.ts';
+import type { ProducerContext } from './plugins/produce-files.ts';
 import type { FileHandler, Helper, PageHook, Plugin, Renderer } from './plugins/register-plugins.ts';
 import type { HandledFile, HandlerOutput } from './plugins/run-handlers.ts';
 import type { HookPage } from './plugins/run-page-hooks.ts';
 
-export type { Configuration, FileHandler, HandledFile, HandlerOutput, Helper, HookPage, PageHook, Plugin, RenderContext, Renderer, Session };
+export type { Configuration, FileHandler, HandledFile, HandlerOutput, Helper, HookPage, PageHook, Plugin, Producer, ProducerContext, RenderContext, Renderer, Session };
 
 /**
  * Resolve the configuration a script passes, then build it once.

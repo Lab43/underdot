@@ -14,6 +14,9 @@ const makeContext = (url: string): RenderContext => {
     readOutput: () => undefined,
     readBody: () => '',
     enterFile: () => context,
+    emit: () => {
+      throw new Error('This test never emits.');
+    },
   };
   return context;
 };

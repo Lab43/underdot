@@ -5,7 +5,9 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
 import { test } from '../../test/helpers/test.ts';
+import type { FileTable } from '../build/hash-files.ts';
 import type { UnitRecords } from '../build/reuse-unit.ts';
 import type { EmittedFile, Producer } from './bind-render-context.ts';
 import type { Output } from './handle-files.ts';
@@ -41,13 +43,25 @@ const emit = (overrides: Partial<EmittedFile> = {}): EmittedFile => ({
 const produced = (sourcePath: string, outputPath: string, text: string): EmittedOutput => ({ sourcePath, outputPath, contents: Buffer.from(text), hash: hash('sha256', text, 'hex') });
 
 interface Memory {
+  handlers?: RegisteredHandler[];
   outputs?: Output[];
+  files?: FileTable;
   written?: Map<string, string>;
   records?: UnitRecords<EmittedOutput[]>;
 }
 
-const produceAll = (directory: string, emits: EmittedFile[], { outputs: current = outputs, written = new Map(), records = new Map() }: Memory = {}) =>
-  produceFiles(join(directory, 'source'), join(directory, 'build'), emits, handlers, pluginNames, current, written, records);
+const produceAll = (directory: string, emits: EmittedFile[], { handlers: registered = handlers, outputs: current = outputs, files = new Map(), written = new Map(), records = new Map() }: Memory = {}) =>
+  produceFiles(
+    join(directory, 'source'),
+    join(directory, 'build'),
+    emits,
+    registered,
+    pluginNames,
+    current,
+    files,
+    written,
+    records,
+  );
 
 describe('produceFiles', () => {
   test('a producer reads handled output by its output path, and its result passes the handlers after its plugin and not before', async ({ directory }) => {
@@ -116,6 +130,25 @@ describe('produceFiles', () => {
     expect(stderr).toStrictEqual(['Producing notes.derived.txt warned in images: Deprecated.\n']);
   });
 
+  // A handler of the plugin after the emitting one that declares notes.md and
+  // warns, under the output path, since an emitted file has no source.
+  const declaring: RegisteredHandler = {
+    pluginName: 'annotate',
+    glob: '**/*.txt',
+    handle: (file, { declareFile, warn }) => {
+      declareFile('notes.md');
+      warn('Deprecated.');
+      return [file];
+    },
+  };
+
+  // spec: docs/specs/plugins.md, Errors
+  test("a handler after the emitting plugin warns naming the output's handling and its plugin", async ({ directory, stderr }) => {
+    const files: FileTable = new Map([['notes.md', makeFileEntry('notes1')]]);
+    await produceAll(directory, [emit()], { handlers: [declaring], files });
+    expect(stderr).toStrictEqual(['Handling notes.derived.txt warned in annotate: Deprecated.\n']);
+  });
+
   test('a producer that returns neither text nor bytes fails naming the plugin and the path', async ({ directory }) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript plugin can return
     const produce = (() => Promise.resolve(42)) as unknown as Producer;
@@ -150,6 +183,21 @@ describe('produceFiles', () => {
         produced('about.tpl', 'notes.derived.txt', 'derived from the edited notes [annotated]'),
       ]);
       expect(produce).toHaveBeenCalledTimes(2);
+    });
+
+    // spec: docs/specs/plugins.md, Dependencies
+    test('a unit is reused while a file a handler declared stands, printing nothing, and reruns when it changes', async ({ directory, stderr }) => {
+      const produce = reading('notes.text');
+      const records: UnitRecords<EmittedOutput[]> = new Map();
+      const first: FileTable = new Map([['notes.md', makeFileEntry('notes1')]]);
+      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: first, records });
+      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: first, records });
+      expect(produce).toHaveBeenCalledOnce();
+      expect(stderr).toHaveLength(1);
+      const second: FileTable = new Map([['notes.md', makeFileEntry('notes2')]]);
+      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: second, records });
+      expect(produce).toHaveBeenCalledTimes(2);
+      expect(stderr).toHaveLength(2);
     });
 
     test('a reused result is named by the file that emits the path now', async ({ directory }) => {

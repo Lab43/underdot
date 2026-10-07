@@ -2,7 +2,7 @@
 
 import { isObject } from '../shared/is-object.ts';
 import type { RenderContext } from './bind-render-context.ts';
-import type { HandledFile, HandlerOutput } from './run-handlers.ts';
+import type { HandledFile, HandlerContext, HandlerOutput } from './run-handlers.ts';
 import type { HookContext, HookPage } from './run-page-hooks.ts';
 
 export type Renderer = (body: string, context: RenderContext) => string | Promise<string>;
@@ -12,7 +12,7 @@ export type Renderer = (body: string, context: RenderContext) => string | Promis
  * through. It returns the files to write in the file's place: the file as it
  * is, the file transformed or renamed, several files, or none.
  */
-export type FileHandler = (file: HandledFile) => HandlerOutput[] | Promise<HandlerOutput[]>;
+export type FileHandler = (file: HandledFile, context: HandlerContext) => HandlerOutput[] | Promise<HandlerOutput[]>;
 
 /**
  * A function a page or template calls by name. It receives the render context

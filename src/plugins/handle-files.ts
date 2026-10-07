@@ -52,7 +52,14 @@ export const handleFiles = async (
         return [{ sourcePath, outputPath: sourcePath, contents: undefined, hash: entry.hash }];
       }
       const bytes = await readFile(join(source, sourcePath));
-      const handled = await runHandlers(sourcePath, { outputPath: sourcePath, contents: bytes }, handlers);
+      const handled = await runHandlers(
+        sourcePath,
+        { outputPath: sourcePath, contents: bytes },
+        handlers,
+        source,
+        files,
+        observe,
+      );
       return handled.map(({ outputPath, contents }) => ({ sourcePath, outputPath, contents, hash: hash('sha256', contents, 'hex') }));
     };
     return reuseUnit(records, sourcePath, lookup, run);

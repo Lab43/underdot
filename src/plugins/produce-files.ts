@@ -5,6 +5,7 @@ import { hash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { FileTable } from '../build/hash-files.ts';
 import { mapUnits } from '../build/map-units.ts';
 import { reuseUnit } from '../build/reuse-unit.ts';
 import type { InputKind, Observe, UnitRecords, Version } from '../build/reuse-unit.ts';
@@ -54,6 +55,7 @@ export const produceFiles = async (
   handlers: RegisteredHandler[],
   pluginNames: string[],
   outputs: Output[],
+  files: FileTable,
   written: ReadonlyMap<string, string>,
   records: UnitRecords<EmittedOutput[]>,
 ): Promise<EmittedOutput[]> => {
@@ -98,7 +100,16 @@ export const produceFiles = async (
         records.delete(outputPath);
       }
     }
-    const lookup = (kind: InputKind, name: string): Version => (kind === 'parameters' ? parametersHash : outputsByPath.get(name)?.hash);
+    const lookup = (kind: InputKind, name: string): Version => {
+      if (kind === 'parameters') {
+        return parametersHash;
+      }
+      // A file a handler after the emitting plugin declared.
+      if (kind === 'file') {
+        return files.get(name)?.hash;
+      }
+      return outputsByPath.get(name)?.hash;
+    };
     const run = async (observe: Observe): Promise<EmittedOutput[]> => {
       observe('parameters', '');
       const readOutput = (readPath: string): Buffer | undefined => {
@@ -125,7 +136,14 @@ export const produceFiles = async (
       const index = pluginNames.indexOf(pluginName);
       const handlersAfter = handlers.filter((handler) => pluginNames.indexOf(handler.pluginName) > index);
       const bytes = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
-      const handled = await runHandlers(outputPath, { outputPath, contents: bytes }, handlersAfter);
+      const handled = await runHandlers(
+        outputPath,
+        { outputPath, contents: bytes },
+        handlersAfter,
+        source,
+        files,
+        observe,
+      );
       return handled.map((file) => ({ sourcePath, outputPath: file.outputPath, contents: file.contents, hash: hash('sha256', file.contents, 'hex') }));
     };
     const result = await reuseUnit(records, outputPath, lookup, run);

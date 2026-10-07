@@ -1,8 +1,11 @@
 // spec: docs/specs/plugins.md, File handlers
 
+import type { FileTable } from '../build/hash-files.ts';
+import type { Observe } from '../build/reuse-unit.ts';
 import { isPlainPath } from '../shared/is-plain-path.ts';
 import { matchGlob } from '../shared/match-glob.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
+import { printWarning } from './print-warning.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 
 /**
@@ -23,23 +26,67 @@ export interface HandlerOutput {
 }
 
 /**
- * Run one file through every handler whose glob matches it, in order. What a
- * handler returns is what the next matching handler receives. A throw names
- * the source path, the file the author edits.
+ * What a handler receives beside the file.
  */
-export const runHandlers = async (sourcePath: string, file: HandledFile, handlers: RegisteredHandler[]): Promise<HandledFile[]> => {
-  let files = [file];
+export interface HandlerContext {
+  /**
+   * The absolute path of the source root, where a wrapped tool finds the
+   * file and what it imports on disk.
+   */
+  sourceDirectory: string;
+  /**
+   * Record a file a wrapped tool read on its own, by its path under the
+   * source root, as an input of the handling.
+   */
+  declareFile: (sourcePath: string) => void;
+  /**
+   * Print a warning naming the handling and the handler's plugin. The build
+   * goes on.
+   */
+  warn: (message: string) => void;
+}
+
+/**
+ * Run one file through every handler whose glob matches it, in order. What a
+ * handler returns is what the next matching handler receives. A throw or a
+ * warning names the source path, the file the author edits, and every file a
+ * handler declares is reported to `observe`.
+ */
+export const runHandlers = async (
+  sourcePath: string,
+  file: HandledFile,
+  handlers: RegisteredHandler[],
+  sourceDirectory: string,
+  files: FileTable,
+  observe: Observe,
+): Promise<HandledFile[]> => {
+  // A declared file is versioned from the table as a read through the render
+  // context is, so one outside the source or excluded cannot be tracked.
+  // spec: docs/specs/plugins.md, Reading and writing
+  const declareFile = (declaredPath: string): void => {
+    if (!isPlainPath(declaredPath)) {
+      throw new Error(`The handler declares ${JSON.stringify(declaredPath)}, which is not a plain path under the source root.`);
+    }
+    if (!files.has(declaredPath)) {
+      throw new Error(`The handler declares ${declaredPath}, which the build does not see.`);
+    }
+    observe('file', declaredPath);
+  };
+  let handledFiles = [file];
   for (const { pluginName, glob, handle } of handlers) {
     const handled: HandledFile[] = [];
-    for (const current of files) {
+    for (const current of handledFiles) {
       if (!matchGlob(current.outputPath, glob)) {
         handled.push(current);
         continue;
       }
+      const warn = (message: string): void => {
+        printWarning(`Handling ${sourcePath}`, pluginName, message);
+      };
       let outputs: HandlerOutput[];
       // spec: docs/specs/plugins.md, Errors
       try {
-        outputs = await handle(current);
+        outputs = await handle(current, { sourceDirectory, declareFile, warn });
       } catch (error) {
         throw attributePluginError(`Handling ${sourcePath}`, pluginName, error);
       }
@@ -57,7 +104,7 @@ export const runHandlers = async (sourcePath: string, file: HandledFile, handler
         handled.push({ outputPath, contents: Buffer.from(contents) });
       }
     }
-    files = handled;
+    handledFiles = handled;
   }
-  return files;
+  return handledFiles;
 };

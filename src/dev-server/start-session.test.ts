@@ -36,8 +36,8 @@ interface Event {
   data: string;
 }
 
-// vi.waitFor's own second is shorter than a first build can take on a busy
-// CI runner.
+// Longer than vi.waitFor's default second, which a first build can outlast on
+// a busy CI runner, and shorter than the test's own five-second timeout.
 const waitFor = <T>(callback: () => T | Promise<T>): Promise<T> => vi.waitFor(callback, { timeout: 3_000 });
 
 // Replace the configuration in one step, as an editor's save does, so the

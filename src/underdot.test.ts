@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { describe, expect, onTestFinished, vi } from 'vitest';
 import { test } from '../test/helpers/test.ts';
 import { runCommand } from './configuration/run-command.ts';
+import { injectClientScript } from './dev-server/inject-client-script.ts';
 
 vi.mock('./configuration/run-command.ts');
 
@@ -57,7 +58,7 @@ describe('underdot', () => {
     const url = /^Serving (\S+)$/m.exec(printed)?.[1];
     expect(url).toBeDefined();
     const response = await fetch(url!);
-    expect(await response.text()).toBe(await readFile(join(directory, 'source/index.html'), 'utf8'));
+    expect(await response.text()).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
   });
 
   test('no arguments exits 2 with the usage on stderr', async () => {

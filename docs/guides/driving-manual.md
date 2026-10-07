@@ -18,6 +18,10 @@ Run `node <repo>/dist/underdot.js dev` from a copy of a fixture, as the build co
 
 `--https` serves over HTTPS from `localhost.pem` and `localhost-key.pem` in the copy. Run `mkcert localhost` in the copy first, which writes both. Without them the session fails to start, naming the missing file and the command that generates it.
 
+With a page open in the browser, an edit to a page under `source/` rebuilds and reloads it, and the terminal prints another `Built in` line. An edit that breaks a page, such as an unclosed frontmatter block, shows the build's report in an overlay in the browser and prints it in the terminal, and the page behind the overlay stays. Fixing the page reloads it. Without a browser, `curl -N <url>_underdot/events` prints the `building`, `failed`, and `built` events as they are sent.
+
+An edit to `underdot.config.ts` reloads the configuration and builds in full, so a rewrite added there serves after the next `Built in` line. A configuration that fails to load is reported the same way, and the previous configuration stays in force until the file loads again.
+
 A module the configuration imports, such as a fixture's plugin module, is loaded once per session. An edit to it takes a restart.
 
 ## The published package
@@ -28,7 +32,7 @@ A module the configuration imports, such as a fixture's plugin module, is loaded
 
 The compiled command cannot resolve `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, or `underdot-collections` from a scratch copy that installs nothing, so a site that uses a plugin is driven on the packed packages. That is also the one run that proves a plugin's `dist`, its `exports` map without the `development` condition, and its peer dependency. No one fixture uses every package: the `bust` fixture is a site on `underdot-ejs` and `underdot-bust`, the `helpers` fixture is one on `underdot-ejs` and `underdot-helpers`, the `svgo` fixture is one on `underdot-ejs` and `underdot-svgo`, and the `collections` fixture is one on `underdot-ejs` and `underdot-collections`, so the four runs together prove every plugin.
 
-1. Pack the core and the plugins into a scratch directory: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace <plugin> --pack-destination <dir>` for `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, and `underdot-collections`. Each pack runs its package's `prepack` build.
+1. Pack the core and the plugins into a scratch directory that already exists, since `npm pack` does not create it: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace <plugin> --pack-destination <dir>` for `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, and `underdot-collections`. Each pack runs its package's `prepack` build.
 2. Copy `test/fixtures/bust/`, `test/fixtures/helpers/`, `test/fixtures/svgo/`, and `test/fixtures/collections/` each to its own scratch directory.
 3. In each copy, run `npm install` with the tarballs its `package.json` declares: `<dir>/underdot-2.0.0-alpha.0.tgz`, `<dir>/underdot-ejs-2.0.0-alpha.0.tgz`, and the copy's own plugin, `<dir>/underdot-bust-2.0.0-alpha.0.tgz`, `<dir>/underdot-helpers-2.0.0-alpha.0.tgz`, `<dir>/underdot-svgo-2.0.0-alpha.0.tgz`, or `<dir>/underdot-collections-2.0.0-alpha.0.tgz`.
 4. In each copy, run `npx underdot build`. It exits 0, and `diff -r <copy>/build test/fixtures/<fixture>/expected` shows nothing. Run the `helpers` copy as `TZ=America/Los_Angeles npx underdot build`, which proves the UTC pin against the compiled package on a machine formatting in another zone.

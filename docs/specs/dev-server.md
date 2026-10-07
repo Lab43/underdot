@@ -4,7 +4,7 @@ What a development session gives an author: one command that builds the site, se
 
 ## Session
 
-A session builds the site once in full, then serves the destination and watches for changes until it is stopped. The session is the scope of incremental builds: every build after the first reruns only what changed (see: docs/specs/build.md, Incremental builds). The session serves whether or not the first build succeeded, so an author can start with a broken site and fix it while watching (see: Build status). A configuration that fails to load when the session starts fails the start, since there is nothing to serve or watch.
+A session builds the site once in full, then serves the destination and watches for changes until it is stopped. The session is the scope of incremental builds: every build after the first reruns only what changed (see: docs/specs/build.md, Incremental builds). The session serves whether or not the first build succeeded, so an author can start with a broken site and fix it while watching (see: Build status). A configuration that fails to load when the session starts fails the start, since there is nothing to serve or watch. A configuration that fails to reload is reported as a build failure, the previous configuration stays in force, and the report stands until a reload succeeds. Rationale: the author is mid-edit in the configuration exactly as they are mid-edit in a page, and the browser showing the report is how they learn.
 
 ## Watching
 
@@ -26,8 +26,8 @@ The port is the one given on the command line (see: docs/specs/configuration.md,
 
 ## Live reload
 
-Every HTML response the session serves carries a small script that keeps a connection to the session. When a build succeeds, every connected browser reloads. The script exists only in served responses and never in the destination. Rationale: a reload the author has to trigger is a reload they forget, and a script written to the destination would ship to production.
+Every HTML response the session serves carries a small script that keeps a connection to the session. When a build succeeds, every connected browser reloads. The script exists only in served responses and never in the destination. Its connection to the session is a path under `/_underdot/`, which no site output can have (see: docs/specs/source-tree.md, Underscore prefix) and which rewrites never reach. Rationale: a reload the author has to trigger is a reload they forget, and a script written to the destination would ship to production.
 
 ## Build status
 
-While a build runs, connected browsers show that a build is in progress. When a build fails, the failure report, with the attribution the build gives it (see: docs/specs/build.md, Errors), is shown in every connected browser as well as in the terminal, and the browser keeps showing the page it had. When the next build succeeds, the report is gone and the browser reloads. Rationale: the author is looking at the browser, not the terminal, when they save.
+While a build runs, connected browsers show that a build is in progress. When a build fails, the failure report, with the attribution the build gives it (see: docs/specs/build.md, Errors), is shown in every connected browser as well as in the terminal, and the browser keeps showing the page it had. When the next build succeeds, the report is gone and the browser reloads. Rationale: the author is looking at the browser, not the terminal, when they save. A standing configuration report stays through a successful source build until a reload succeeds. Rationale: those builds run under a configuration the author has already replaced, and a browser that cleared the report on one of them would tell the author the edit took.

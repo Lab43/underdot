@@ -6,6 +6,7 @@ import { extname, join, posix } from 'node:path';
 import { contentType } from 'mime-types';
 import { describeError } from '../shared/describe-error.ts';
 import { matchGlob } from '../shared/match-glob.ts';
+import { injectClientScript } from './inject-client-script.ts';
 
 /**
  * The site a session serves: the destination its files are read from, and
@@ -38,9 +39,14 @@ export const serveRequest = async ({ destination, rewrites }: Site, request: Inc
   const query = queryStart === -1 ? '' : target.slice(queryStart);
 
   // A file is read whole and typed by its extension, with the charset
-  // mime-types adds to every text type.
+  // mime-types adds to every text type. HTML is decoded as text so the
+  // script can be inserted, as UTF-8 because that is what the build writes.
+  // spec: docs/specs/dev-server.md, Live reload
   const readAnswer = async (status: number, file: string): Promise<Answer> => {
     const type = contentType(extname(file));
+    if (type !== false && type.startsWith('text/html')) {
+      return { status, headers: { 'Content-Type': type }, body: injectClientScript(await readFile(file, 'utf8')) };
+    }
     return {
       status,
       headers: { 'Content-Type': type === false ? 'application/octet-stream' : type },

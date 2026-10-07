@@ -1,20 +1,10 @@
 // spec: docs/specs/helpers.md
 
-import type { RenderContext } from 'underdot';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { formatDate } from './format-date.ts';
 
-const context: RenderContext = {
-  sourcePath: 'blog/_post.ejs',
-  variables: {},
-  readFile: () => undefined,
-  readOutput: () => undefined,
-  readBody: () => '',
-  enterFile: () => context,
-  emit: () => {
-    throw new Error('This test never emits.');
-  },
-};
+const context = makeRenderContext({ sourcePath: 'blog/_post.ejs' });
 
 const midnight = new Date('2024-01-02T00:00:00.000Z');
 const evening = new Date('2024-01-02T18:00:00.000Z');

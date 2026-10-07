@@ -2,24 +2,12 @@
 
 import type { RenderContext } from 'underdot';
 import { describe, expect, test } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { renderActiveLink } from './render-active-link.ts';
 
 // The context as the spec defines it to a helper: the page's URL among the
 // variables, and operations the helper never reaches.
-const makeContext = (url: string): RenderContext => {
-  const context: RenderContext = {
-    sourcePath: '_.ejs',
-    variables: { _url: url },
-    readFile: () => undefined,
-    readOutput: () => undefined,
-    readBody: () => '',
-    enterFile: () => context,
-    emit: () => {
-      throw new Error('This test never emits.');
-    },
-  };
-  return context;
-};
+const makeContext = (url: string): RenderContext => makeRenderContext({ sourcePath: '_.ejs', variables: { _url: url } });
 
 describe('renderActiveLink', () => {
   test('the link to the page being rendered is active', () => {

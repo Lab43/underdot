@@ -1,7 +1,7 @@
 // spec: docs/specs/collections.md
 
-import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { readPageBody } from './read-page-body.ts';
 
 // The context as the spec defines it to a helper, with a read of a rendered
@@ -14,17 +14,7 @@ const makeContext = (bodies: Record<string, string>) => {
     }
     return body;
   });
-  const context: RenderContext = {
-    sourcePath: '_archive.ejs',
-    variables: {},
-    readFile: () => undefined,
-    readOutput: () => undefined,
-    readBody,
-    enterFile: () => context,
-    emit: () => {
-      throw new Error('This test never emits.');
-    },
-  };
+  const context = makeRenderContext({ sourcePath: '_archive.ejs', readBody });
   return { context, readBody };
 };
 

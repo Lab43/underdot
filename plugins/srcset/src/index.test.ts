@@ -3,21 +3,18 @@
 import sharp from 'sharp';
 import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { srcset } from './index.ts';
 import type { SrcsetOptions } from './index.ts';
 
 const photo = await sharp({ create: { width: 1200, height: 800, channels: 3, background: { r: 200, g: 100, b: 50 } } }).jpeg().toBuffer();
 
 const emit = vi.fn<RenderContext['emit']>();
-const context: RenderContext = {
+const context = makeRenderContext({
   sourcePath: 'index.ejs',
-  variables: {},
-  readFile: () => undefined,
   readOutput: (reference) => (reference === '/images/photo.jpg' ? photo : undefined),
-  readBody: () => '',
-  enterFile: () => context,
   emit,
-};
+});
 
 describe('srcset', () => {
   test('the plugin is named srcset and registers one helper, imageSet', () => {

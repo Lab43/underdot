@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { serialize } from 'node:v8';
 import { describe, expect, test, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import type { Observe } from '../build/reuse-unit.ts';
 import { bindRenderContext, PluginError } from './bind-render-context.ts';
@@ -17,7 +18,7 @@ const source = join(fixturePath('templated'), 'source');
 // The walked files a read may reach. notes.txt is on disk but left out, as an
 // excluded file would be.
 const sourcePaths = ['_.tpl', '_includes/header.tpl', '_partial.txt', 'about.tpl', 'blog/_.tpl', 'blog/_post.tpl', 'blog/hello.tpl', 'index.tpl'];
-const files: FileTable = new Map(sourcePaths.map((sourcePath) => [sourcePath, { mtimeNs: 1n, size: 1n, hash: sourcePath }]));
+const files: FileTable = new Map(sourcePaths.map((sourcePath) => [sourcePath, makeFileEntry(sourcePath)]));
 
 const bodies = new Map([['/', 'The home body.'], ['/blog/hello/', 'The hello body.']]);
 

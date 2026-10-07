@@ -3,6 +3,7 @@
 import { hash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, test, vi } from 'vitest';
+import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
 import { makePage } from '../../test/helpers/make-page.ts';
 import { makeTemplate } from '../../test/helpers/make-template.ts';
 import type { Versions } from '../build/bind-build.ts';
@@ -57,7 +58,7 @@ const renderEverything = (pageChains: PageChain[], globals: Record<string, unkno
 const renderAll = async (...args: Parameters<typeof renderEverything>): Promise<RenderedPage[]> => (await renderEverything(...args)).pages;
 
 // The file table entries for the files named, each hashed as its own path.
-const hashed = (...sourcePaths: string[]): Versions['files'] => new Map(sourcePaths.map((sourcePath) => [sourcePath, { mtimeNs: 1n, size: 1n, hash: sourcePath }]));
+const hashed = (...sourcePaths: string[]): Versions['files'] => new Map(sourcePaths.map((sourcePath) => [sourcePath, makeFileEntry(sourcePath)]));
 
 describe('renderPages', () => {
   test("the page renders with its variables, then the template with the page's output as _content", async () => {
@@ -294,7 +295,7 @@ describe('renderPages', () => {
       const records = freshRecords();
       await renderAll(chains, {}, freshVersions({ files: hashed('a.tpl', 'b.tpl', 'c.tpl', '_.tpl', '_wide.tpl') }), records);
       render.mockClear();
-      await renderAll(chains, {}, freshVersions({ files: new Map([...hashed('a.tpl', 'b.tpl', 'c.tpl', '_wide.tpl'), ['_.tpl', { mtimeNs: 2n, size: 2n, hash: 'edited' }]]) }), records);
+      await renderAll(chains, {}, freshVersions({ files: new Map([...hashed('a.tpl', 'b.tpl', 'c.tpl', '_wide.tpl'), ['_.tpl', makeFileEntry('edited')]]) }), records);
       expect(render.mock.calls.map(([, { sourcePath }]) => sourcePath)).toStrictEqual(['a.tpl', 'b.tpl', '_.tpl', '_.tpl']);
     });
 
@@ -326,7 +327,7 @@ describe('renderPages', () => {
       text = 'second';
       renderPage.mockClear();
       renderRoot.mockClear();
-      const pages = await renderAll(chains, {}, freshVersions({ files: new Map([...hashed('a.tpl', '_.tpl'), ['b.tpl', { mtimeNs: 2n, size: 2n, hash: 'edited' }]]) }), records);
+      const pages = await renderAll(chains, {}, freshVersions({ files: new Map([...hashed('a.tpl', '_.tpl'), ['b.tpl', makeFileEntry('edited')]]) }), records);
       expect(renderPage).not.toHaveBeenCalled();
       expect(renderChanging).toHaveBeenCalledTimes(2);
       expect(renderRoot).toHaveBeenCalledTimes(2);

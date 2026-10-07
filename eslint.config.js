@@ -125,6 +125,8 @@ export default defineConfig(
     rules: {
       ...vitest.configs.recommended.rules,
       'vitest/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],
+      // A test helper that asserts counts as an assertion only once named here.
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'assertAbsent', 'expectDestination'] }],
       'vitest/prefer-each': 'error',
       'vitest/prefer-to-be': 'error',
       'vitest/prefer-to-have-length': 'error',

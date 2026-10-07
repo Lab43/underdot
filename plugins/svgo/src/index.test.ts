@@ -1,7 +1,7 @@
 // spec: docs/specs/svgo.md
 
-import type { RenderContext } from 'underdot';
 import { describe, expect, test } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { svgo } from './index.ts';
 import type { SvgoOptions } from './index.ts';
 
@@ -19,17 +19,10 @@ const optimizedIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height
 // An icon styled by its own stylesheet, which the default keeps and prefixes.
 const styledIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><style>.a { fill: red; }</style><path class="a" d="M2 4h20v16H2Z"/></svg>';
 
-const context: RenderContext = {
+const context = makeRenderContext({
   sourcePath: 'index.ejs',
-  variables: {},
-  readFile: () => undefined,
   readOutput: (reference) => (reference === '/_icons/mail.svg' ? Buffer.from(optimizedIcon) : undefined),
-  readBody: () => '',
-  enterFile: () => context,
-  emit: () => {
-    throw new Error('This test never emits.');
-  },
-};
+});
 
 // The icon through the handler the plugin registers, awaited because a
 // registered handler may return a promise.

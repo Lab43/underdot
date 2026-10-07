@@ -2,19 +2,15 @@
 
 import type { RenderContext } from 'underdot';
 import { describe, expect, test } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { ejs } from './index.ts';
 import type { EjsOptions } from './index.ts';
 
-const makeContext = (sourcePath: string, variables: Record<string, unknown>): RenderContext => ({
+const makeContext = (sourcePath: string, variables: Record<string, unknown>): RenderContext => makeRenderContext({
   sourcePath,
   variables,
   readFile: (reference) => (reference === '/_includes/head.ejs' ? 'the head' : undefined),
-  readOutput: () => undefined,
-  readBody: () => '',
   enterFile: (reference, entered) => makeContext(reference.slice(1), entered),
-  emit: () => {
-    throw new Error('This test never emits.');
-  },
 });
 
 const context = makeContext('index.ejs', {});

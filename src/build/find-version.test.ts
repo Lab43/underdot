@@ -1,11 +1,12 @@
 // spec: docs/specs/build.md, Incremental builds
 
 import { describe, expect, test } from 'vitest';
+import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
 import type { Versions } from './bind-build.ts';
 import { findVersion } from './find-version.ts';
 
 const versions: Versions = {
-  files: new Map([['index.tpl', { mtimeNs: 1n, size: 1n, hash: 'home' }]]),
+  files: new Map([['index.tpl', makeFileEntry('home')]]),
   outputs: new Map([['notes.text', 'notes']]),
   globals: new Map([['site', 'site1'], ['team', 'team1']]),
   allGlobals: 'site:site1\nteam:team1',

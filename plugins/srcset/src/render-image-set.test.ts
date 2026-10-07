@@ -9,7 +9,7 @@ import { renderImageSet } from './render-image-set.ts';
 
 // A solid 1200 by 800 image in the format given, tagged with an EXIF
 // orientation when one is given.
-const makeImage = (format: 'jpeg' | 'png' | 'webp' | 'gif', orientation?: number): Promise<Buffer> => {
+const makeImage = (format: 'jpeg' | 'png' | 'webp' | 'gif' | 'avif', orientation?: number): Promise<Buffer> => {
   const image = sharp({ create: { width: 1200, height: 800, channels: 3, background: { r: 200, g: 100, b: 50 } } }).toFormat(format);
   return (orientation === undefined ? image : image.withMetadata({ orientation })).toBuffer();
 };
@@ -27,6 +27,7 @@ const outputs = new Map<string, Buffer>([
   ['/images/logo.png', await makeImage('png')],
   ['/images/photo.webp', await makeImage('webp')],
   ['/images/still.gif', await makeImage('gif')],
+  ['/images/still.avif', await makeImage('avif')],
   ['/images/portrait.jpg', await makeImage('jpeg', 6)],
   ['/images/icon.svg', Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"/>')],
   ['/notes.txt', Buffer.from('Not an image.\n')],
@@ -101,6 +102,11 @@ describe('renderImageSet', () => {
   test('a GIF converts under the default and keeps its format under webp false', () => {
     expect(render('/images/still.gif', { sizes: '100vw', widths: [300] })).toBe('<img src="/images/still-300.webp" srcset="/images/still-300.webp 300w" sizes="100vw">');
     expect(render('/images/still.gif', { sizes: '100vw', widths: [300], webp: false })).toBe('<img src="/images/still-300.gif" srcset="/images/still-300.gif 300w" sizes="100vw">');
+  });
+
+  test('an AVIF converts under the default and keeps its format under webp false', () => {
+    expect(render('/images/still.avif', { sizes: '100vw', widths: [300] })).toBe('<img src="/images/still-300.webp" srcset="/images/still-300.webp 300w" sizes="100vw">');
+    expect(render('/images/still.avif', { sizes: '100vw', widths: [300], webp: false })).toBe('<img src="/images/still-300.avif" srcset="/images/still-300.avif 300w" sizes="100vw">');
   });
 
   test('a PNG resizes like any other source', () => {

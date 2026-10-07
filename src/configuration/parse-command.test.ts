@@ -64,8 +64,10 @@ describe('parseCommand', () => {
       expect(() => parseCommand(['build', 'extra'])).toThrow(new Error('Unexpected argument: extra.'));
     });
 
-    test.each(['port', 'https'])('build given --%s is a usage error', (option) => {
-      const args = option === 'port' ? ['build', '--port', '1'] : ['build', '--https'];
+    test.each([
+      ['port', ['build', '--port', '1']],
+      ['https', ['build', '--https']],
+    ])('build given --%s is a usage error', (option, args) => {
       expect(() => parseCommand(args)).toThrow(new Error(`The --${option} option belongs to dev.`));
     });
 

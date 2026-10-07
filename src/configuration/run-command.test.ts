@@ -1,25 +1,16 @@
 // spec: docs/specs/configuration.md, Commands
 
-import { access } from 'node:fs/promises';
+import { access, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
-import { test as base } from '../../test/helpers/test.ts';
+import { test } from '../../test/helpers/test.ts';
+import { startSession } from '../dev-server/start-session.ts';
 import { runCommand } from './run-command.ts';
 
-const usage = 'Usage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n';
+vi.mock('../dev-server/start-session.ts', { spy: true });
 
-// Every write to stderr for the test's duration, in order.
-const test = base.extend<{ stderr: string[] }>({
-  stderr: async ({}, use) => {
-    const writes: string[] = [];
-    vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
-      writes.push(String(chunk));
-      return true;
-    });
-    await use(writes);
-  },
-});
+const usage = 'Usage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n';
 
 describe('runCommand', () => {
   describe('build', () => {
@@ -59,10 +50,31 @@ describe('runCommand', () => {
     });
   });
 
+  // spec: docs/specs/dev-server.md, Session
   describe('dev', () => {
-    test('is not available yet', async ({ stderr }) => {
-      expect(await runCommand(['dev'])).toBe(2);
-      expect(stderr).toStrictEqual(['The dev command is not available yet.\n']);
+    test('starts a session on the located file with the port and the HTTPS flag, loading the file as it stands', async ({ stderr, stdout, workingDirectory }) => {
+      expect(await runCommand(['dev', '--port', '0'])).toBe(0);
+      const session = await vi.mocked(startSession).mock.results[0]!.value;
+      try {
+        expect(stderr).toStrictEqual([]);
+        const file = join(workingDirectory, 'underdot.config.ts');
+        expect(startSession).toHaveBeenCalledWith({ load: expect.any(Function), configurationFile: file, port: 0, https: false });
+        const { load } = vi.mocked(startSession).mock.calls[0]![0];
+        await writeFile(file, "export default { source: 'content' };\n");
+        expect((await load()).source).toBe(join(workingDirectory, 'content'));
+        expect(stdout[0]).toMatch(/^Serving http:\/\/localhost:\d+\/\n$/);
+      } finally {
+        await session.close();
+      }
+    });
+
+    describe('in the no-config fixture', () => {
+      test.override({ fixture: 'no-config' });
+
+      test('a missing configuration file fails the start', async ({ stderr, workingDirectory }) => {
+        expect(await runCommand(['dev'])).toBe(1);
+        expect(stderr).toStrictEqual([`No underdot.config.ts or underdot.config.js in ${workingDirectory}.\n`]);
+      });
     });
   });
 
@@ -70,6 +82,11 @@ describe('runCommand', () => {
     test('the reason and the usage are printed with status 2', async ({ stderr }) => {
       expect(await runCommand([])).toBe(2);
       expect(stderr).toStrictEqual([`No command given.\n${usage}`]);
+    });
+
+    test('an option that belongs to dev is refused by build', async ({ stderr }) => {
+      expect(await runCommand(['build', '--port', '1'])).toBe(2);
+      expect(stderr).toStrictEqual([`The --port option belongs to dev.\n${usage}`]);
     });
 
     test("the parser's reason is printed the same way", async ({ stderr }) => {

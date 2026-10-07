@@ -10,6 +10,16 @@ Pick the fixture by the surface being proved. `test/fixtures/defaults` is a site
 
 The tests run the shim from source under type stripping, so only this compiled run proves that the emitted file keeps its shebang and that its imports, rewritten from `.ts` to `.js`, resolve. That proof needs a full compile. Deleting `dist/` and running `npm run build` emits only the files whose source changed since the last build, because `tsconfig.build.tsbuildinfo` at the repo root survives the deletion and tells `tsc -b` the rest is current, and the command then fails with `Cannot find module .../dist/underdot.js`. Run `npx tsc -b tsconfig.solution.json --force` instead, or delete the build-info file along with `dist/`.
 
+## The dev server
+
+Run `node <repo>/dist/underdot.js dev` from a copy of a fixture, as the build command is run (see: The compiled command). Use a copy of `test/fixtures/templated`, whose pages, templates, and data files give an edit something to rebuild. The session prints `Serving http://localhost:3000/`, then `Network http://<address>:3000/` naming the machine's network address, then `Built in <n> ms` once the first build lands, and runs until interrupted. Either URL opens the site. The `Network` URL is reachable from a phone on the same Wi-Fi, once macOS has asked to allow `node` through the firewall on the first listen.
+
+`--port <n>` takes that port, and fails when it is busy. Without it, a second session started in a second copy takes 3001, the next free port after 3000.
+
+`--https` serves over HTTPS from `localhost.pem` and `localhost-key.pem` in the copy. Run `mkcert localhost` in the copy first, which writes both. Without them the session fails to start, naming the missing file and the command that generates it.
+
+A module the configuration imports, such as a fixture's plugin module, is loaded once per session. An edit to it takes a restart.
+
 ## The published package
 
 `npm pack --dry-run` lists the files the package publishes but never the manifest, so it cannot show the `bin` field. To check the manifest, pack for real into a scratch directory with `npm pack --pack-destination <dir>` and read `package/package.json` out of the tarball. Packing runs the build first through `prepack`, and packs `dist/` as it stands, so the output of a module that has since moved is still there beside its new location until `dist/` is deleted and rebuilt.

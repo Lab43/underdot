@@ -2,9 +2,7 @@
 
 import { readdir, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-
-const isMissing = (error: unknown): boolean =>
-  error instanceof Error && 'code' in error && error.code === 'ENOENT';
+import { hasErrorCode } from '../shared/has-error-code.ts';
 
 // The root must exist and be a directory. Any other failure of stat
 // propagates as raised.
@@ -13,7 +11,7 @@ const checkRoot = async (root: string): Promise<void> => {
   try {
     stats = await stat(root);
   } catch (error) {
-    if (isMissing(error)) {
+    if (hasErrorCode(error, 'ENOENT')) {
       throw new Error(`The source root ${root} does not exist.`, { cause: error });
     }
     throw error;

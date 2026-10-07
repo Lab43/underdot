@@ -1,7 +1,7 @@
 // spec: docs/specs/configuration.md, Commands
 
-import { execFile } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { execFile, spawn } from 'node:child_process';
+import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -34,6 +34,30 @@ describe('underdot', () => {
     const { stderr } = await runShim(['build'], directory);
     expect(stderr).toBe('');
     await access(join(directory, 'build/index.html'));
+  });
+
+  test('dev serves the working directory until it is killed', async ({ directory }) => {
+    const child = spawn(process.execPath, [shim, 'dev', '--port', '0'], { cwd: directory });
+    onTestFinished(() => {
+      child.kill();
+    });
+    let output = '';
+    const printed = await new Promise<string>((resolve, reject) => {
+      child.stdout.setEncoding('utf8');
+      child.stdout.on('data', (chunk: string) => {
+        output += chunk;
+        if (output.includes('Built in')) {
+          resolve(output);
+        }
+      });
+      child.on('exit', (code) => {
+        reject(new Error(`The command exited with ${code} before building.`));
+      });
+    });
+    const url = /^Serving (\S+)$/m.exec(printed)?.[1];
+    expect(url).toBeDefined();
+    const response = await fetch(url!);
+    expect(await response.text()).toBe(await readFile(join(directory, 'source/index.html'), 'utf8'));
   });
 
   test('no arguments exits 2 with the usage on stderr', async () => {

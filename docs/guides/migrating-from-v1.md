@@ -75,7 +75,7 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 ## The srcset plugin
 
 - **The plugin is imported from `underdot-srcset` and called with its presets.** `import { srcset } from 'underdot-srcset'` in the configuration, and `srcset({ presets })` in its plugin list. Each preset's `srcset` key becomes `widths`. Every other option, the ones v1 handed to sharp among them, is dropped (see: docs/specs/srcset.md, Options).
-- **Every `srcset(` in a template becomes `imageSet(`.** A one-off that passed `sizes` and `srcset` in the attributes passes `{ sizes, widths }` in the preset's place (see: docs/specs/srcset.md, The helper).
+- **Every `srcset(` in a template becomes `imageSet(`.** A one-off that passed `sizes` and `srcset` in the attributes passes a sizing, `{ sizes, widths }`, in place of a preset's name (see: docs/specs/srcset.md, The helper).
 - **The element gains `src`, prints `src`, `srcset`, and `sizes` first, and escapes every value** (see: docs/specs/srcset.md, The helper).
 - **A width the image cannot fill is skipped, and the image's own width is the largest candidate.** v1 enlarged the image to every width (see: docs/specs/srcset.md, The helper).
 - **An original the site does not want shipped moves under an underscore.** Its derivatives keep their public path, so `/_images/hero.jpg` ships as `/images/hero-300.webp` and the like (see: docs/specs/srcset.md, The helper).

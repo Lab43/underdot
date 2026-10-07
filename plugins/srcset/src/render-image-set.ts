@@ -3,8 +3,8 @@
 import { dirname, join } from 'node:path/posix';
 import { imageSize } from 'image-size';
 import type { RenderContext } from 'underdot';
-import { checkPreset } from './check-preset.ts';
-import type { Preset } from './check-preset.ts';
+import { checkSizing } from './check-sizing.ts';
+import type { Sizing } from './check-sizing.ts';
 import { produceDerivative } from './produce-derivative.ts';
 
 // The formats sharp resizes to the width the header states.
@@ -14,32 +14,32 @@ const resizableTypes = new Set(['jpg', 'png', 'webp', 'gif', 'avif']);
 const ownAttributes = new Set(['src', 'srcset', 'sizes']);
 
 /**
- * An `<img>` offering a static file's output at each width of a preset it
+ * An `<img>` offering a static file's output at each width of a sizing it
  * can fill, emitting a derivative for each, with the given attributes after
  * the element's own.
  */
 export const renderImageSet = (
   context: RenderContext,
-  presets: Record<string, Preset>,
+  presets: Record<string, Sizing>,
   reference: unknown,
-  preset: unknown,
+  sizing: unknown,
   attributes: unknown = {},
 ): string => {
   if (typeof reference !== 'string') {
     throw new Error(`A reference must be a string, and ${String(reference)} is not.`);
   }
-  let chosen: Preset;
-  if (typeof preset === 'string') {
-    const named = Object.hasOwn(presets, preset) ? presets[preset] : undefined;
+  let chosen: Sizing;
+  if (typeof sizing === 'string') {
+    const named = Object.hasOwn(presets, sizing) ? presets[sizing] : undefined;
     if (named === undefined) {
-      throw new Error(`No preset is named ${preset}.`);
+      throw new Error(`No preset is named ${sizing}.`);
     }
     chosen = named;
-  } else if (typeof preset === 'object' && preset !== null) {
-    checkPreset(preset, 'The inline preset');
-    chosen = preset;
+  } else if (typeof sizing === 'object' && sizing !== null) {
+    checkSizing(sizing, 'The sizing passed to imageSet');
+    chosen = sizing;
   } else {
-    throw new Error(`A preset must be a name or an object, and ${String(preset)} is not.`);
+    throw new Error(`A sizing must be a preset's name or an object, and ${String(sizing)} is not.`);
   }
   if (typeof attributes !== 'object' || attributes === null || Array.isArray(attributes)) {
     throw new Error(`The attributes must be an object, and ${String(attributes)} is not.`);

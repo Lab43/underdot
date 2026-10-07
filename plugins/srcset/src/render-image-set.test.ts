@@ -4,7 +4,7 @@ import { imageSize } from 'image-size';
 import sharp from 'sharp';
 import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
-import type { Preset } from './check-preset.ts';
+import type { Sizing } from './check-sizing.ts';
 import { renderImageSet } from './render-image-set.ts';
 
 // A solid 1200 by 800 image in the format given, tagged with an EXIF
@@ -50,12 +50,12 @@ const makeContext = () => {
   return { context, emit };
 };
 
-const presets: Record<string, Preset> = {
+const presets: Record<string, Sizing> = {
   wide: { sizes: '100vw', widths: [300, 1200, 1600], webp: false },
   hero: { sizes: '(min-width: 600px) 600px, 100vw', widths: [300, 1600] },
 };
 
-const render = (reference: unknown, preset: unknown, attributes?: unknown): string => renderImageSet(makeContext().context, presets, reference, preset, attributes);
+const render = (reference: unknown, sizing: unknown, attributes?: unknown): string => renderImageSet(makeContext().context, presets, reference, sizing, attributes);
 
 describe('renderImageSet', () => {
   test('a public JPEG under a preset keeping its format offers a derivative per width below its own, then itself in place of the rest', () => {
@@ -158,11 +158,11 @@ describe('renderImageSet', () => {
   describe('errors', () => {
     test.each([
       ['a reference that is not a string', 7, 'wide', {}, 'A reference must be a string, and 7 is not.'],
-      ['a preset that is neither a name nor an object', '/images/photo.jpg', 300, {}, 'A preset must be a name or an object, and 300 is not.'],
-      ['a preset of null', '/images/photo.jpg', null, {}, 'A preset must be a name or an object, and null is not.'],
+      ['a sizing that is neither a name nor an object', '/images/photo.jpg', 300, {}, "A sizing must be a preset's name or an object, and 300 is not."],
+      ['a sizing of null', '/images/photo.jpg', null, {}, "A sizing must be a preset's name or an object, and null is not."],
       ['a name no preset has', '/images/photo.jpg', 'thumb', {}, 'No preset is named thumb.'],
       ['a name only the prototype has', '/images/photo.jpg', 'toString', {}, 'No preset is named toString.'],
-      ['an inline preset checkPreset rejects', '/images/photo.jpg', { sizes: '100vw', widths: [] }, {}, 'The inline preset needs widths, a non-empty list of positive integers.'],
+      ['a passed sizing checkSizing rejects', '/images/photo.jpg', { sizes: '100vw', widths: [] }, {}, 'The sizing passed to imageSet needs widths, a non-empty list of positive integers.'],
       ['attributes that are not an object', '/images/photo.jpg', 'wide', 'lazy', 'The attributes must be an object, and lazy is not.'],
       ['attributes that are a list', '/images/photo.jpg', 'wide', ['lazy'], 'The attributes must be an object, and lazy is not.'],
       ['attributes carrying src', '/images/photo.jpg', 'wide', { src: '/x.jpg' }, 'The attributes must not carry src, which the image already has.'],
@@ -172,8 +172,8 @@ describe('renderImageSet', () => {
       ['an attribute that is true', '/images/photo.jpg', 'wide', { hidden: true }, 'The attribute hidden must be a string or false, and true is not.'],
       ['a reference no output is at', '/images/missing.jpg', 'wide', {}, "No static file's output is at /images/missing.jpg."],
       ['an SVG', '/images/icon.svg', 'wide', {}, '/images/icon.svg is a svg image, which the helper does not resize.'],
-    ])('%s fails', (_name, reference, preset, attributes, message) => {
-      expect(() => render(reference, preset, attributes)).toThrow(new Error(message));
+    ])('%s fails', (_name, reference, sizing, attributes, message) => {
+      expect(() => render(reference, sizing, attributes)).toThrow(new Error(message));
     });
 
     test('bytes the reader cannot size fail with its message', () => {

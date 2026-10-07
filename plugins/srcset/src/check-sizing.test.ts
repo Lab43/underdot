@@ -1,16 +1,16 @@
 // spec: docs/specs/srcset.md
 
 import { describe, expect, test } from 'vitest';
-import { checkPreset } from './check-preset.ts';
+import { checkSizing } from './check-sizing.ts';
 
-describe('checkPreset', () => {
+describe('checkSizing', () => {
   test.each([
     ['without webp', { sizes: '100vw', widths: [300, 600] }],
     ['with webp true', { sizes: '100vw', widths: [300], webp: true }],
     ['with webp false', { sizes: '100vw', widths: [300], webp: false }],
-  ])('a preset %s passes', (_name, preset) => {
+  ])('a sizing %s passes', (_name, sizing) => {
     expect(() => {
-      checkPreset(preset, 'The preset wide');
+      checkSizing(sizing, 'The preset wide');
     }).not.toThrow();
   });
 
@@ -18,19 +18,19 @@ describe('checkPreset', () => {
     ['null', null],
     ['an array', [300]],
     ['a string', 'wide'],
-  ])('%s fails as not an object', (_name, preset) => {
+  ])('%s fails as not an object', (_name, sizing) => {
     expect(() => {
-      checkPreset(preset, 'The preset wide');
+      checkSizing(sizing, 'The preset wide');
     }).toThrow(new Error('The preset wide must be an object.'));
   });
 
   test.each([
     ['missing', { widths: [300] }],
     ['a number', { sizes: 100, widths: [300] }],
-  ])('sizes %s fails', (_name, preset) => {
+  ])('sizes %s fails', (_name, sizing) => {
     expect(() => {
-      checkPreset(preset, 'The inline preset');
-    }).toThrow(new Error('The inline preset needs sizes, a string.'));
+      checkSizing(sizing, 'The sizing passed to imageSet');
+    }).toThrow(new Error('The sizing passed to imageSet needs sizes, a string.'));
   });
 
   test.each([
@@ -41,15 +41,15 @@ describe('checkPreset', () => {
     ['holding a negative', { sizes: '100vw', widths: [-300] }],
     ['holding a fraction', { sizes: '100vw', widths: [300.5] }],
     ['holding a string', { sizes: '100vw', widths: ['300'] }],
-  ])('widths %s fails', (_name, preset) => {
+  ])('widths %s fails', (_name, sizing) => {
     expect(() => {
-      checkPreset(preset, 'The preset wide');
+      checkSizing(sizing, 'The preset wide');
     }).toThrow(new Error('The preset wide needs widths, a non-empty list of positive integers.'));
   });
 
   test('webp that is not a boolean fails', () => {
     expect(() => {
-      checkPreset({ sizes: '100vw', widths: [300], webp: 'no' }, 'The preset wide');
+      checkSizing({ sizes: '100vw', widths: [300], webp: 'no' }, 'The preset wide');
     }).toThrow(new Error('The preset wide may only have webp true or false.'));
   });
 });

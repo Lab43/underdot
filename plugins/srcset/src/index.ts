@@ -1,17 +1,18 @@
 // spec: docs/specs/srcset.md
 
 import type { Plugin } from 'underdot';
-import { checkPreset } from './check-preset.ts';
-import type { Preset } from './check-preset.ts';
+import { checkSizing } from './check-sizing.ts';
+import type { Sizing } from './check-sizing.ts';
 import { renderImageSet } from './render-image-set.ts';
 
-export type { Preset };
+export type { Sizing };
 
 export interface SrcsetOptions {
   /**
-   * The presets a template names by key: `{ hero: { sizes, widths } }`.
+   * The sizings a template names by key, each a preset:
+   * `{ hero: { sizes, widths } }`.
    */
-  presets?: Record<string, Preset>;
+  presets?: Record<string, Sizing>;
 }
 
 export const srcset = ({ presets = {} }: SrcsetOptions = {}): Plugin => {
@@ -20,11 +21,11 @@ export const srcset = ({ presets = {} }: SrcsetOptions = {}): Plugin => {
   if (typeof given !== 'object' || given === null || Array.isArray(given)) {
     throw new Error('The presets option must be an object.');
   }
-  for (const [name, preset] of Object.entries(given)) {
-    checkPreset(preset, `The preset ${name}`);
+  for (const [name, sizing] of Object.entries(given)) {
+    checkSizing(sizing, `The preset ${name}`);
   }
   return {
     name: 'srcset',
-    helpers: { imageSet: (context, reference, preset, attributes) => renderImageSet(context, presets, reference, preset, attributes) },
+    helpers: { imageSet: (context, reference, sizing, attributes) => renderImageSet(context, presets, reference, sizing, attributes) },
   };
 };

@@ -70,7 +70,8 @@ export const renderImageSet = (
     throw new Error(`${reference} is a ${String(size.type)} image, which the helper does not resize.`);
   }
   // Orientations 5 through 8 turn the image a quarter, so it stands as wide
-  // as it is stored high. Only a JPEG's is applied, as the producer applies it.
+  // as it is stored high. Only a JPEG's is applied, since the producer turns
+  // only a JPEG upright, and the two must agree on the width.
   const isTurned = size.type === 'jpg' && (size.orientation ?? 1) >= 5;
   const width = isTurned ? size.height : size.width;
 

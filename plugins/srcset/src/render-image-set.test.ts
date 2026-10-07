@@ -119,6 +119,11 @@ describe('renderImageSet', () => {
     );
   });
 
+  test('an orientation reported for any format but a JPEG is ignored, so the stored width decides', () => {
+    vi.mocked(imageSize).mockReturnValueOnce({ width: 1200, height: 800, type: 'png', orientation: 6 });
+    expect(render('/images/logo.png', { sizes: '100vw', widths: [1000], webp: false })).toBe('<img src="/images/logo-1000.png" srcset="/images/logo-1000.png 1000w" sizes="100vw">');
+  });
+
   test("a relative reference resolves against the file's directory", () => {
     const { context, emit } = makeContext();
     expect(renderImageSet(context, presets, 'photo.jpg', { sizes: '100vw', widths: [300] })).toBe('<img src="/about/photo-300.webp" srcset="/about/photo-300.webp 300w" sizes="100vw">');

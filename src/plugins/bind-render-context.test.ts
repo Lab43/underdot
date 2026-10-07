@@ -3,6 +3,8 @@
 import { join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import type { FileTable } from '../build/hash-files.ts';
+import type { Observe } from '../build/reuse-unit.ts';
 import { bindRenderContext, PluginError } from './bind-render-context.ts';
 import type { Output } from './handle-files.ts';
 import type { Helper } from './register-plugins.ts';
@@ -11,7 +13,8 @@ const source = join(fixturePath('templated'), 'source');
 
 // The walked files a read may reach. notes.txt is on disk but left out, as an
 // excluded file would be.
-const sourcePaths = new Set(['_.tpl', '_includes/header.tpl', '_partial.txt', 'about.tpl', 'blog/_.tpl', 'blog/_post.tpl', 'blog/hello.tpl', 'index.tpl']);
+const sourcePaths = ['_.tpl', '_includes/header.tpl', '_partial.txt', 'about.tpl', 'blog/_.tpl', 'blog/_post.tpl', 'blog/hello.tpl', 'index.tpl'];
+const files: FileTable = new Map(sourcePaths.map((sourcePath) => [sourcePath, { mtimeNs: 1n, size: 1n, hash: sourcePath }]));
 
 const bodies = new Map([['/', 'The home body.'], ['/blog/hello/', 'The hello body.']]);
 
@@ -22,9 +25,9 @@ const helpers = new Map([['here', { pluginName: 'tools', helper: here }]]);
 
 // The static files' outputs: two handled, one of them private, and one copy.
 const outputs: Output[] = [
-  { sourcePath: 'notes.txt', outputPath: 'notes.text', contents: Buffer.from('THE NOTES FILE.\n') },
-  { sourcePath: '_partial.txt', outputPath: '_partial.text', contents: Buffer.from('THE PRIVATE PARTIAL.\n') },
-  { sourcePath: 'styles/site.css', outputPath: 'styles/site.css', contents: undefined },
+  { sourcePath: 'notes.txt', outputPath: 'notes.text', contents: Buffer.from('THE NOTES FILE.\n'), hash: 'notes' },
+  { sourcePath: '_partial.txt', outputPath: '_partial.text', contents: Buffer.from('THE PRIVATE PARTIAL.\n'), hash: 'partial' },
+  { sourcePath: 'styles/site.css', outputPath: 'styles/site.css', contents: undefined, hash: 'site' },
 ];
 
 // Call the function a variable holds.
@@ -34,8 +37,8 @@ const call = (variables: Record<string, unknown>, name: string, ...args: unknown
 };
 
 // The context of a template, which may read bodies, and of a page, which may not.
-const makeContext = (sourcePath: string) => bindRenderContext(source, sourcePaths, helpers, outputs)(sourcePath, variables, bodies);
-const makePageContext = (sourcePath: string) => bindRenderContext(source, sourcePaths, helpers, outputs)(sourcePath, variables, undefined);
+const makeContext = (sourcePath: string) => bindRenderContext(source, files, helpers, outputs)(sourcePath, variables, bodies, vi.fn());
+const makePageContext = (sourcePath: string) => bindRenderContext(source, files, helpers, outputs)(sourcePath, variables, undefined, vi.fn());
 
 describe('bindRenderContext', () => {
   test('the context carries the file and its variables', () => {
@@ -46,7 +49,7 @@ describe('bindRenderContext', () => {
   describe('helpers', () => {
     test('a helper sits among the variables under its name and receives the context ahead of the arguments', () => {
       const helper = vi.fn<Helper>(() => 'shouted');
-      const context = bindRenderContext(source, sourcePaths, new Map([['shout', { pluginName: 'tools', helper }]]), outputs)('index.tpl', variables, bodies);
+      const context = bindRenderContext(source, files, new Map([['shout', { pluginName: 'tools', helper }]]), outputs)('index.tpl', variables, bodies, vi.fn());
       expect(context.variables).toStrictEqual({ title: 'Home', shout: expect.any(Function) });
       expect(call(context.variables, 'shout', 'hi', 2)).toBe('shouted');
       expect(helper).toHaveBeenCalledExactlyOnceWith(context, 'hi', 2);
@@ -58,7 +61,7 @@ describe('bindRenderContext', () => {
     });
 
     test("a helper's name wins over a variable handed in under it", () => {
-      const context = bindRenderContext(source, sourcePaths, helpers, outputs)('index.tpl', { here: 'shadow' }, bodies);
+      const context = bindRenderContext(source, files, helpers, outputs)('index.tpl', { here: 'shadow' }, bodies, vi.fn());
       expect(call(context.variables, 'here')).toBe('index.tpl');
     });
   });
@@ -66,7 +69,7 @@ describe('bindRenderContext', () => {
   // spec: docs/specs/plugins.md, Errors
   describe("a helper's throw", () => {
     const bind = (helper: Helper, pluginName = 'tools') =>
-      bindRenderContext(source, sourcePaths, new Map([['fail', { pluginName, helper }]]), outputs)('index.tpl', variables, bodies);
+      bindRenderContext(source, files, new Map([['fail', { pluginName, helper }]]), outputs)('index.tpl', variables, bodies, vi.fn());
 
     test("an Error comes out as a PluginError carrying the helper's plugin, the message, and the Error as cause", () => {
       const cause = new Error('boom');
@@ -119,15 +122,39 @@ describe('bindRenderContext', () => {
       expect(makeContext('blog/_.tpl').enterFile('/_includes/header.tpl', {})).toMatchObject({ sourcePath: '_includes/header.tpl' });
     });
 
-    test('the entered context has the variables given, with the helpers bound to it', () => {
+    test("the entered context has the data over the file's variables, with the helpers bound to it", () => {
       const entered = makeContext('blog/_.tpl').enterFile('/_includes/header.tpl', { name: 'Ada' });
-      expect(entered.variables).toStrictEqual({ name: 'Ada', here: expect.any(Function) });
+      expect(entered.variables).toStrictEqual({ name: 'Ada', title: 'Home', here: expect.any(Function) });
       expect(call(entered.variables, 'here')).toBe('_includes/header.tpl');
     });
 
-    test("a variable handed in under a helper's name is replaced by the helper", () => {
+    test("data under a helper's name is replaced by the helper", () => {
       const entered = makeContext('_.tpl').enterFile('_partial.txt', { here: 'shadow' });
       expect(call(entered.variables, 'here')).toBe('_partial.txt');
+    });
+
+    test("data wins over the file's variable of the same name, and the rest read through", () => {
+      const entered = bindRenderContext(source, files, helpers, outputs)('_.tpl', { title: 'Home', year: 2000 }, bodies, vi.fn()).enterFile('_partial.txt', { year: 2024 });
+      expect(entered.variables.year).toBe(2024);
+      expect(entered.variables.title).toBe('Home');
+      expect('title' in entered.variables).toBe(true);
+      expect(Object.keys(entered.variables)).toStrictEqual(['year', 'title', 'here']);
+      expect(Object.getOwnPropertyDescriptor(entered.variables, 'title')).toStrictEqual({ value: 'Home', writable: true, enumerable: true, configurable: true });
+    });
+
+    test("an assignment on the entered variables lands on the data, never on the file's variables", () => {
+      const handed: Record<string, unknown> = { title: 'Home', name: 'Site' };
+      const entered = bindRenderContext(source, files, helpers, outputs)('_.tpl', handed, bodies, vi.fn()).enterFile('_partial.txt', { year: 2024 });
+      entered.variables.added = 1;
+      entered.variables.name = 'Other';
+      expect({ ...entered.variables }).toStrictEqual({ year: 2024, added: 1, name: 'Other', title: 'Home', here: expect.any(Function) });
+      expect(handed).toStrictEqual({ title: 'Home', name: 'Site' });
+    });
+
+    test("entering a partial enumerates nothing of the file's variables", () => {
+      const observe = vi.fn<Observe>();
+      bindRenderContext(source, files, helpers, outputs)('_.tpl', variables, bodies, observe).enterFile('_partial.txt', { year: 2024 });
+      expect(observe.mock.calls.map(([kind]) => kind)).not.toContain('globals');
     });
 
     test('the entered context reads relative to the entered file and reads the same bodies', () => {
@@ -185,6 +212,85 @@ describe('bindRenderContext', () => {
       expect(() => makeContext('blog/_archive.tpl').readBody('/blog/missing/')).toThrow(
         new Error('blog/_archive.tpl reads the body of /blog/missing/, but no page has that URL.'),
       );
+    });
+  });
+
+  // spec: docs/specs/build.md, Incremental builds
+  describe('observing', () => {
+    const bind = (sourcePath: string, observe: Observe, handed: Record<string, unknown> = { title: 'Home' }) =>
+      bindRenderContext(source, files, helpers, outputs)(sourcePath, handed, bodies, observe);
+
+    test('each read operation observes its input, an absent file and an absent output included', () => {
+      const observe = vi.fn<Observe>();
+      const context = bind('_.tpl', observe);
+      context.readFile('_partial.txt');
+      context.readFile('missing.txt');
+      context.readOutput('notes.text');
+      context.readOutput('/missing.css');
+      context.readBody('/');
+      expect(observe.mock.calls).toStrictEqual([['file', '_partial.txt'], ['file', 'missing.txt'], ['output', 'notes.text'], ['output', 'missing.css'], ['body', '/']]);
+    });
+
+    test('a body read a page may not make observes nothing', () => {
+      const observe = vi.fn<Observe>();
+      const context = bindRenderContext(source, files, helpers, outputs)('index.tpl', variables, undefined, observe);
+      expect(() => context.readBody('/')).toThrow(/while its own body renders/);
+      expect(observe).not.toHaveBeenCalled();
+    });
+
+    test('a variable read, a has check, and a descriptor check observe the name, defined or not, and an enumeration observes every global', () => {
+      const observe = vi.fn<Observe>();
+      const { variables: seen } = bind('_.tpl', observe);
+      expect(seen.title).toBe('Home');
+      expect(seen.missing).toBeUndefined();
+      expect('title' in seen).toBe(true);
+      expect(Object.hasOwn(seen, 'missing')).toBe(false);
+      expect(Object.keys(seen)).toStrictEqual(['title', 'here']);
+      expect({ ...seen }).toStrictEqual({ title: 'Home', here: expect.any(Function) });
+      expect(observe.mock.calls.slice(0, 5)).toStrictEqual([['global', 'title'], ['global', 'missing'], ['global', 'title'], ['global', 'missing'], ['globals', '']]);
+      expect(observe.mock.calls.slice(5)).toContainEqual(['globals', '']);
+    });
+
+    test('a symbol key is forwarded and not observed', () => {
+      const observe = vi.fn<Observe>();
+      const { variables: seen } = bind('_.tpl', observe);
+      expect(Reflect.get(seen, Symbol.iterator)).toBeUndefined();
+      expect(Symbol.iterator in seen).toBe(false);
+      expect(Object.getOwnPropertyDescriptor(seen, Symbol.iterator)).toBeUndefined();
+      expect(observe).not.toHaveBeenCalled();
+    });
+
+    test('a helper is answered without being observed, by a read, a has check, and a descriptor check alike', () => {
+      const observe = vi.fn<Observe>();
+      const { variables: seen } = bind('_.tpl', observe);
+      expect(call(seen, 'here')).toBe('_.tpl');
+      expect('here' in seen).toBe(true);
+      expect(Object.getOwnPropertyDescriptor(seen, 'here')).toStrictEqual({ value: expect.any(Function), writable: true, enumerable: true, configurable: true });
+      expect(observe).not.toHaveBeenCalled();
+    });
+
+    test("an enumeration of variables that already hold a helper's name lists it once, with the helper as its value", () => {
+      const { variables: seen } = bind('_.tpl', vi.fn(), { here: 'shadow', title: 'Home' });
+      expect(Object.keys(seen)).toStrictEqual(['here', 'title']);
+      expect({ ...seen }).toStrictEqual({ here: expect.any(Function), title: 'Home' });
+    });
+
+    test("an assignment lands on the object handed in as an ordinary property, under a helper's name too, and the helper still answers", () => {
+      const handed: Record<string, unknown> = { title: 'Home' };
+      const { variables: seen } = bind('_.tpl', vi.fn(), handed);
+      seen.added = 1;
+      seen.here = 'shadow';
+      expect(handed).toStrictEqual({ title: 'Home', added: 1, here: 'shadow' });
+      expect(Object.getOwnPropertyDescriptor(handed, 'here')).toStrictEqual({ value: 'shadow', writable: true, enumerable: true, configurable: true });
+      expect(call(seen, 'here')).toBe('_.tpl');
+    });
+
+    test("the partial's context observes through the same function", () => {
+      const observe = vi.fn<Observe>();
+      const entered = bind('blog/_.tpl', observe).enterFile('/_includes/header.tpl', { name: 'Ada' });
+      entered.readFile('../_partial.txt');
+      expect(entered.variables.name).toBe('Ada');
+      expect(observe.mock.calls).toStrictEqual([['file', '_partial.txt'], ['global', 'name']]);
     });
   });
 });

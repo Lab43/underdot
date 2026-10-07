@@ -1,0 +1,87 @@
+// spec: docs/specs/build.md
+
+import { removeExcludedFiles } from '../configuration/remove-excluded-files.ts';
+import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
+import { bindRenderContext } from '../plugins/bind-render-context.ts';
+import { handleFiles } from '../plugins/handle-files.ts';
+import type { Output } from '../plugins/handle-files.ts';
+import { registerPlugins } from '../plugins/register-plugins.ts';
+import { runPageHooks } from '../plugins/run-page-hooks.ts';
+import type { HookGlobal } from '../plugins/run-page-hooks.ts';
+import { classifySource } from '../source-tree/classify-source.ts';
+import { walkSource } from '../source-tree/walk-source.ts';
+import { defineGlobals } from '../templates/define-globals.ts';
+import { readData } from '../templates/read-data.ts';
+import { renderPages } from '../templates/render-pages.ts';
+import type { RenderedBody, RenderedPage } from '../templates/render-pages.ts';
+import { resolveChains } from '../templates/resolve-chains.ts';
+import { hashFiles } from './hash-files.ts';
+import type { FileTable } from './hash-files.ts';
+import { readSite } from './read-site.ts';
+import type { FileContents } from './read-site.ts';
+import type { UnitRecords } from './reuse-unit.ts';
+import { versionGlobals } from './version-globals.ts';
+import { writeDestination } from './write-destination.ts';
+
+/**
+ * The version of every input a render can observe in one build: the file
+ * table, each handled output by its output path, each global by name, every
+ * global at once, each page's chain by the page's source path, and each
+ * page's body by its URL.
+ */
+export interface Versions {
+  files: FileTable;
+  outputs: Map<string, string>;
+  globals: Map<string, string>;
+  allGlobals: string;
+  chains: Map<string, string>;
+  bodies: Map<string, string>;
+}
+
+/**
+ * Bind a resolved configuration. The function returned runs one build, and
+ * every build it runs shares the memory of the ones before, so a unit whose
+ * inputs are unchanged is reused. A function called once reuses nothing.
+ */
+export const bindBuild = ({ source, destination, exclude, plugins, globals }: ResolvedConfiguration): (() => Promise<void>) => {
+  let files: FileTable = new Map();
+  const dataRecords: UnitRecords<unknown> = new Map();
+  const contentsRecords: UnitRecords<FileContents> = new Map();
+  const outputRecords: UnitRecords<Output[]> = new Map();
+  const hookRecords: UnitRecords<HookGlobal[]> = new Map();
+  const bodyRecords: UnitRecords<RenderedBody> = new Map();
+  const pageRecords: UnitRecords<RenderedPage> = new Map();
+  const written = new Map<string, string>();
+  return async () => {
+    const { renderers, helpers, handlers, hooks } = registerPlugins(plugins);
+    const paths = removeExcludedFiles(await walkSource(source), exclude);
+    files = await hashFiles(source, paths, files);
+    const { pages, templates, staticFiles } = classifySource(paths, renderers);
+    const dataVariables = await readData(source, paths, files, dataRecords);
+    const site = await readSite(source, pages, templates, helpers, files, contentsRecords);
+    const outputs = await handleFiles(source, staticFiles, handlers, files, outputRecords);
+    const hookGlobals = await runPageHooks(site.pages, hooks, hookRecords);
+    const definedGlobals = defineGlobals(globals, dataVariables, hookGlobals, helpers);
+    const globalVersions = versionGlobals(globals, dataVariables, hookGlobals, files);
+    const versions: Versions = {
+      files,
+      outputs: new Map(outputs.map(({ outputPath, hash }) => [outputPath, hash])),
+      globals: globalVersions,
+      allGlobals: globalVersions.entries().map(([name, version]) => `${name}:${version}`).toArray().sort().join('\n'),
+      chains: new Map(),
+      bodies: new Map(),
+    };
+    // Every walked file is readable, those inside private directories included.
+    // spec: docs/specs/source-tree.md, Underscore prefix
+    const makeContext = bindRenderContext(source, files, helpers, outputs);
+    const renderedPages = await renderPages(
+      resolveChains(site.pages, site.templates),
+      definedGlobals,
+      makeContext,
+      versions,
+      bodyRecords,
+      pageRecords,
+    );
+    await writeDestination(source, destination, outputs, renderedPages, written);
+  };
+};

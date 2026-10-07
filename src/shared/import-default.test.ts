@@ -16,4 +16,13 @@ describe('importDefault', () => {
     await writeFile(file, 'export const value = 42;\n');
     await expect(importDefault(file)).resolves.toBeUndefined();
   });
+
+  test('a rewritten module imported under a different version yields the new export', async ({ directory }) => {
+    const file = join(directory, 'value.js');
+    await writeFile(file, 'export default 1;\n');
+    await expect(importDefault(file, 'a')).resolves.toBe(1);
+    await writeFile(file, 'export default 2;\n');
+    await expect(importDefault(file, 'a')).resolves.toBe(1);
+    await expect(importDefault(file, 'b')).resolves.toBe(2);
+  });
 });

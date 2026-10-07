@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Order of work
+// spec: docs/specs/build.md
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -6,6 +6,9 @@ import type { RegisteredHelper } from '../plugins/register-plugins.ts';
 import { attributeError } from '../shared/attribute-error.ts';
 import type { PageFile, TemplateFile } from '../source-tree/classify-source.ts';
 import { parseFrontmatter } from '../templates/parse-frontmatter.ts';
+import type { FileTable } from './hash-files.ts';
+import { reuseUnit } from './reuse-unit.ts';
+import type { InputKind, UnitRecords, Version } from './reuse-unit.ts';
 import { runUnits } from './run-units.ts';
 
 /**
@@ -37,8 +40,20 @@ const parseContents = (sourcePath: string, text: string): FileContents => {
   }
 };
 
-const readContents = async (source: string, sourcePath: string, helpers: ReadonlyMap<string, RegisteredHelper>): Promise<FileContents> => {
-  const contents = parseContents(sourcePath, await readFile(join(source, sourcePath), 'utf8'));
+// The read and the parse are reused while the file's hash stands. The helper
+// check runs on the value every build, reused or not.
+const readContents = async (
+  source: string,
+  sourcePath: string,
+  helpers: ReadonlyMap<string, RegisteredHelper>,
+  files: FileTable,
+  records: UnitRecords<FileContents>,
+): Promise<FileContents> => {
+  const lookup = (_kind: InputKind, name: string): Version => files.get(name)?.hash;
+  const contents = await reuseUnit(records, sourcePath, lookup, async (observe) => {
+    observe('file', sourcePath);
+    return parseContents(sourcePath, await readFile(join(source, sourcePath), 'utf8'));
+  });
   // A helper is reachable under its name, so no frontmatter key may carry it.
   // spec: docs/specs/plugins.md, Template helpers
   for (const [name, { pluginName }] of helpers) {
@@ -58,15 +73,17 @@ export const readSite = async (
   pageFiles: PageFile[],
   templateFiles: TemplateFile[],
   helpers: ReadonlyMap<string, RegisteredHelper>,
+  files: FileTable,
+  records: UnitRecords<FileContents>,
 ): Promise<Site> => {
   const pages = new Array<Page>(pageFiles.length);
   const templates = new Array<Template>(templateFiles.length);
   await runUnits([
     ...pageFiles.map((page, index) => async () => {
-      pages[index] = { ...page, ...(await readContents(source, page.sourcePath, helpers)) };
+      pages[index] = { ...page, ...(await readContents(source, page.sourcePath, helpers, files, records)) };
     }),
     ...templateFiles.map((template, index) => async () => {
-      templates[index] = { ...template, ...(await readContents(source, template.sourcePath, helpers)) };
+      templates[index] = { ...template, ...(await readContents(source, template.sourcePath, helpers, files, records)) };
     }),
   ]);
   return { pages, templates };

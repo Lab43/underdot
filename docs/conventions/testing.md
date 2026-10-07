@@ -22,7 +22,7 @@ Put a test fixture in its own directory under `test/fixtures/<case>/`, one direc
 
 Give a test a fixture only where the code under test touches the disk, or where a whole site proves an integrated build. Test everything else on values: a function from a value to a value gets an object literal, never a file. Rationale: a fixture is a filesystem case, and a rule about a value has no filesystem case to hold.
 
-Import a file from a fixture only in a test that exercises that fixture. A fixture's files belong to its site: its configuration imports its own plugin, and a test that builds or reads the fixture imports its configuration. A test that needs a plugin value for another case writes the plugin as a literal, as the build tests in `src/build/build.test.ts` do. Rationale: a file pulled out of one fixture into a test of another couples two cases that should stand alone, and hides that the second case has no site behind it.
+Import a file from a fixture only in a test that exercises that fixture. A fixture's files belong to its site: its configuration imports its own plugin, and a test that builds or reads the fixture imports its configuration. A test that needs a plugin value for another case writes the plugin as a literal, as the build tests in `src/build/bind-build.test.ts` do. Rationale: a file pulled out of one fixture into a test of another couples two cases that should stand alone, and hides that the second case has no site behind it.
 
 Write the files a fixture holds exactly as a site writes them, in the form the site conventions prescribe, and keep the fixtures inside the typecheck. Rationale: a typechecked fixture configuration is the proof that a site's file checks against the exported type.
 

@@ -3,9 +3,10 @@
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, test, vi } from 'vitest';
 import { makePage } from '../../test/helpers/make-page.ts';
+import type { UnitRecords } from '../build/reuse-unit.ts';
 import type { PageHook, RegisteredHook } from './register-plugins.ts';
 import { runPageHooks } from './run-page-hooks.ts';
-import type { HookPage } from './run-page-hooks.ts';
+import type { HookGlobal, HookPage } from './run-page-hooks.ts';
 
 const pages = [
   makePage({ sourcePath: 'index.tpl', frontmatter: { title: 'Home' }, template: undefined, body: 'The home page.' }),
@@ -19,17 +20,20 @@ const seen: HookPage[] = [
 
 const hook = (pluginName: string, hook: PageHook): RegisteredHook => ({ pluginName, hook });
 
+// Records no earlier run filled.
+const fresh = (): UnitRecords<HookGlobal[]> => new Map();
+
 describe('runPageHooks', () => {
   test("a hook receives each page's source path, output path, URL, and frontmatter and nothing else, in the pages' order", async () => {
     const listing = vi.fn<PageHook>(() => ({}));
-    await runPageHooks(pages, [hook('listing', listing)]);
+    await runPageHooks(pages, [hook('listing', listing)], fresh());
     expect(listing).toHaveBeenCalledExactlyOnceWith(seen);
   });
 
   test('two hooks receive the same list', async () => {
     const first = vi.fn<PageHook>(() => ({}));
     const second = vi.fn<PageHook>(() => ({}));
-    await runPageHooks(pages, [hook('first', first), hook('second', second)]);
+    await runPageHooks(pages, [hook('first', first), hook('second', second)], fresh());
     expect(second.mock.calls[0]?.[0]).toBe(first.mock.calls[0]?.[0]);
   });
 
@@ -38,15 +42,15 @@ describe('runPageHooks', () => {
       hook('listing', (hookPages) => ({ pages: hookPages.map(({ url }) => url), count: hookPages.length })),
       hook('tags', () => ({ tags: ['news'] })),
     ];
-    await expect(runPageHooks(pages, hooks)).resolves.toStrictEqual([
-      { name: 'pages', pluginName: 'listing', value: ['/', '/blog/hello/'] },
-      { name: 'count', pluginName: 'listing', value: 2 },
-      { name: 'tags', pluginName: 'tags', value: ['news'] },
+    await expect(runPageHooks(pages, hooks, fresh())).resolves.toStrictEqual([
+      { name: 'pages', pluginName: 'listing', value: ['/', '/blog/hello/'], version: expect.stringMatching(/^[0-9a-f]{64}$/) },
+      { name: 'count', pluginName: 'listing', value: 2, version: expect.any(String) },
+      { name: 'tags', pluginName: 'tags', value: ['news'], version: expect.any(String) },
     ]);
   });
 
   test('no hooks define no globals', async () => {
-    await expect(runPageHooks(pages, [])).resolves.toStrictEqual([]);
+    await expect(runPageHooks(pages, [], fresh())).resolves.toStrictEqual([]);
   });
 
   test('an asynchronous hook is awaited, and the next hook starts only once it has settled', async () => {
@@ -61,9 +65,9 @@ describe('runPageHooks', () => {
       calls.push('fast starts');
       return { fast: true };
     };
-    await expect(runPageHooks(pages, [hook('first', slow), hook('second', fast)])).resolves.toStrictEqual([
-      { name: 'slow', pluginName: 'first', value: true },
-      { name: 'fast', pluginName: 'second', value: true },
+    await expect(runPageHooks(pages, [hook('first', slow), hook('second', fast)], fresh())).resolves.toStrictEqual([
+      { name: 'slow', pluginName: 'first', value: true, version: expect.any(String) },
+      { name: 'fast', pluginName: 'second', value: true, version: expect.any(String) },
     ]);
     expect(calls).toStrictEqual(['slow starts', 'slow settles', 'fast starts']);
   });
@@ -71,11 +75,11 @@ describe('runPageHooks', () => {
   test.each([undefined, null, ['pages'], 'pages'])('a hook returning %j fails naming the plugin', async (returned) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript site can return
     const forgetful = (() => returned) as unknown as PageHook;
-    await expect(runPageHooks(pages, [hook('listing', forgetful)])).rejects.toThrow(new Error('The page hook of listing must return an object of globals.'));
+    await expect(runPageHooks(pages, [hook('listing', forgetful)], fresh())).rejects.toThrow(new Error('The page hook of listing must return an object of globals.'));
   });
 
   test('a global starting with an underscore fails naming it and the plugin', async () => {
-    await expect(runPageHooks(pages, [hook('listing', () => ({ _pages: [] }))])).rejects.toThrow(
+    await expect(runPageHooks(pages, [hook('listing', () => ({ _pages: [] }))], fresh())).rejects.toThrow(
       new Error('The global _pages from the page hook of listing starts with an underscore, which is reserved.'),
     );
   });
@@ -83,8 +87,40 @@ describe('runPageHooks', () => {
   // spec: docs/specs/plugins.md, Errors
   test("a hook's throw is reported as the page hook failing in the plugin, with the throw as cause", async () => {
     const cause = new Error('boom');
-    const running = runPageHooks(pages, [hook('listing', () => { throw cause; })]);
+    const running = runPageHooks(pages, [hook('listing', () => { throw cause; })], fresh());
     await expect(running).rejects.toThrow(new Error('Running the page hook failed in listing: boom'));
     await expect(running).rejects.toHaveProperty('cause', cause);
+  });
+
+  // spec: docs/specs/build.md, Incremental builds
+  describe('across two calls with one set of records', () => {
+    const versionsOf = (globals: HookGlobal[]): string[] => globals.map(({ version }) => version);
+
+    test('the same pages call no hook the second time, and every global of one run carries one version', async () => {
+      const listing = vi.fn<PageHook>(() => ({ pages: [], count: 0 }));
+      const tags = vi.fn<PageHook>(() => ({ tags: [] }));
+      const records = fresh();
+      const first = await runPageHooks(pages, [hook('listing', listing), hook('tags', tags)], records);
+      const second = await runPageHooks(pages.map((page) => ({ ...page, body: 'edited' })), [hook('listing', listing), hook('tags', tags)], records);
+      expect(listing).toHaveBeenCalledTimes(1);
+      expect(tags).toHaveBeenCalledTimes(1);
+      expect(second).toStrictEqual(first);
+      expect(new Set(versionsOf(first)).size).toBe(1);
+    });
+
+    test.each([
+      ['a frontmatter change', pages.map((page, index) => (index === 0 ? { ...page, frontmatter: { title: 'Home, edited' } } : page))],
+      ['a page added', [...pages, makePage({ sourcePath: 'about.tpl', outputPath: 'about/index.html', url: '/about/' })]],
+      ['a page removed', pages.slice(0, 1)],
+    ])('%s reruns every hook, and the version differs from the earlier run', async (_case, changed) => {
+      const listing = vi.fn<PageHook>(() => ({ pages: [] }));
+      const tags = vi.fn<PageHook>(() => ({ tags: [] }));
+      const records = fresh();
+      const first = await runPageHooks(pages, [hook('listing', listing), hook('tags', tags)], records);
+      const second = await runPageHooks(changed, [hook('listing', listing), hook('tags', tags)], records);
+      expect(listing).toHaveBeenCalledTimes(2);
+      expect(tags).toHaveBeenCalledTimes(2);
+      expect(versionsOf(second)[0]).not.toBe(versionsOf(first)[0]);
+    });
   });
 });

@@ -1,26 +1,43 @@
 // spec: docs/specs/templates.md
 
+import { hash } from 'node:crypto';
+import type { Versions } from '../build/bind-build.ts';
+import { findVersion } from '../build/find-version.ts';
 import { mapUnits } from '../build/map-units.ts';
 import type { Page, Template } from '../build/read-site.ts';
+import { reuseUnit } from '../build/reuse-unit.ts';
+import type { InputKind, Observe, UnitRecords, Version } from '../build/reuse-unit.ts';
 import { attributePluginError } from '../plugins/attribute-plugin-error.ts';
 import { PluginError } from '../plugins/bind-render-context.ts';
 import type { MakeRenderContext, RenderContext } from '../plugins/bind-render-context.ts';
 import type { PageChain } from './resolve-chains.ts';
 
+/**
+ * A page as written: its source, where it goes, its finished document, and
+ * the document's hash.
+ */
 export interface RenderedPage {
   sourcePath: string;
   outputPath: string;
   contents: string;
+  hash: string;
+}
+
+/**
+ * A page's rendered body with its hash, before its templates wrap it.
+ */
+export interface RenderedBody {
+  body: string;
+  hash: string;
 }
 
 type Variables = Record<string, unknown>;
 
-interface RenderedBody {
-  page: Page;
-  chain: Template[];
+interface MergedPage extends PageChain {
   variables: Variables;
-  body: string;
 }
+
+interface RenderedPageBody extends MergedPage, RenderedBody {}
 
 const mergeVariables = (globals: Variables, { page, chain }: PageChain): Variables => {
   const variables: Variables = { ...globals };
@@ -42,34 +59,76 @@ const render = async (file: Page | Template, context: RenderContext): Promise<st
   }
 };
 
-const renderBody = async (globals: Variables, makeContext: MakeRenderContext, pageChain: PageChain): Promise<RenderedBody> => {
-  const { page, chain } = pageChain;
-  const variables = mergeVariables(globals, pageChain);
-  const body = await render(page, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined));
-  return { page, chain, variables, body };
+// Every file of the chain is an input of the body and of the finished page,
+// and so is the chain itself, which changes when a template appears.
+const observeChain = (observe: Observe, { page, chain }: PageChain): void => {
+  observe('file', page.sourcePath);
+  for (const template of chain) {
+    observe('file', template.sourcePath);
+  }
+  observe('chain', page.sourcePath);
+};
+
+const renderBody = async (makeContext: MakeRenderContext, merged: MergedPage, observe: Observe): Promise<RenderedBody> => {
+  const { page, variables } = merged;
+  observeChain(observe, merged);
+  const body = await render(page, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined, observe));
+  return { body, hash: hash('sha256', body, 'hex') };
 };
 
 const renderChain = async (
   makeContext: MakeRenderContext,
   bodies: ReadonlyMap<string, string>,
-  { page, chain, variables, body }: RenderedBody,
+  rendered: RenderedPageBody,
+  observe: Observe,
 ): Promise<RenderedPage> => {
+  const { page, chain, variables, body } = rendered;
+  observeChain(observe, rendered);
+  observe('body', page.url);
   let below = [page.frontmatter];
   let content = body;
   for (const template of chain) {
-    content = await render(template, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies));
+    content = await render(template, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies, observe));
     below = [template.frontmatter, ...below];
   }
-  return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content };
+  return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content, hash: hash('sha256', content, 'hex') };
 };
 
 /**
  * Every body renders before any chain, so a template can read any page's
- * rendered body.
+ * rendered body. A body and a finished page are each reused while every
+ * input they observed stands. The merge is a spread on values, so it runs for
+ * every page whether or not its renders are reused.
  */
 // spec: docs/specs/build.md, Order of work
-export const renderPages = async (pageChains: PageChain[], globals: Variables, makeContext: MakeRenderContext): Promise<RenderedPage[]> => {
-  const renderedBodies = await mapUnits(pageChains, (pageChain) => renderBody(globals, makeContext, pageChain));
+// spec: docs/specs/build.md, Incremental builds
+export const renderPages = async (
+  pageChains: PageChain[],
+  globals: Variables,
+  makeContext: MakeRenderContext,
+  versions: Versions,
+  bodyRecords: UnitRecords<RenderedBody>,
+  pageRecords: UnitRecords<RenderedPage>,
+): Promise<RenderedPage[]> => {
+  for (const { page, chain } of pageChains) {
+    versions.chains.set(page.sourcePath, chain.map((template) => template.sourcePath).join('\n'));
+  }
+  const lookup = (kind: InputKind, name: string): Version => findVersion(versions, kind, name);
+  const mergedPages = pageChains.map((pageChain): MergedPage => ({
+    ...pageChain,
+    variables: mergeVariables(globals, pageChain),
+  }));
+  const renderedBodies = await mapUnits(mergedPages, async (merged): Promise<RenderedPageBody> => {
+    const run = (observe: Observe): Promise<RenderedBody> => renderBody(makeContext, merged, observe);
+    const rendered = await reuseUnit(bodyRecords, merged.page.sourcePath, lookup, run);
+    return { ...merged, ...rendered };
+  });
+  for (const { page, hash: bodyHash } of renderedBodies) {
+    versions.bodies.set(page.url, bodyHash);
+  }
   const bodies = new Map(renderedBodies.map(({ page, body }) => [page.url, body]));
-  return mapUnits(renderedBodies, (renderedBody) => renderChain(makeContext, bodies, renderedBody));
+  return mapUnits(renderedBodies, (rendered) => {
+    const run = (observe: Observe): Promise<RenderedPage> => renderChain(makeContext, bodies, rendered, observe);
+    return reuseUnit(pageRecords, rendered.page.sourcePath, lookup, run);
+  });
 };

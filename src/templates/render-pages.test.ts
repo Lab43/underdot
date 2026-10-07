@@ -1,32 +1,63 @@
 // spec: docs/specs/templates.md
 
+import { hash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, test, vi } from 'vitest';
 import { makePage } from '../../test/helpers/make-page.ts';
 import { makeTemplate } from '../../test/helpers/make-template.ts';
+import type { Versions } from '../build/bind-build.ts';
+import type { UnitRecords } from '../build/reuse-unit.ts';
 import { PluginError } from '../plugins/bind-render-context.ts';
 import type { MakeRenderContext } from '../plugins/bind-render-context.ts';
 import type { RegisteredRenderer, Renderer } from '../plugins/register-plugins.ts';
 import { renderPages } from './render-pages.ts';
+import type { RenderedBody, RenderedPage } from './render-pages.ts';
+import type { PageChain } from './resolve-chains.ts';
+
+// A rendered page as renderPages reports it.
+const rendered = (sourcePath: string, outputPath: string, contents: string) => ({ sourcePath, outputPath, contents, hash: hash('sha256', contents, 'hex') });
 
 const fakeRenderer = (): ReturnType<typeof vi.fn<Renderer>> => vi.fn<Renderer>((_body, { sourcePath }) => `rendered ${sourcePath}`);
 
-// A context of the file's fields alone, with operations that do nothing.
-const makeContext: MakeRenderContext = (sourcePath, variables, bodies) => ({
+// A context of the file's fields alone, observing a variable read and a body
+// read, with the other operations doing nothing.
+const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe) => ({
   sourcePath,
-  variables,
+  variables: new Proxy(variables, {
+    get: (target, key): unknown => {
+      if (typeof key === 'string') {
+        observe('global', key);
+      }
+      return Reflect.get(target, key);
+    },
+  }),
   readFile: () => undefined,
   readOutput: () => undefined,
-  readBody: () => '',
-  enterFile: (reference, entered) => makeContext(reference, entered, bodies),
+  readBody: (url) => {
+    observe('body', url);
+    return bodies?.get(url) ?? '';
+  },
+  enterFile: (reference, entered) => makeContext(reference, entered, bodies, observe),
 });
+
+const freshVersions = (overrides: Partial<Versions> = {}): Versions =>
+  ({ files: new Map(), outputs: new Map(), globals: new Map(), allGlobals: '', chains: new Map(), bodies: new Map(), ...overrides });
+
+// Records no earlier run filled.
+const freshRecords = (): { bodies: UnitRecords<RenderedBody>; pages: UnitRecords<RenderedPage> } => ({ bodies: new Map(), pages: new Map() });
+
+const renderAll = (pageChains: PageChain[], globals: Record<string, unknown> = {}, versions = freshVersions(), records = freshRecords()): Promise<RenderedPage[]> =>
+  renderPages(pageChains, globals, makeContext, versions, records.bodies, records.pages);
+
+// The file table entries for the files named, each hashed as its own path.
+const hashed = (...sourcePaths: string[]): Versions['files'] => new Map(sourcePaths.map((sourcePath) => [sourcePath, { mtimeNs: 1n, size: 1n, hash: sourcePath }]));
 
 describe('renderPages', () => {
   test("the page renders with its variables, then the template with the page's output as _content", async () => {
     const render = fakeRenderer();
     const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render }, frontmatter: { title: 'Home' }, body: 'The home page.' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render }, body: 'The root template.' });
-    await expect(renderPages([{ page, chain: [root] }], {}, makeContext)).resolves.toStrictEqual([{ sourcePath: 'index.tpl', outputPath: 'index.html', contents: 'rendered _.tpl' }]);
+    await expect(renderAll([{ page, chain: [root] }], {})).resolves.toStrictEqual([rendered('index.tpl', 'index.html', 'rendered _.tpl')]);
     expect(render).toHaveBeenCalledTimes(2);
     expect(render).toHaveBeenNthCalledWith(1, 'The home page.', expect.objectContaining({
       sourcePath: 'index.tpl',
@@ -43,7 +74,7 @@ describe('renderPages', () => {
     const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render }, frontmatter: { title: 'Page' } });
     const near = makeTemplate({ sourcePath: '_near.tpl', renderer: { pluginName: 'fixture', render }, name: '_near', frontmatter: { title: 'Near', color: 'blue', near: true } });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render }, frontmatter: { title: 'Root', color: 'red', root: true } });
-    await renderPages([{ page, chain: [near, root] }], {}, makeContext);
+    await renderAll([{ page, chain: [near, root] }], {});
     const merged = { title: 'Page', color: 'blue', near: true, root: true, _url: '/' };
     for (const [, context] of render.mock.calls) {
       expect(context.variables).toMatchObject(merged);
@@ -54,7 +85,7 @@ describe('renderPages', () => {
     const render = fakeRenderer();
     const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render }, frontmatter: { title: 'Page' } });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render }, frontmatter: { color: 'Root' } });
-    await renderPages([{ page, chain: [root] }], { title: 'Global', color: 'Global', siteName: 'Site' }, makeContext);
+    await renderAll([{ page, chain: [root] }], { title: 'Global', color: 'Global', siteName: 'Site' });
     expect(render.mock.calls.map(([, { variables }]) => variables)).toStrictEqual([
       { title: 'Page', color: 'Root', siteName: 'Site', _url: '/', _chain: [] },
       { title: 'Page', color: 'Root', siteName: 'Site', _url: '/', _content: 'rendered index.tpl', _chain: [{ title: 'Page' }] },
@@ -67,7 +98,7 @@ describe('renderPages', () => {
     const near = makeTemplate({ sourcePath: '_near.tpl', renderer: { pluginName: 'fixture', render }, name: '_near', frontmatter: { layout: 'near' } });
     const middle = makeTemplate({ sourcePath: '_middle.tpl', renderer: { pluginName: 'fixture', render }, name: '_middle', frontmatter: { layout: 'middle' } });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render }, frontmatter: { layout: 'root' } });
-    await renderPages([{ page, chain: [near, middle, root] }], {}, makeContext);
+    await renderAll([{ page, chain: [near, middle, root] }], {});
     expect(render.mock.calls.map(([, { variables }]) => variables._chain)).toStrictEqual([
       [],
       [{ title: 'Page' }],
@@ -81,7 +112,7 @@ describe('renderPages', () => {
     const page = makePage({ sourcePath: 'blog/hello.tpl', renderer: { pluginName: 'fixture', render }, outputPath: 'blog/hello/index.html', url: '/blog/hello/' });
     const post = makeTemplate({ sourcePath: 'blog/_post.tpl', renderer: { pluginName: 'fixture', render }, name: '_post' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render } });
-    await renderPages([{ page, chain: [post, root] }], {}, makeContext);
+    await renderAll([{ page, chain: [post, root] }], {});
     expect(render.mock.calls.map(([, { variables }]) => variables._url)).toStrictEqual(['/blog/hello/', '/blog/hello/', '/blog/hello/']);
   });
 
@@ -90,7 +121,7 @@ describe('renderPages', () => {
     const renderTemplate = vi.fn<Renderer>((_body, { variables }) => `wrapped ${String(variables._content)}`);
     const page = makePage({ sourcePath: 'index.md', extension: 'md', renderer: { pluginName: 'fixture', render: renderMarkdown }, body: '# Home' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: renderTemplate } });
-    await expect(renderPages([{ page, chain: [root] }], {}, makeContext)).resolves.toStrictEqual([{ sourcePath: 'index.md', outputPath: 'index.html', contents: 'wrapped from markdown' }]);
+    await expect(renderAll([{ page, chain: [root] }], {})).resolves.toStrictEqual([rendered('index.md', 'index.html', 'wrapped from markdown')]);
     expect(renderMarkdown).toHaveBeenCalledExactlyOnceWith('# Home', expect.objectContaining({ sourcePath: 'index.md' }));
     expect(renderTemplate).toHaveBeenCalledTimes(1);
   });
@@ -102,7 +133,7 @@ describe('renderPages', () => {
     });
     const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render } });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render } });
-    await expect(renderPages([{ page, chain: [root] }], {}, makeContext)).resolves.toStrictEqual([{ sourcePath: 'index.tpl', outputPath: 'index.html', contents: 'rendered _.tpl' }]);
+    await expect(renderAll([{ page, chain: [root] }], {})).resolves.toStrictEqual([rendered('index.tpl', 'index.html', 'rendered _.tpl')]);
   });
 
   test('pages come back in their order whichever settles first', async () => {
@@ -114,9 +145,9 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: slow }, outputPath: 'a/index.html' });
     const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: fast }, outputPath: 'b/index.html' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: (_body, { variables }) => String(variables._content) } });
-    await expect(renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, makeContext)).resolves.toStrictEqual([
-      { sourcePath: 'a.tpl', outputPath: 'a/index.html', contents: 'slow a.tpl' },
-      { sourcePath: 'b.tpl', outputPath: 'b/index.html', contents: 'fast b.tpl' },
+    await expect(renderAll([{ page: first, chain: [root] }, { page: second, chain: [root] }], {})).resolves.toStrictEqual([
+      rendered('a.tpl', 'a/index.html', 'slow a.tpl'),
+      rendered('b.tpl', 'b/index.html', 'fast b.tpl'),
     ]);
   });
 
@@ -129,7 +160,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render }, outputPath: 'a/index.html' });
     const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render }, outputPath: 'b/index.html' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render } });
-    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, makeContext);
+    await renderAll([{ page: first, chain: [root] }, { page: second, chain: [root] }], {});
     expect(calls).toStrictEqual(['a.tpl', 'b.tpl', '_.tpl', '_.tpl']);
   });
 
@@ -139,7 +170,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'a/index.html', url: '/a/' });
     const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'b/index.html', url: '/b/' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
-    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker);
+    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map());
     expect(maker.mock.calls.slice(0, 2).map(([sourcePath, , bodies]) => [sourcePath, bodies])).toStrictEqual([['a.tpl', undefined], ['b.tpl', undefined]]);
   });
 
@@ -149,7 +180,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'a/index.html', url: '/a/' });
     const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'b/index.html', url: '/b/' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
-    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker);
+    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map());
     const bodies = new Map([['/a/', 'rendered a.tpl'], ['/b/', 'rendered b.tpl']]);
     expect(maker.mock.calls.slice(2).map(([sourcePath, , pageBodies]) => [sourcePath, pageBodies])).toStrictEqual([['_.tpl', bodies], ['_.tpl', bodies]]);
   });
@@ -162,7 +193,7 @@ describe('renderPages', () => {
       const cause = new Error('unexpected token');
       const page = makePage({ sourcePath: 'index.tpl', renderer: throwing(cause) });
       const root = makeTemplate({ sourcePath: '_.tpl' });
-      const rendering = renderPages([{ page, chain: [root] }], {}, makeContext);
+      const rendering = renderAll([{ page, chain: [root] }], {});
       await expect(rendering).rejects.toThrow(new Error('Rendering index.tpl failed in fixture: unexpected token'));
       await expect(rendering).rejects.toHaveProperty('cause', cause);
     });
@@ -170,13 +201,100 @@ describe('renderPages', () => {
     test('a throw while a template renders names that template', async () => {
       const page = makePage({ sourcePath: 'index.tpl' });
       const root = makeTemplate({ sourcePath: '_.tpl', renderer: throwing(new Error('unexpected token')) });
-      await expect(renderPages([{ page, chain: [root] }], {}, makeContext)).rejects.toThrow(new Error('Rendering _.tpl failed in fixture: unexpected token'));
+      await expect(renderAll([{ page, chain: [root] }], {})).rejects.toThrow(new Error('Rendering _.tpl failed in fixture: unexpected token'));
     });
 
     test("a throw a helper tagged names the helper's plugin", async () => {
       const page = makePage({ sourcePath: 'index.tpl', renderer: throwing(new PluginError('tools', new Error('boom'))) });
       const root = makeTemplate({ sourcePath: '_.tpl' });
-      await expect(renderPages([{ page, chain: [root] }], {}, makeContext)).rejects.toThrow(new Error('Rendering index.tpl failed in tools: boom'));
+      await expect(renderAll([{ page, chain: [root] }], {})).rejects.toThrow(new Error('Rendering index.tpl failed in tools: boom'));
+    });
+  });
+
+  // spec: docs/specs/build.md, Incremental builds
+  describe('across two calls with one set of records', () => {
+    test('unchanged versions render nothing the second time, and the pages come back the same', async () => {
+      const render = fakeRenderer();
+      const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render } });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render } });
+      const versions = freshVersions({ files: hashed('index.tpl', '_.tpl') });
+      const records = freshRecords();
+      const first = await renderAll([{ page, chain: [root] }], {}, versions, records);
+      const second = await renderAll([{ page, chain: [root] }], {}, versions, records);
+      expect(render).toHaveBeenCalledTimes(2);
+      expect(second).toStrictEqual(first);
+      expect(versions.chains).toStrictEqual(new Map([['index.tpl', '_.tpl']]));
+      expect(versions.bodies).toStrictEqual(new Map([['/', expect.stringMatching(/^[0-9a-f]{64}$/)]]));
+    });
+
+    test("a template's hash change renders every body and chain of the pages it wraps, and no other page", async () => {
+      const render = fakeRenderer();
+      const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render }, outputPath: 'a/index.html', url: '/a/' });
+      const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render }, outputPath: 'b/index.html', url: '/b/' });
+      const other = makePage({ sourcePath: 'c.tpl', renderer: { pluginName: 'fixture', render }, outputPath: 'c/index.html', url: '/c/' });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render } });
+      const wide = makeTemplate({ sourcePath: '_wide.tpl', renderer: { pluginName: 'fixture', render }, name: '_wide' });
+      const chains = [{ page: first, chain: [root] }, { page: second, chain: [root] }, { page: other, chain: [wide] }];
+      const records = freshRecords();
+      await renderAll(chains, {}, freshVersions({ files: hashed('a.tpl', 'b.tpl', 'c.tpl', '_.tpl', '_wide.tpl') }), records);
+      render.mockClear();
+      await renderAll(chains, {}, freshVersions({ files: new Map([...hashed('a.tpl', 'b.tpl', 'c.tpl', '_wide.tpl'), ['_.tpl', { mtimeNs: 2n, size: 2n, hash: 'edited' }]]) }), records);
+      expect(render.mock.calls.map(([, { sourcePath }]) => sourcePath)).toStrictEqual(['a.tpl', 'b.tpl', '_.tpl', '_.tpl']);
+    });
+
+    test('a chain change renders its page, body and chain', async () => {
+      const render = fakeRenderer();
+      const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render } });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render } });
+      const near = makeTemplate({ sourcePath: '_near.tpl', renderer: { pluginName: 'fixture', render }, name: '_near' });
+      const versions = freshVersions({ files: hashed('index.tpl', '_.tpl', '_near.tpl') });
+      const records = freshRecords();
+      await renderAll([{ page, chain: [root] }], {}, versions, records);
+      render.mockClear();
+      await renderAll([{ page, chain: [near, root] }], {}, versions, records);
+      expect(render.mock.calls.map(([, { sourcePath }]) => sourcePath)).toStrictEqual(['index.tpl', '_near.tpl', '_.tpl']);
+      expect(versions.chains.get('index.tpl')).toBe('_near.tpl\n_.tpl');
+    });
+
+    test("a body's hash change renders the chains that read it and not their bodies", async () => {
+      const renderPage = fakeRenderer();
+      let text = 'first';
+      const renderChanging = vi.fn<Renderer>(() => text);
+      const renderRoot = vi.fn<Renderer>((_body, context) => `root ${context.readBody('/b/')}`);
+      const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: renderPage }, outputPath: 'a/index.html', url: '/a/' });
+      const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: renderChanging }, outputPath: 'b/index.html', url: '/b/' });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: renderRoot } });
+      const chains = [{ page: first, chain: [root] }, { page: second, chain: [root] }];
+      const records = freshRecords();
+      await renderAll(chains, {}, freshVersions({ files: hashed('a.tpl', 'b.tpl', '_.tpl') }), records);
+      text = 'second';
+      renderPage.mockClear();
+      renderRoot.mockClear();
+      const pages = await renderAll(chains, {}, freshVersions({ files: new Map([...hashed('a.tpl', '_.tpl'), ['b.tpl', { mtimeNs: 2n, size: 2n, hash: 'edited' }]]) }), records);
+      expect(renderPage).not.toHaveBeenCalled();
+      expect(renderChanging).toHaveBeenCalledTimes(2);
+      expect(renderRoot).toHaveBeenCalledTimes(2);
+      expect(pages.map(({ contents }) => contents)).toStrictEqual(['root second', 'root second']);
+    });
+
+    test("a global's version change renders the bodies that observed it, and a chain whose body came out the same is reused", async () => {
+      const renderReading = vi.fn<Renderer>((_body, { variables }) => `title ${String(variables.title)}`);
+      const renderBlind = fakeRenderer();
+      const renderRoot = fakeRenderer();
+      const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: renderReading }, outputPath: 'a/index.html', url: '/a/' });
+      const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: renderBlind }, outputPath: 'b/index.html', url: '/b/' });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: renderRoot } });
+      const chains = [{ page: first, chain: [root] }, { page: second, chain: [root] }];
+      const records = freshRecords();
+      const files = hashed('a.tpl', 'b.tpl', '_.tpl');
+      await renderAll(chains, { title: 'Site' }, freshVersions({ files, globals: new Map([['title', 'v1']]) }), records);
+      renderReading.mockClear();
+      renderBlind.mockClear();
+      renderRoot.mockClear();
+      await renderAll(chains, { title: 'Site' }, freshVersions({ files, globals: new Map([['title', 'v2']]) }), records);
+      expect(renderReading).toHaveBeenCalledTimes(1);
+      expect(renderBlind).not.toHaveBeenCalled();
+      expect(renderRoot).not.toHaveBeenCalled();
     });
   });
 });

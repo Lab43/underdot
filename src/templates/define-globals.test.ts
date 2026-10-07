@@ -9,8 +9,8 @@ const here: Helper = (context) => context.sourcePath;
 const helpers = new Map([['team', { pluginName: 'tools', helper: here }]]);
 const none = new Map<string, { pluginName: string; helper: Helper }>();
 
-const pages: HookGlobal = { name: 'pages', pluginName: 'listing', value: ['/'] };
-const team: HookGlobal = { name: 'team', pluginName: 'listing', value: ['Ada'] };
+const pages: HookGlobal = { name: 'pages', pluginName: 'listing', value: ['/'], version: 'pages' };
+const team: HookGlobal = { name: 'team', pluginName: 'listing', value: ['Ada'], version: 'pages' };
 
 describe('defineGlobals', () => {
   test('no data variables return a copy of the globals', () => {
@@ -49,7 +49,7 @@ describe('defineGlobals', () => {
   // spec: docs/specs/plugins.md, Page hooks
   describe('hook globals', () => {
     test('hook globals merge under their names beside the globals and the data variables', () => {
-      expect(defineGlobals({ siteName: 'Site' }, [{ name: 'site', sourcePath: '_data/site.json', value: { year: 2024 } }], [pages, { name: 'count', pluginName: 'counting', value: 1 }], none)).toStrictEqual({
+      expect(defineGlobals({ siteName: 'Site' }, [{ name: 'site', sourcePath: '_data/site.json', value: { year: 2024 } }], [pages, { name: 'count', pluginName: 'counting', value: 1, version: 'pages' }], none)).toStrictEqual({
         siteName: 'Site',
         site: { year: 2024 },
         pages: ['/'],

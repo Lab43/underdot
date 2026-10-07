@@ -27,14 +27,15 @@ interface Case {
 }
 
 // A context over the files above. An entered file's context carries the
-// variables given and a `here` helper bound to the entered path.
+// file's variables with the data over them, as the build's does, and a `here`
+// helper bound to the entered path.
 const makeContext = (sourcePath: string, variables: Record<string, unknown>, readFile: RenderContext['readFile']): RenderContext => ({
   sourcePath,
   variables,
   readFile,
   readOutput: () => undefined,
   readBody: () => '',
-  enterFile: (reference, entered) => makeContext(reference.slice(1), { ...entered, here: () => reference.slice(1) }, readFile),
+  enterFile: (reference, data) => makeContext(reference.slice(1), { ...variables, ...data, here: () => reference.slice(1) }, readFile),
 });
 
 // Render with a context over the files above. The renderer resolves every
@@ -95,6 +96,16 @@ describe('renderEjs', () => {
       expect(render("<% var title = 'Changed'; %><%= title %>", { variables })).toBe('Changed');
       expect(variables).toStrictEqual({ title: 'Home' });
     });
+
+    // spec: docs/specs/build.md, Incremental builds
+    test("a variable read and a locals read reach the context's variables object, never a copy of it", () => {
+      const traps = { get: vi.fn((target: Record<string, unknown>, key: PropertyKey): unknown => Reflect.get(target, key)), ownKeys: vi.fn((target: Record<string, unknown>) => Reflect.ownKeys(target)) };
+      const variables = new Proxy<Record<string, unknown>>({ title: 'Home', year: 2000 }, traps);
+      expect(render('<%= title %> <%= locals.year %>', { variables })).toBe('Home 2000');
+      // `with` probes Symbol.unscopables through the same trap, so only the named reads count.
+      expect(new Set(traps.get.mock.calls.map(([, key]) => key).filter((key) => typeof key === 'string'))).toStrictEqual(new Set(['title', 'year']));
+      expect(traps.ownKeys).not.toHaveBeenCalled();
+    });
   });
 
   describe('includes', () => {
@@ -135,11 +146,15 @@ describe('renderEjs', () => {
     });
 
     // spec: docs/specs/plugins.md, Template helpers
-    test('a partial renders as the file being rendered, entered with the merged variables', () => {
+    test("a partial renders as the file being rendered, entered with the include's data alone", () => {
       const context = makeContext('blog/post.ejs', { year: 2000, name: 'Site' }, (reference) => files[reference]);
       const enterFile = vi.spyOn(context, 'enterFile');
       expect(renderEjs("<%- include('/_includes/where', { year: 2024 }) %>", context, [])).toBe('at _includes/where.ejs');
-      expect(enterFile).toHaveBeenCalledExactlyOnceWith('/_includes/where.ejs', { year: 2024, name: 'Site' });
+      expect(enterFile).toHaveBeenCalledExactlyOnceWith('/_includes/where.ejs', { year: 2024 });
+    });
+
+    test('a name every object inherits is not a variable, so it reaches the runtime', () => {
+      expect(render('<%= typeof toString %> <%= typeof locals.toString %>')).toBe('function function');
     });
 
     test('a partial reads a variable no file set as nothing', () => {

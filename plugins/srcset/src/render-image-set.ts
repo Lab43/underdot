@@ -70,9 +70,9 @@ export const renderImageSet = (
     throw new Error(`${reference} is a ${String(size.type)} image, which the helper does not resize.`);
   }
   // Orientations 5 through 8 turn the image a quarter, so it stands as wide
-  // as it is stored high. Only a JPEG reports one.
-  const orientation = size.orientation ?? 1;
-  const width = orientation >= 5 ? size.height : size.width;
+  // as it is stored high. Only a JPEG's is applied, as the producer applies it.
+  const isTurned = size.type === 'jpg' && (size.orientation ?? 1) >= 5;
+  const width = isTurned ? size.height : size.width;
 
   // A derivative drops one leading underscore from each segment, so a private
   // original's derivatives are public, and drops the extension. A WebP source

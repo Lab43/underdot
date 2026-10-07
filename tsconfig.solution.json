@@ -6,6 +6,7 @@
     { "path": "./plugins/collections/tsconfig.build.json" },
     { "path": "./plugins/ejs/tsconfig.build.json" },
     { "path": "./plugins/helpers/tsconfig.build.json" },
+    { "path": "./plugins/srcset/tsconfig.build.json" },
     { "path": "./plugins/svgo/tsconfig.build.json" }
   ]
 }

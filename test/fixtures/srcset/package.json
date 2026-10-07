@@ -1,0 +1,10 @@
+{
+  "name": "srcset-site",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "underdot": "^2.0.0-alpha.0",
+    "underdot-ejs": "^2.0.0-alpha.0",
+    "underdot-srcset": "^2.0.0-alpha.0"
+  }
+}

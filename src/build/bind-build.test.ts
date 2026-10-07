@@ -473,6 +473,17 @@ describe('bindBuild', () => {
     await assertAbsent(join(directory, 'build'));
   });
 
+  // spec: docs/specs/build.md, Errors
+  test('a warning prints and the build completes', async ({ directory, stderr }) => {
+    const plugins: Plugin[] = [{ name: 'listing', pageHook: (_pages, { warn }) => {
+      warn('Deprecated.');
+      return {};
+    } }];
+    await bindBuild(resolveConfiguration({ plugins }, directory))();
+    expect(stderr).toStrictEqual(['Running the page hook warned in listing: Deprecated.\n']);
+    expect(await list(join(directory, 'build'))).toStrictEqual(defaultsFiles);
+  });
+
   test('two plugins with one name fail before any write', async () => {
     const configuration = resolveConfiguration({ plugins: [{ name: 'dup' }, { name: 'dup' }] }, defaultsFixture);
     await expect(bindBuild(configuration)()).rejects.toThrow(new Error('Two plugins are named dup.'));

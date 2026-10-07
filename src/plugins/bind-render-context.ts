@@ -12,6 +12,7 @@ import type { Observe } from '../build/reuse-unit.ts';
 import { describeError } from '../shared/describe-error.ts';
 import { isPlainPath } from '../shared/is-plain-path.ts';
 import type { Output } from './handle-files.ts';
+import { printWarning } from './print-warning.ts';
 import type { ProducerContext } from './produce-files.ts';
 import type { RegisteredHelper } from './register-plugins.ts';
 
@@ -86,13 +87,19 @@ export interface RenderContext {
    * only when either or what it read changed. Only a helper may emit.
    */
   emit: (outputPath: string, parameters: unknown, produce: Producer) => void;
+  /**
+   * Print a warning naming the render and the plugin whose function warned:
+   * the helper's in a helper, the renderer's otherwise. The build goes on.
+   */
+  warn: (message: string) => void;
 }
 
 /**
  * Makes the context for one file. The bodies are those rendered so far, and
  * none while a page's own body renders. Every read through the context, the
  * variables included, is reported to `observe` as an input of the render,
- * and every file a helper emits is pushed onto `emits`.
+ * and every file a helper emits is pushed onto `emits`. A warning names the
+ * attribution's unit, and its plugin unless a helper warned.
  */
 export type MakeRenderContext = (
   sourcePath: string,
@@ -100,6 +107,7 @@ export type MakeRenderContext = (
   bodies: ReadonlyMap<string, string> | undefined,
   observe: Observe,
   emits: EmittedFile[],
+  attribution: { unit: string; pluginName: string },
 ) => RenderContext;
 
 /**
@@ -114,7 +122,7 @@ export const bindRenderContext = (
 ): MakeRenderContext => {
   // The last output of a path, the only one there is once the write succeeds.
   const outputsByPath = new Map(outputs.map((output) => [output.outputPath, output]));
-  const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits) => {
+  const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits, attribution) => {
     // A relative reference resolves against the file's directory and an
     // absolute one against the source root.
     // spec: docs/specs/templates.md, Relative paths
@@ -188,7 +196,8 @@ export const bindRenderContext = (
         // consult the descriptor trap above and define a non-writable property.
         set: (target, key, value) => Reflect.set(target, key, value),
       });
-      return makeContext(referencedPath, layered, bodies, observe, emits);
+      // The renderer entering the partial is the one rendering it.
+      return makeContext(referencedPath, layered, bodies, observe, emits, attribution);
     };
 
     // A throw is tagged with the helper's plugin. An engine rethrows the same
@@ -214,9 +223,12 @@ export const bindRenderContext = (
         }
         emits.push({ pluginName, sourcePath, outputPath, parametersHash: hash('sha256', serialized, 'hex'), produce });
       };
+      const warn = (message: string): void => {
+        printWarning(attribution.unit, pluginName, message);
+      };
       boundHelpers.set(name, (...args: unknown[]): unknown => {
         try {
-          return helper({ ...context, emit }, ...args);
+          return helper({ ...context, emit, warn }, ...args);
         } catch (error) {
           throw error instanceof PluginError ? error : new PluginError(pluginName, error);
         }
@@ -275,6 +287,9 @@ export const bindRenderContext = (
       // Only the copy a helper receives can emit.
       emit: (outputPath) => {
         throw new Error(`${sourcePath} emits ${outputPath} outside a helper, which only a helper can do.`);
+      },
+      warn: (message) => {
+        printWarning(attribution.unit, attribution.pluginName, message);
       },
     };
     return context;

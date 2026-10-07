@@ -148,7 +148,10 @@ describe('renderImageSet', () => {
     const { context, emit } = makeContext();
     renderImageSet(context, presets, '/images/photo.jpg', { sizes: '100vw', widths: [300] });
     const produce = emit.mock.calls[0]![2];
-    const contents = await produce({ readOutput: (outputPath) => (outputPath === 'images/photo.jpg' ? jpeg : undefined) });
+    const contents = await produce({
+      readOutput: (outputPath) => (outputPath === 'images/photo.jpg' ? jpeg : undefined),
+      warn: vi.fn(),
+    });
     expect(await sharp(contents).metadata()).toMatchObject({ format: 'webp', width: 300, height: 200 });
   });
 

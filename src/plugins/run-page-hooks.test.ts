@@ -1,8 +1,9 @@
 // spec: docs/specs/plugins.md, Page hooks
 
 import { setTimeout } from 'node:timers/promises';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { makePage } from '../../test/helpers/make-page.ts';
+import { test } from '../../test/helpers/test.ts';
 import type { UnitRecords } from '../build/reuse-unit.ts';
 import type { PageHook, RegisteredHook } from './register-plugins.ts';
 import { runPageHooks } from './run-page-hooks.ts';
@@ -27,7 +28,7 @@ describe('runPageHooks', () => {
   test("a hook receives each page's source path, output path, URL, and frontmatter and nothing else, in the pages' order", async () => {
     const listing = vi.fn<PageHook>(() => ({}));
     await runPageHooks(pages, [hook('listing', listing)], fresh());
-    expect(listing).toHaveBeenCalledExactlyOnceWith(seen);
+    expect(listing).toHaveBeenCalledExactlyOnceWith(seen, { warn: expect.any(Function) });
   });
 
   test('two hooks receive the same list', async () => {
@@ -92,8 +93,29 @@ describe('runPageHooks', () => {
     await expect(running).rejects.toHaveProperty('cause', cause);
   });
 
+  // spec: docs/specs/plugins.md, Errors
+  test("a hook's warning names the page hook and the plugin", async ({ stderr }) => {
+    const listing: PageHook = (_pages, { warn }) => {
+      warn('Deprecated.');
+      return {};
+    };
+    await runPageHooks(pages, [hook('listing', listing)], fresh());
+    expect(stderr).toStrictEqual(['Running the page hook warned in listing: Deprecated.\n']);
+  });
+
   // spec: docs/specs/build.md, Incremental builds
   describe('across two calls with one set of records', () => {
+    test('a reused hook prints nothing', async ({ stderr }) => {
+      const listing: PageHook = (_pages, { warn }) => {
+        warn('Deprecated.');
+        return {};
+      };
+      const records = fresh();
+      await runPageHooks(pages, [hook('listing', listing)], records);
+      await runPageHooks(pages, [hook('listing', listing)], records);
+      expect(stderr).toHaveLength(1);
+    });
+
     const versionsOf = (globals: HookGlobal[]): string[] => globals.map(({ version }) => version);
 
     test('the same pages call no hook the second time, and every global of one run carries one version', async () => {

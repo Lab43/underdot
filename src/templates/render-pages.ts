@@ -84,7 +84,15 @@ const renderBody = async (makeContext: MakeRenderContext, merged: MergedPage, ob
   const { page, variables } = merged;
   observeChain(observe, merged);
   const emits: EmittedFile[] = [];
-  const body = await render(page, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined, observe, emits));
+  const context = makeContext(
+    page.sourcePath,
+    { ...variables, _chain: [] },
+    undefined,
+    observe,
+    emits,
+    { unit: `Rendering ${page.sourcePath}`, pluginName: page.renderer.pluginName },
+  );
+  const body = await render(page, context);
   return { body, hash: hash('sha256', body, 'hex'), emits };
 };
 
@@ -103,7 +111,15 @@ const renderChain = async (
   let below = [page.frontmatter];
   let content = body;
   for (const template of chain) {
-    content = await render(template, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies, observe, emits));
+    const context = makeContext(
+      template.sourcePath,
+      { ...variables, _content: content, _chain: below },
+      bodies,
+      observe,
+      emits,
+      { unit: `Rendering ${template.sourcePath}`, pluginName: template.renderer.pluginName },
+    );
+    content = await render(template, context);
     below = [template.frontmatter, ...below];
   }
   return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content, hash: hash('sha256', content, 'hex'), emits };

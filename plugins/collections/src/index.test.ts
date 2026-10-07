@@ -1,7 +1,7 @@
 // spec: docs/specs/collections.md
 
 import type { HookPage } from 'underdot';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { collections } from './index.ts';
 import type { CollectionsOptions } from './index.ts';
@@ -36,11 +36,11 @@ describe('collections', () => {
   });
 
   test('a call with no options defines nothing', async () => {
-    expect(await collections().pageHook!([hello])).toStrictEqual({});
+    expect(await collections().pageHook!([hello], { warn: vi.fn() })).toStrictEqual({});
   });
 
   test('the registered hook collects the pages under each directory', async () => {
-    expect(await collections({ posts: 'posts' }).pageHook!([hello])).toStrictEqual({ posts: [{ title: 'Hello', _url: '/posts/hello/' }] });
+    expect(await collections({ posts: 'posts' }).pageHook!([hello], { warn: vi.fn() })).toStrictEqual({ posts: [{ title: 'Hello', _url: '/posts/hello/' }] });
   });
 
   test('the registered helper reads a body', () => {

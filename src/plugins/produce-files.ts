@@ -12,6 +12,7 @@ import { compareStrings } from '../shared/compare-strings.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
 import type { EmittedFile } from './bind-render-context.ts';
 import type { Output } from './handle-files.ts';
+import { printWarning } from './print-warning.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 import { runHandlers } from './run-handlers.ts';
 
@@ -22,6 +23,10 @@ import { runHandlers } from './run-handlers.ts';
  */
 export interface ProducerContext {
   readOutput: (outputPath: string) => Buffer | undefined;
+  /**
+   * Print a warning naming the emitting plugin. The build goes on.
+   */
+  warn: (message: string) => void;
 }
 
 /**
@@ -104,10 +109,13 @@ export const produceFiles = async (
         }
         return output.contents ?? readFileSync(join(source, output.sourcePath));
       };
+      const warn = (message: string): void => {
+        printWarning(`Producing ${outputPath}`, pluginName, message);
+      };
       let contents: unknown;
       // spec: docs/specs/plugins.md, Errors
       try {
-        contents = await produce({ readOutput });
+        contents = await produce({ readOutput, warn });
       } catch (error) {
         throw attributePluginError(`Producing ${outputPath}`, pluginName, error);
       }

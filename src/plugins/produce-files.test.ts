@@ -107,6 +107,15 @@ describe('produceFiles', () => {
     await expect(producing).rejects.toHaveProperty('cause', cause);
   });
 
+  test("a producer's warning names the output and the emitting plugin", async ({ directory, stderr }) => {
+    const produce: Producer = ({ warn }) => {
+      warn('Deprecated.');
+      return Promise.resolve('derived');
+    };
+    await produceAll(directory, [emit({ produce })]);
+    expect(stderr).toStrictEqual(['Producing notes.derived.txt warned in images: Deprecated.\n']);
+  });
+
   test('a producer that returns neither text nor bytes fails naming the plugin and the path', async ({ directory }) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the shape a JavaScript plugin can return
     const produce = (() => Promise.resolve(42)) as unknown as Producer;

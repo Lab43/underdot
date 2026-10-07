@@ -74,15 +74,15 @@ export const runHandlers = async (
   };
   let handledFiles = [file];
   for (const { pluginName, glob, handle } of handlers) {
+    const warn = (message: string): void => {
+      printWarning(`Handling ${sourcePath}`, pluginName, message);
+    };
     const handled: HandledFile[] = [];
     for (const current of handledFiles) {
       if (!matchGlob(current.outputPath, glob)) {
         handled.push(current);
         continue;
       }
-      const warn = (message: string): void => {
-        printWarning(`Handling ${sourcePath}`, pluginName, message);
-      };
       let outputs: HandlerOutput[];
       // spec: docs/specs/plugins.md, Errors
       try {

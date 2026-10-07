@@ -10,6 +10,7 @@ export interface Configuration {
   exclude?: string[];
   plugins?: Plugin[];
   globals?: Record<string, unknown>;
+  rewrites?: Record<string, string>;
 }
 
 export interface ResolvedConfiguration {
@@ -19,11 +20,12 @@ export interface ResolvedConfiguration {
   exclude: string[];
   plugins: Plugin[];
   globals: Record<string, unknown>;
+  rewrites: Record<string, string>;
 }
 
 // Every setting the configuration knows, held to the type's keys in both
 // directions so the unknown-setting check cannot drift from the type.
-const settingNames = { source: true, destination: true, exclude: true, plugins: true, globals: true } satisfies Record<keyof Configuration, true>;
+const settingNames = { source: true, destination: true, exclude: true, plugins: true, globals: true, rewrites: true } satisfies Record<keyof Configuration, true>;
 const settings: ReadonlySet<string> = new Set(Object.keys(settingNames));
 
 const defaults: Required<Configuration> = {
@@ -32,6 +34,7 @@ const defaults: Required<Configuration> = {
   exclude: ['**/.DS_Store'],
   plugins: [],
   globals: {},
+  rewrites: {},
 };
 
 const isStringArray = (value: unknown): value is string[] =>
@@ -96,6 +99,25 @@ const checkSettings: SettingsCheck = (configuration) => {
       throw new Error(`The global ${reserved} starts with an underscore, which is reserved.`);
     }
   }
+  if (configuration.rewrites !== undefined && !isObject(configuration.rewrites)) {
+    throw new Error('The rewrites setting must be an object.');
+  }
+  if (configuration.rewrites !== undefined) {
+    // A request path starts with a slash, so a glob without one matches
+    // nothing and a path without one names nothing under the destination.
+    // spec: docs/specs/configuration.md, Rewrites
+    for (const [glob, path] of Object.entries(configuration.rewrites)) {
+      if (typeof path !== 'string') {
+        throw new Error(`The rewrite for ${glob} must be a string.`);
+      }
+      if (!glob.startsWith('/')) {
+        throw new Error(`The rewrite glob ${glob} must start with a slash.`);
+      }
+      if (!path.startsWith('/')) {
+        throw new Error(`The rewrite path ${path} for ${glob} must start with a slash.`);
+      }
+    }
+  }
 };
 
 export const resolveConfiguration = (configuration: unknown, projectDirectory: string): ResolvedConfiguration => {
@@ -109,8 +131,9 @@ export const resolveConfiguration = (configuration: unknown, projectDirectory: s
   const exclude = configuration.exclude ?? [...defaults.exclude];
   const plugins = configuration.plugins ?? [...defaults.plugins];
   const globals = configuration.globals ?? { ...defaults.globals };
+  const rewrites = configuration.rewrites ?? { ...defaults.rewrites };
 
   checkPlacement(projectDirectory, source, destination);
 
-  return { projectDirectory, source, destination, exclude, plugins, globals };
+  return { projectDirectory, source, destination, exclude, plugins, globals, rewrites };
 };

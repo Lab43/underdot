@@ -14,6 +14,7 @@ describe('resolveConfiguration', () => {
       exclude: ['**/.DS_Store'],
       plugins: [],
       globals: {},
+      rewrites: {},
     });
   });
 
@@ -24,6 +25,7 @@ describe('resolveConfiguration', () => {
       exclude: ['**/*.draft'],
       plugins: [{ name: 'first' }, { name: 'second' }],
       globals: { siteName: 'Site', team: ['Ada'] },
+      rewrites: { '/cart': '/store/', '/cart/**': '/store/' },
     }, project)).toStrictEqual({
       projectDirectory: project,
       source: '/site/content',
@@ -31,7 +33,13 @@ describe('resolveConfiguration', () => {
       exclude: ['**/*.draft'],
       plugins: [{ name: 'first' }, { name: 'second' }],
       globals: { siteName: 'Site', team: ['Ada'] },
+      rewrites: { '/cart': '/store/', '/cart/**': '/store/' },
     });
+  });
+
+  test('rewrites keep their listed order', () => {
+    const { rewrites } = resolveConfiguration({ rewrites: { '/z': '/a/', '/a': '/z/' } }, project);
+    expect(Object.entries(rewrites)).toStrictEqual([['/z', '/a/'], ['/a', '/z/']]);
   });
 
   test('an absolute path stands as given', () => {
@@ -41,7 +49,7 @@ describe('resolveConfiguration', () => {
   });
 
   test('a setting given as undefined is absent', () => {
-    const resolved = resolveConfiguration({ source: undefined, destination: undefined, exclude: undefined }, project);
+    const resolved = resolveConfiguration({ source: undefined, destination: undefined, exclude: undefined, rewrites: undefined }, project);
     expect(resolved).toStrictEqual(resolveConfiguration({}, project));
   });
 
@@ -126,6 +134,31 @@ describe('resolveConfiguration', () => {
     test('a global starting with an underscore is reserved', () => {
       expect(() => resolveConfiguration({ globals: { siteName: 'Site', _site: {} } }, project)).toThrow(
         new Error('The global _site starts with an underscore, which is reserved.'),
+      );
+    });
+
+    // spec: docs/specs/configuration.md, Rewrites
+    test('rewrites must be an object', () => {
+      expect(() => resolveConfiguration({ rewrites: [['/cart', '/store/']] }, project)).toThrow(
+        new Error('The rewrites setting must be an object.'),
+      );
+    });
+
+    test('a rewrite must be a string', () => {
+      expect(() => resolveConfiguration({ rewrites: { '/cart': ['/store/'] } }, project)).toThrow(
+        new Error('The rewrite for /cart must be a string.'),
+      );
+    });
+
+    test('a rewrite glob must start with a slash', () => {
+      expect(() => resolveConfiguration({ rewrites: { 'cart/**': '/store/' } }, project)).toThrow(
+        new Error('The rewrite glob cart/** must start with a slash.'),
+      );
+    });
+
+    test('a rewrite path must start with a slash', () => {
+      expect(() => resolveConfiguration({ rewrites: { '/cart': 'store/' } }, project)).toThrow(
+        new Error('The rewrite path store/ for /cart must start with a slash.'),
       );
     });
   });

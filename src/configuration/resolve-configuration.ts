@@ -99,13 +99,13 @@ const checkSettings: SettingsCheck = (configuration) => {
       throw new Error(`The global ${reserved} starts with an underscore, which is reserved.`);
     }
   }
-  if (configuration.rewrites !== undefined && !isObject(configuration.rewrites)) {
-    throw new Error('The rewrites setting must be an object.');
-  }
+  // A request path starts with a slash, so a glob without one matches
+  // nothing and a path without one names nothing under the destination.
+  // spec: docs/specs/configuration.md, Rewrites
   if (configuration.rewrites !== undefined) {
-    // A request path starts with a slash, so a glob without one matches
-    // nothing and a path without one names nothing under the destination.
-    // spec: docs/specs/configuration.md, Rewrites
+    if (!isObject(configuration.rewrites)) {
+      throw new Error('The rewrites setting must be an object.');
+    }
     for (const [glob, path] of Object.entries(configuration.rewrites)) {
       if (typeof path !== 'string') {
         throw new Error(`The rewrite for ${glob} must be a string.`);

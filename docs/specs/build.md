@@ -25,7 +25,7 @@ Rationale: each boundary exists because something after it reads something befor
 
 The destination is a directory inside the project directory, the one holding the configuration, and is neither the project directory itself nor the source root, and neither the destination nor the source root contains the other. A configuration that violates any of this is an error before any work starts. Rationale: the build owns the destination outright and deletes what it did not produce, so the destination must be a directory that holds nothing else. A destination inside the source would be classified as static files on the next build, and a source inside the destination would be deleted by it.
 
-After a successful build the destination contains exactly the files the build produced. Every other file in it is removed. Rationale: a renamed page must not leave its old address serving stale content, and the output must be reproducible from the source alone.
+After a successful build the destination contains exactly the files the build produced. Every other file in it is removed. Within a dev-server session, a file the build wrote whose contents it would write again is left as it is rather than written again, and a file edited inside the destination by anything but the build is outside this guarantee. Rationale: a renamed page must not leave its old address serving stale content, and the output must be reproducible from the source alone. The destination is the build's own, so a file it wrote with the contents it would write again is its output sitting where it belongs, and rewriting it is work with no reader.
 
 A failed build stops where it failed (see: Errors).
 
@@ -33,11 +33,13 @@ A failed build stops where it failed (see: Errors).
 
 Every unit of work has inputs (see: docs/specs/plugins.md, Dependencies). A build reruns a unit when any of its inputs changed since the unit last ran and otherwise reuses its previous result. The first build of a dev-server session runs every unit, and every later build in the session reruns only what changed. A build run on its own, outside a dev-server session, reuses nothing. Rationale: a deploy build that could inherit a stale cache is a deploy build nobody can trust, and the dev loop is where the cost of full rebuilds is paid.
 
+A file's change is detected by its size and modification time, and then by its contents, so a save that changed nothing reruns nothing. On a filesystem with coarse timestamps, a file rewritten to the same size within one timestamp tick of a build's stat keeps its earlier hash until it changes again or the session restarts. Rationale: a stat is cheap and a hash costs the file's bytes, and images are most of a site's bytes. The tick is a nanosecond on APFS and a few milliseconds on ext4, where a build's stat cannot fall between two saves, and a second on HFS+ or two on FAT, where it can.
+
 The inputs a build tracks for a render are the page's own file, every template in its chain, every global name it read whether or not that name was defined, every file and handled output it read through the render context, and every rendered body it read. Rationale: a template that reads `team` before `_data/team.json` exists must re-render when the file appears.
 
-A change to the set of files, not only to their contents, is a change to inputs. Adding, removing, or renaming a template re-resolves the chain of every page whose search path includes the template's directory, and a page whose chain changed re-renders. Adding or removing a static file, a data file, or a page reruns the hooks and re-evaluates the uniqueness rule. Rationale: template resolution is a search, and a search's result depends on what exists.
+A change to the set of files, not only to their contents, is a change to inputs. Adding, removing, or renaming a template re-resolves the chain of every page whose search path includes the template's directory, and a page whose chain changed re-renders. A page added, removed, or renamed, or a page whose frontmatter changed, reruns every hook, and a change to a page's body reruns none, because the list of pages is everything a hook is given. Adding or removing any file re-evaluates the uniqueness rule. Rationale: template resolution is a search, and a search's result depends on what exists.
 
-A change to the configuration or to a plugin's code invalidates everything, and the next build runs every unit.
+A change to the configuration or to a plugin's code invalidates everything, and the next build runs every unit. A data module's own file is its input. A module it imports is treated as a plugin's code: it is not watched, and a change to it takes a restart.
 
 ## Concurrency
 

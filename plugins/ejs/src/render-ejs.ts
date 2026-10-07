@@ -27,7 +27,7 @@ export const renderEjs = (body: string, context: RenderContext, views: string[])
       for (const candidate of candidates) {
         const partial = fileContext.readFile(candidate);
         if (partial !== undefined) {
-          return render(partial, fileContext.enterFile(candidate, { ...variables, ...data }));
+          return render(partial, fileContext.enterFile(candidate, data));
         }
       }
       if (file.startsWith('/')) {
@@ -36,13 +36,35 @@ export const renderEjs = (body: string, context: RenderContext, views: string[])
       throw new Error(`No include ${reference} is in ${directory === '.' ? 'the source root' : directory} or in the views directories.`);
     };
 
-    // A name no file set reads as undefined, a runtime global stays reachable
-    // unless a variable shares its name, and EJS's own names always reach EJS.
-    // The copy keeps a `var` assignment off the caller's object.
-    const copy = { ...variables };
-    const locals = new Proxy(copy, {
-      has: (target, key) => key === 'include' || (!ejsNames.has(key) && (Object.hasOwn(target, key) || !(key in globalThis))),
-      get: (target, key): unknown => (key === 'include' ? include : Reflect.get(target, key)),
+    // Where a `var` a scriptlet sets lands, so the context's variables are
+    // never written.
+    const assignments: Variables = {};
+    // What EJS's `with` block resolves a name to.
+    const locals = new Proxy(assignments, {
+      has: (target, key) => {
+        if (key === 'include') {
+          return true;
+        }
+        // EJS's own names always reach EJS.
+        if (ejsNames.has(key)) {
+          return false;
+        }
+        if (Object.hasOwn(target, key) || Object.hasOwn(variables, key)) {
+          return true;
+        }
+        // A name no file set reads as undefined, unless the runtime has it.
+        return !(key in globalThis);
+      },
+      get: (target, key): unknown => {
+        if (key === 'include') {
+          return include;
+        }
+        if (Object.hasOwn(target, key)) {
+          return Reflect.get(target, key);
+        }
+        return Reflect.get(variables, key);
+      },
+      set: (target, key, value) => Reflect.set(target, key, value),
     });
     return ejs.compile(text, { filename: sourcePath, unsafePrototypeLocals: true, legacyInclude: false })(locals);
   };

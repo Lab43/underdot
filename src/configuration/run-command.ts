@@ -1,6 +1,6 @@
 // spec: docs/specs/configuration.md, Commands
 
-import { build } from '../build/build.ts';
+import { bindBuild } from '../build/bind-build.ts';
 import { describeError } from '../shared/describe-error.ts';
 import { loadConfiguration } from './load-configuration.ts';
 import { parseCommand } from './parse-command.ts';
@@ -12,7 +12,7 @@ const usage = 'Usage: underdot build [--config <path>]';
 // spec: docs/specs/build.md, Errors
 const runBuildCommand = async ({ configurationPath }: Command): Promise<number> => {
   try {
-    await build(await loadConfiguration(configurationPath));
+    await bindBuild(await loadConfiguration(configurationPath))();
     return 0;
   } catch (error) {
     process.stderr.write(`${describeError(error)}\n`);

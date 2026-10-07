@@ -2,7 +2,7 @@
 
 import { watch } from 'node:fs';
 import type { FSWatcher, WatchListener } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { createServer as createHttpServer } from 'node:http';
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'node:http';
 import { createServer as createHttpsServer } from 'node:https';
@@ -132,12 +132,16 @@ export const startSession = async ({ load, configurationFile, port, https = fals
     return watcher;
   };
 
-  // Which file changed does not matter: the build's own stat-and-hash pass
-  // decides what reruns, so any event schedules a build.
-  const watchSource = (source: string): FSWatcher =>
-    startWatcher(source, { recursive: true }, () => {
+  // The root is checked first, because a recursive watch on a missing
+  // directory throws on macOS but starts and reports the error later on
+  // Linux. Which file changed does not matter: the build's own
+  // stat-and-hash pass decides what reruns, so any event schedules a build.
+  const watchSource = async (source: string): Promise<FSWatcher> => {
+    await stat(source);
+    return startWatcher(source, { recursive: true }, () => {
       scheduleBuild();
     });
+  };
 
   // Replace the site, the build, and the source watcher from a fresh load,
   // or keep the previous ones and report the failure, which stands until a
@@ -151,7 +155,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       if (isClosed()) {
         return false;
       }
-      watcher = watchSource(next.source);
+      watcher = await watchSource(next.source);
     } catch (error) {
       if (isClosed()) {
         return false;
@@ -246,7 +250,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
         }
       });
     }
-    sourceWatcher = watchSource(configuration.source);
+    sourceWatcher = await watchSource(configuration.source);
   } catch (error) {
     configurationWatcher?.close();
     server.close();

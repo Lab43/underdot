@@ -79,8 +79,11 @@ export const serveRequest = async ({ destination, rewrites }: Site, request: Inc
     if (stats?.isDirectory()) {
       if (!path.endsWith('/')) {
         // The raw path, since the decoded one may hold characters a header
-        // cannot carry. A 302 rather than a 301, which a browser caches.
-        return { status: 302, headers: { Location: `${rawPath}/${query}` }, body: '' };
+        // cannot carry, with its leading slashes collapsed so the location
+        // never reads as a protocol-relative URL. A 302 rather than a 301,
+        // which a browser caches.
+        const location = rawPath.replace(/^\/+/, '/');
+        return { status: 302, headers: { Location: `${location}/${query}` }, body: '' };
       }
       file = join(file, 'index.html');
       stats = await stat(file).catch(() => undefined);

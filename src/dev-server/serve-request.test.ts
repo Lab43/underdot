@@ -70,6 +70,12 @@ describe('serveRequest', () => {
       expect(withQuery.headers.get('location')).toBe('/about/?x=1');
     });
 
+    test('a redirect never starts with two slashes', async () => {
+      const response = await get(`${url()}//about`);
+      expect(response.status).toBe(302);
+      expect(response.headers.get('location')).toBe('/about/');
+    });
+
     test('a directory with a trailing slash serves its index, a doubled slash included', async () => {
       const about = await readFile(join(source, 'about/index.html'), 'utf8');
       expect(await (await get(`${url()}/about/`)).text()).toBe(about);

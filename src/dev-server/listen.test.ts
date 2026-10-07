@@ -54,6 +54,12 @@ describe('listen', () => {
     expect(failing.listenerCount('listening')).toBe(before);
   });
 
+  test('a server that reports no port after listening is an error', async () => {
+    const piped = server();
+    vi.spyOn(piped, 'address').mockReturnValue('/tmp/socket');
+    await expect(listen(piped, 0)).rejects.toThrow(new Error('The server is not bound to a port.'));
+  });
+
   test('an attempt leaves no listener behind', async () => {
     const listening = server();
     const errors = listening.listenerCount('error');

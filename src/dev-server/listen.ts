@@ -47,8 +47,6 @@ export const listen = async (server: Server, port: number | undefined): Promise<
     await attempt(server, port);
   }
   const address = server.address();
-  // Only a server bound to a pipe reports a string, and listen binds ports.
-  /* v8 ignore next */
   if (address === null || typeof address === 'string') {
     throw new Error('The server is not bound to a port.');
   }

@@ -1,12 +1,14 @@
 // spec: docs/specs/dev-server.md
 
+import { watch } from 'node:fs';
+import type { FSWatcher, WatchListener } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer as createHttpServer } from 'node:http';
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'node:http';
 import { createServer as createHttpsServer } from 'node:https';
 import type { Server as HttpsServer } from 'node:https';
 import { networkInterfaces } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { bindBuild } from '../build/bind-build.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { describeError } from '../shared/describe-error.ts';
@@ -35,14 +37,29 @@ export interface Session {
   close: () => Promise<void>;
 }
 
+// What a connecting browser is shown: nothing, that a build runs, or a report.
+type Status = { name: 'idle' } | { name: 'building' } | { name: 'failed'; report: string };
+
+// Under an underscore segment, which no site output can have.
+const eventsPath = '/_underdot/events';
+
 /**
- * Load the configuration, serve its destination, and run the first build,
- * printing the URLs and every build's outcome.
+ * Load the configuration, serve its destination, build it, and rebuild it on
+ * every change until closed, printing the URLs and every build's outcome and
+ * telling every connected browser how each build went.
  */
-export const startSession = async ({ load, port, https = false }: SessionOptions): Promise<Session> => {
+export const startSession = async ({ load, configurationFile, port, https = false }: SessionOptions): Promise<Session> => {
   const configuration = await load();
-  const site: Site = { destination: configuration.destination, rewrites: configuration.rewrites };
-  const build = bindBuild(configuration);
+  let site: Site = { destination: configuration.destination, rewrites: configuration.rewrites };
+  let build = bindBuild(configuration);
+  let sourceWatcher: FSWatcher;
+  let configurationWatcher: FSWatcher | undefined;
+  const streams = new Set<ServerResponse>();
+  let status: Status = { name: 'idle' };
+  let configurationError: string | undefined;
+  let pending = false;
+  let reloadPending = false;
+  let running: Promise<void> | undefined;
   let closed = false;
 
   // The pair is read beside the configuration, so a session started with
@@ -62,8 +79,133 @@ export const startSession = async ({ load, port, https = false }: SessionOptions
     }
   };
 
+  // One event to a stream: its name, one data line per line of the data,
+  // and a blank line.
+  // spec: docs/specs/dev-server.md, Build status
+  const send = (stream: ServerResponse, name: string, data = ''): void => {
+    const lines = data.split('\n').map((line) => `data: ${line}\n`).join('');
+    stream.write(`event: ${name}\n${lines}\n`);
+  };
+
+  const broadcast = (name: string, data?: string): void => {
+    for (const stream of streams) {
+      send(stream, name, data);
+    }
+  };
+
+  // The event stream is answered before anything else, so a site's catch-all
+  // rewrite cannot swallow it, and a connecting client is told the status.
+  // spec: docs/specs/dev-server.md, Live reload
   const handle = (request: IncomingMessage, response: ServerResponse): void => {
-    void serveRequest(site, request, response);
+    if (request.url !== eventsPath) {
+      void serveRequest(site, request, response);
+      return;
+    }
+    response.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
+    response.flushHeaders();
+    streams.add(response);
+    response.on('close', () => {
+      streams.delete(response);
+    });
+    if (status.name === 'building') {
+      send(response, 'building');
+    }
+    if (status.name === 'failed') {
+      send(response, 'failed', status.report);
+    }
+  };
+
+  // A watcher's own error is printed, and the watcher keeps watching.
+  // spec: docs/specs/dev-server.md, Watching
+  const startWatcher = (path: string, options: { recursive?: boolean }, listener: WatchListener<string>): FSWatcher => {
+    const watcher = watch(path, options, listener);
+    watcher.on('error', (error) => {
+      process.stderr.write(`${describeError(error)}\n`);
+    });
+    return watcher;
+  };
+
+  // Which file changed does not matter: the build's own stat-and-hash pass
+  // decides what reruns, so any event schedules a build.
+  const watchSource = (source: string): FSWatcher =>
+    startWatcher(source, { recursive: true }, () => {
+      scheduleBuild();
+    });
+
+  // Replace the site, the build, and the source watcher from a fresh load,
+  // or keep the previous ones and report the failure, which stands until a
+  // reload succeeds.
+  // spec: docs/specs/dev-server.md, Session
+  const reload = async (): Promise<boolean> => {
+    let next: ResolvedConfiguration;
+    let watcher: FSWatcher;
+    try {
+      next = await load();
+      watcher = watchSource(next.source);
+    } catch (error) {
+      configurationError = describeError(error);
+      status = { name: 'failed', report: configurationError };
+      process.stderr.write(`${configurationError}\n`);
+      broadcast('failed', configurationError);
+      return false;
+    }
+    sourceWatcher.close();
+    sourceWatcher = watcher;
+    site = { destination: next.destination, rewrites: next.rewrites };
+    build = bindBuild(next);
+    configurationError = undefined;
+    return true;
+  };
+
+  // One build at a time, and one more after it when a change arrived while
+  // it ran, however many arrived. A build that settles after the session
+  // closed sets, prints, and broadcasts nothing.
+  // spec: docs/specs/dev-server.md, Watching
+  const runBuilds = async (): Promise<void> => {
+    while (pending && !closed) {
+      pending = false;
+      if (reloadPending) {
+        reloadPending = false;
+        if (!(await reload())) {
+          continue;
+        }
+      }
+      status = { name: 'building' };
+      broadcast('building');
+      const started = performance.now();
+      try {
+        await build();
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- close runs while the build is awaited, which the narrowing cannot see
+        if (closed) {
+          return;
+        }
+        const report = describeError(error);
+        status = { name: 'failed', report };
+        process.stderr.write(`${report}\n`);
+        broadcast('failed', report);
+        continue;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- as above
+      if (closed) {
+        return;
+      }
+      // A standing configuration report outlasts a successful source build,
+      // which ran under a configuration the author has already replaced.
+      status = configurationError === undefined ? { name: 'idle' } : { name: 'failed', report: configurationError };
+      process.stdout.write(`Built in ${String(Math.round(performance.now() - started))} ms\n`);
+      broadcast('built');
+    }
+  };
+
+  const scheduleBuild = (): void => {
+    if (closed) {
+      return;
+    }
+    pending = true;
+    running ??= runBuilds().finally(() => {
+      running = undefined;
+    });
   };
 
   let server: HttpServer | HttpsServer;
@@ -78,6 +220,28 @@ export const startSession = async ({ load, port, https = false }: SessionOptions
   const scheme = https ? 'https' : 'http';
   const url = `${scheme}://localhost:${String(boundPort)}/`;
 
+  // The configuration file is watched through its directory, because an
+  // editor that saves by renaming a temporary file over it replaces the
+  // inode a watch on the file would hold. The destination's writes arrive on
+  // the same watcher, so only an event naming the file reloads. A failure
+  // here leaves nothing open.
+  // spec: docs/specs/dev-server.md, Watching
+  try {
+    if (configurationFile !== undefined) {
+      configurationWatcher = startWatcher(dirname(configurationFile), {}, (_event, filename) => {
+        if (filename === basename(configurationFile)) {
+          reloadPending = true;
+          scheduleBuild();
+        }
+      });
+    }
+    sourceWatcher = watchSource(configuration.source);
+  } catch (error) {
+    configurationWatcher?.close();
+    server.close();
+    throw error;
+  }
+
   process.stdout.write(`Serving ${url}\n`);
   // The first address a device on the same network can reach.
   const networkAddress = Object.values(networkInterfaces())
@@ -86,29 +250,17 @@ export const startSession = async ({ load, port, https = false }: SessionOptions
   if (networkAddress !== undefined) {
     process.stdout.write(`Network ${scheme}://${networkAddress.address}:${String(boundPort)}/\n`);
   }
-
-  // One build's outcome, printed unless the session closed while it ran.
-  // spec: docs/specs/dev-server.md, Build status
-  const runBuild = async (): Promise<void> => {
-    const started = performance.now();
-    try {
-      await build();
-    } catch (error) {
-      if (!closed) {
-        process.stderr.write(`${describeError(error)}\n`);
-      }
-      return;
-    }
-    if (!closed) {
-      process.stdout.write(`Built in ${String(Math.round(performance.now() - started))} ms\n`);
-    }
-  };
-  const running = runBuild();
+  scheduleBuild();
 
   // The build in flight is awaited so its last write lands before a caller
   // removes the directory.
   const close = async (): Promise<void> => {
     closed = true;
+    sourceWatcher.close();
+    configurationWatcher?.close();
+    for (const stream of streams) {
+      stream.end();
+    }
     server.closeAllConnections();
     await new Promise<void>((resolve) => {
       server.close(() => {

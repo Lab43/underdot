@@ -1,6 +1,10 @@
 // spec: docs/specs/dev-server.md
 
+import { EventEmitter } from 'node:events';
+import { watch } from 'node:fs';
+import type * as fs from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { get } from 'node:https';
 import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
@@ -8,14 +12,32 @@ import { describe, expect, vi } from 'vitest';
 import { test as base } from '../../test/helpers/test.ts';
 import { bindBuild } from '../build/bind-build.ts';
 import { loadConfiguration } from '../configuration/load-configuration.ts';
+import { injectClientScript } from './inject-client-script.ts';
 import { startSession } from './start-session.ts';
 import type { Session, SessionOptions } from './start-session.ts';
 
 vi.mock('../build/bind-build.ts', { spy: true });
+// Spying on the whole of node:fs sends the worker's stdout writes to its
+// stderr, so only watch is wrapped.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof fs>();
+  return { ...actual, watch: vi.fn(actual.watch) };
+});
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:os', { spy: true });
 
+interface Event {
+  name: string;
+  data: string;
+}
+
 const loader = (directory: string) => () => loadConfiguration(join(directory, 'underdot.config.ts'));
+
+// A loader that imports the file as it stands on each call.
+const reloader = (directory: string): (() => ReturnType<typeof loadConfiguration>) => {
+  let version = 0;
+  return () => loadConfiguration(join(directory, 'underdot.config.ts'), String(version++));
+};
 
 // Sessions on the copy, each closed before the copy is removed. Fixtures
 // are torn down before onTestFinished runs, so a session closed there
@@ -40,17 +62,90 @@ const whenServed = (url: string): Promise<string> =>
     return response.text();
   });
 
-// bindBuild's next build replaced by one that settles when the test says.
-const holdBuild = (): { release: () => void; fail: (error: Error) => void } => {
+// The events the session's stream sends, collected as they arrive.
+const subscribe = async (url: string): Promise<Event[]> => {
+  const response = await fetch(`${url}_underdot/events`);
+  expect(response.headers.get('content-type')).toBe('text/event-stream');
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  const events: Event[] = [];
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const read = async (): Promise<void> => {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        return;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      let end = buffer.indexOf('\n\n');
+      while (end !== -1) {
+        const lines = buffer.slice(0, end).split('\n');
+        buffer = buffer.slice(end + 2);
+        events.push({
+          name: lines.filter((line) => line.startsWith('event: ')).map((line) => line.slice(7)).join(''),
+          data: lines.filter((line) => line.startsWith('data: ')).map((line) => line.slice(6)).join('\n'),
+        });
+        end = buffer.indexOf('\n\n');
+      }
+    }
+  };
+  void read().catch(() => undefined);
+  return events;
+};
+
+const names = (events: Event[]): string[] => events.map((event) => event.name);
+
+// Until the stream's last event is the named one.
+const whenLast = (events: Event[], name: string): Promise<Event> =>
+  vi.waitFor(() => {
+    const last = events.at(-1);
+    expect(last?.name).toBe(name);
+    return last!;
+  });
+
+// bindBuild's next build replaced by one that settles when the test says,
+// counting its calls.
+const holdBuild = (): { build: ReturnType<typeof vi.fn>; release: () => void; fail: (error: Error) => void } => {
   let release = (): void => undefined;
   let fail = (_error: Error): void => undefined;
   const held = new Promise<void>((resolve, reject) => {
     release = resolve;
     fail = reject;
   });
-  vi.mocked(bindBuild).mockReturnValueOnce(() => held);
-  return { release, fail };
+  const build = vi.fn(() => held);
+  vi.mocked(bindBuild).mockReturnValueOnce(build);
+  return { build, release, fail };
 };
+
+// A watcher the test drives, in place of the next one the session starts.
+class FakeWatcher extends EventEmitter {
+  close = vi.fn();
+  ref(): this {
+    return this;
+  }
+
+  unref(): this {
+    return this;
+  }
+}
+
+const driveNextWatcher = (): FakeWatcher => {
+  const fake = new FakeWatcher();
+  vi.mocked(watch).mockImplementationOnce((...args: unknown[]) => {
+    // As fs.watch does, the listener given becomes a change listener.
+    const listener = args.at(-1);
+    if (typeof listener === 'function') {
+      fake.on('change', (...eventArgs: unknown[]) => {
+        listener(...eventArgs);
+      });
+    }
+    return fake;
+  });
+  return fake;
+};
+
+const badDataReport = 'The data file _data/bad.txt must be a .json, .js, or .ts file.';
 
 describe('startSession', () => {
   test.override({ fixture: 'dev' });
@@ -58,7 +153,7 @@ describe('startSession', () => {
   test('serves the built site and prints the URLs and the build time', async ({ directory, start, stdout }) => {
     const { url } = await start();
     expect(url).toMatch(/^http:\/\/localhost:\d+\/$/);
-    expect(await whenServed(url)).toBe(await readFile(join(directory, 'source/index.html'), 'utf8'));
+    expect(await whenServed(url)).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
     await vi.waitFor(() => {
       expect(stdout.at(-1)).toMatch(/^Built in \d+ ms\n$/);
     });
@@ -78,14 +173,19 @@ describe('startSession', () => {
   });
 
   // spec: docs/specs/dev-server.md, Session
-  test('a site whose first build fails serves and prints the report', async ({ directory, start, stderr }) => {
+  test('a site whose first build fails serves, prints the report, and builds once the fix lands', async ({ directory, start, stderr }) => {
     await mkdir(join(directory, 'source/_data'));
     await writeFile(join(directory, 'source/_data/bad.txt'), 'bad');
     const { url } = await start();
     await vi.waitFor(() => {
-      expect(stderr).toStrictEqual(['The data file _data/bad.txt must be a .json, .js, or .ts file.\n']);
+      expect(stderr).toStrictEqual([`${badDataReport}\n`]);
     });
     expect((await fetch(url)).status).toBe(404);
+    const events = await subscribe(url);
+    await whenLast(events, 'failed');
+    await rm(join(directory, 'source/_data/bad.txt'));
+    await whenLast(events, 'built');
+    expect((await fetch(url)).status).toBe(200);
   });
 
   test('a loader that rejects fails the start', async () => {
@@ -106,6 +206,209 @@ describe('startSession', () => {
       expect(stdout.at(-1)).toMatch(/^Built in/);
     });
     await expect(session.close()).resolves.toBeUndefined();
+  });
+
+  // spec: docs/specs/dev-server.md, Watching
+  describe('a missing source root', () => {
+    test('fails the start and frees the port', async ({ directory }) => {
+      const file = join(directory, 'underdot.config.ts');
+      await writeFile(file, "export default { source: 'missing' };\n");
+      const probe = createServer();
+      await new Promise<void>((resolve) => {
+        probe.listen(0, resolve);
+      });
+      const address = probe.address();
+      const port = typeof address === 'object' && address !== null ? address.port : 0;
+      await new Promise((resolve) => {
+        probe.close(resolve);
+      });
+      await expect(startSession({ load: loader(directory), configurationFile: file, port })).rejects.toThrow(/ENOENT/);
+      const again = createServer();
+      await new Promise<void>((resolve) => {
+        again.listen(port, resolve);
+      });
+      await new Promise((resolve) => {
+        again.close(resolve);
+      });
+    });
+
+    test('fails the start without a configuration file to watch', async ({ directory }) => {
+      await writeFile(join(directory, 'underdot.config.ts'), "export default { source: 'missing' };\n");
+      await expect(startSession({ load: loader(directory), port: 0 })).rejects.toThrow(/ENOENT/);
+    });
+  });
+
+  // spec: docs/specs/dev-server.md, Build status
+  describe('a source change', () => {
+    test('rebuilds, serves the edit, and tells the browsers', async ({ directory, start }) => {
+      const { url } = await start();
+      await whenServed(url);
+      const events = await subscribe(url);
+      await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
+      await vi.waitFor(async () => {
+        expect(await (await fetch(url)).text()).toContain('Edited');
+      });
+      await whenLast(events, 'built');
+      expect(names(events)).toContain('building');
+      expect(new Set(names(events))).toStrictEqual(new Set(['building', 'built']));
+    });
+
+    test('a failing build reports to the browsers and to a browser connecting later, until the fix builds', async ({ directory, start, stderr }) => {
+      const { url } = await start();
+      await whenServed(url);
+      const events = await subscribe(url);
+      await mkdir(join(directory, 'source/_data'));
+      await writeFile(join(directory, 'source/_data/bad.txt'), 'bad');
+      expect(await whenLast(events, 'failed')).toStrictEqual({ name: 'failed', data: badDataReport });
+      expect(stderr).toContain(`${badDataReport}\n`);
+      expect((await fetch(url)).status).toBe(200);
+      const later = await subscribe(url);
+      await vi.waitFor(() => {
+        expect(later[0]).toStrictEqual({ name: 'failed', data: badDataReport });
+      });
+      await rm(join(directory, 'source/_data/bad.txt'));
+      await whenLast(events, 'built');
+      await whenLast(later, 'built');
+    });
+  });
+
+  // spec: docs/specs/dev-server.md, Session
+  describe('a configuration change', () => {
+    test('reloads the configuration and builds in full', async ({ directory, start }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const { url } = await start({ load: reloader(directory), configurationFile: file });
+      await whenServed(url);
+      const events = await subscribe(url);
+      await writeFile(file, "export default { rewrites: { '/cart': '/about/' } };\n");
+      await vi.waitFor(async () => {
+        expect(await (await fetch(`${url}cart`)).text()).toContain('About');
+      });
+      await whenLast(events, 'built');
+      expect(vi.mocked(bindBuild)).toHaveBeenCalledTimes(2);
+    });
+
+    test('a configuration that fails to load is reported, stands through source builds, and clears when it loads', async ({ directory, start, stderr }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const { url } = await start({ load: reloader(directory), configurationFile: file });
+      await whenServed(url);
+      const events = await subscribe(url);
+      await writeFile(file, 'export default {\n');
+      const failure = await whenLast(events, 'failed');
+      expect(failure.data).not.toBe('');
+      expect(stderr).toContain(`${failure.data}\n`);
+      expect(await (await fetch(`${url}cart`)).text()).toContain('Store');
+      await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
+      await whenLast(events, 'built');
+      const during = await subscribe(url);
+      await vi.waitFor(() => {
+        expect(during[0]).toStrictEqual(failure);
+      });
+      await writeFile(file, 'export default {};\n');
+      await whenLast(during, 'built');
+      const after = await subscribe(url);
+      await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited again</h1></body>\n');
+      await whenLast(after, 'built');
+      expect(names(after)).toStrictEqual(['building', 'built']);
+    });
+
+    test('a configuration naming a missing source root is reported and the site keeps serving', async ({ directory, start }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const { url } = await start({ load: reloader(directory), configurationFile: file });
+      await whenServed(url);
+      const events = await subscribe(url);
+      await writeFile(file, "export default { source: 'missing' };\n");
+      const failure = await whenLast(events, 'failed');
+      expect(failure.data).toMatch(/ENOENT/);
+      expect((await fetch(url)).status).toBe(200);
+    });
+  });
+
+  // spec: docs/specs/dev-server.md, Watching
+  describe('with a driven watcher', () => {
+    test("a watcher's error is printed and the site keeps serving", async ({ start, stderr }) => {
+      const fake = driveNextWatcher();
+      const { url } = await start();
+      await whenServed(url);
+      fake.emit('error', new Error('The watcher broke.'));
+      await vi.waitFor(() => {
+        expect(stderr).toContain('The watcher broke.\n');
+      });
+      expect((await fetch(url)).status).toBe(200);
+    });
+
+    test('an event without a filename on the configuration watcher reloads nothing', async ({ directory, start, stdout }) => {
+      const load = vi.fn(loader(directory));
+      const file = join(directory, 'underdot.config.ts');
+      const fake = driveNextWatcher();
+      const { url } = await start({ load, configurationFile: file });
+      await whenServed(url);
+      fake.emit('change', 'rename', null);
+      await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
+      await vi.waitFor(() => {
+        expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(2);
+      });
+      expect(load).toHaveBeenCalledTimes(1);
+    });
+
+    test("an event naming another file in the configuration's directory reloads nothing", async ({ directory, start, stdout }) => {
+      const load = vi.fn(loader(directory));
+      const file = join(directory, 'underdot.config.ts');
+      const fake = driveNextWatcher();
+      const { url } = await start({ load, configurationFile: file });
+      await whenServed(url);
+      fake.emit('change', 'rename', 'build');
+      await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
+      await vi.waitFor(() => {
+        expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(2);
+      });
+      expect(load).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // spec: docs/specs/dev-server.md, Watching
+  describe('with the first build held', () => {
+    test('changes during a build are held into one build after it', async ({ start }) => {
+      const { build, release } = holdBuild();
+      const fake = driveNextWatcher();
+      const { url } = await start();
+      const events = await subscribe(url);
+      await vi.waitFor(() => {
+        expect(events[0]).toStrictEqual({ name: 'building', data: '' });
+      });
+      fake.emit('change', 'rename', 'a.html');
+      fake.emit('change', 'rename', 'b.html');
+      fake.emit('change', 'rename', 'c.html');
+      release();
+      await vi.waitFor(() => {
+        expect(names(events).filter((name) => name === 'built')).toHaveLength(2);
+      });
+      expect(build).toHaveBeenCalledTimes(2);
+      expect(names(events)).toStrictEqual(['building', 'built', 'building', 'built']);
+    });
+
+    test('a session closed mid-build prints and broadcasts nothing when the build settles, and builds no more', async ({ directory, stdout }) => {
+      const { build, release } = holdBuild();
+      const fake = driveNextWatcher();
+      const session = await startSession({ load: loader(directory), port: 0 });
+      const events = await subscribe(session.url);
+      const closing = session.close();
+      release();
+      await closing;
+      fake.emit('change', 'rename', 'a.html');
+      expect(stdout.filter((line) => line.startsWith('Built'))).toStrictEqual([]);
+      expect(names(events)).not.toContain('built');
+      expect(build).toHaveBeenCalledTimes(1);
+    });
+
+    test('a session closed mid-build prints no report when the build fails', async ({ directory, stderr, stdout }) => {
+      const { fail } = holdBuild();
+      const session = await startSession({ load: loader(directory), port: 0 });
+      const closing = session.close();
+      fail(new Error('Late failure.'));
+      await closing;
+      expect(stderr).toStrictEqual([]);
+      expect(stdout.filter((line) => line.startsWith('Built'))).toStrictEqual([]);
+    });
   });
 
   // spec: docs/specs/dev-server.md, Serving
@@ -133,7 +436,7 @@ describe('startSession', () => {
         expect(got.status).toBe(200);
         return got;
       });
-      expect(body).toBe(await readFile(join(directory, 'source/index.html'), 'utf8'));
+      expect(body).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
       expect(stdout[0]).toBe(`Serving ${url}\n`);
     });
 
@@ -158,27 +461,6 @@ describe('startSession', () => {
           new Error(`No localhost.pem in ${directory}. Run \`mkcert localhost\` there to generate localhost.pem and localhost-key.pem.`),
         );
       });
-    });
-  });
-
-  describe('closed while the first build runs', () => {
-    test('a build that then succeeds prints nothing', async ({ directory, stdout }) => {
-      const { release } = holdBuild();
-      const session = await startSession({ load: loader(directory), port: 0 });
-      const closing = session.close();
-      release();
-      await closing;
-      expect(stdout.filter((line) => line.startsWith('Built'))).toStrictEqual([]);
-    });
-
-    test('a build that then fails prints no report', async ({ directory, stderr, stdout }) => {
-      const { fail } = holdBuild();
-      const session = await startSession({ load: loader(directory), port: 0 });
-      const closing = session.close();
-      fail(new Error('Late failure.'));
-      await closing;
-      expect(stderr).toStrictEqual([]);
-      expect(stdout.filter((line) => line.startsWith('Built'))).toStrictEqual([]);
     });
   });
 });

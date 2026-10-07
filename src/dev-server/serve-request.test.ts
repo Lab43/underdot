@@ -6,6 +6,7 @@ import type { Server } from 'node:http';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { injectClientScript } from './inject-client-script.ts';
 import { serveRequest } from './serve-request.ts';
 import type { Site } from './serve-request.ts';
 
@@ -46,19 +47,19 @@ describe('serveRequest', () => {
     const source = fixturePath('dev/source');
     const url = serve({ destination: source, rewrites: { '/cart': '/store/', '/cart/**': '/store/' } });
 
-    test('the root serves index.html with the three headers', async () => {
+    test('the root serves index.html with the script and the three headers', async () => {
       const response = await get(`${url()}/`);
       const body = await response.text();
       expect(response.status).toBe(200);
-      expect(body).toBe(await readFile(join(source, 'index.html'), 'utf8'));
+      expect(body).toBe(injectClientScript(await readFile(join(source, 'index.html'), 'utf8')));
       expect(response.headers.get('content-type')).toBe(html);
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(response.headers.get('content-length')).toBe(String(Buffer.byteLength(body)));
     });
 
-    test('a page without a body tag serves as it is', async () => {
+    test('a page without a body tag gets the script appended', async () => {
       const response = await get(`${url()}/snippet.html`);
-      expect(await response.text()).toBe('<p>Snippet</p>\n');
+      expect(await response.text()).toBe(injectClientScript('<p>Snippet</p>\n'));
     });
 
     test('a directory without a trailing slash redirects to it, keeping the query', async () => {
@@ -78,8 +79,8 @@ describe('serveRequest', () => {
 
     test('a directory with a trailing slash serves its index, a doubled slash included', async () => {
       const about = await readFile(join(source, 'about/index.html'), 'utf8');
-      expect(await (await get(`${url()}/about/`)).text()).toBe(about);
-      expect(await (await get(`${url()}//about/`)).text()).toBe(about);
+      expect(await (await get(`${url()}/about/`)).text()).toBe(injectClientScript(about));
+      expect(await (await get(`${url()}//about/`)).text()).toBe(injectClientScript(about));
     });
 
     test('a percent-encoded path is decoded to find the file and kept raw in the redirect', async () => {
@@ -87,7 +88,7 @@ describe('serveRequest', () => {
       expect(redirect.status).toBe(302);
       expect(redirect.headers.get('location')).toBe('/caf%C3%A9/');
       const page = await get(`${url()}/caf%C3%A9/`);
-      expect(await page.text()).toBe(await readFile(join(source, 'café/index.html'), 'utf8'));
+      expect(await page.text()).toBe(injectClientScript(await readFile(join(source, 'café/index.html'), 'utf8')));
     });
 
     test('a read that fails after the file was found is a 500 with the message', async () => {
@@ -111,15 +112,15 @@ describe('serveRequest', () => {
 
     test('a rewrite serves its path in place of the request', async () => {
       const store = await readFile(join(source, 'store/index.html'), 'utf8');
-      expect(await (await get(`${url()}/cart`)).text()).toBe(store);
-      expect(await (await get(`${url()}/cart/anything`)).text()).toBe(store);
+      expect(await (await get(`${url()}/cart`)).text()).toBe(injectClientScript(store));
+      expect(await (await get(`${url()}/cart/anything`)).text()).toBe(injectClientScript(store));
     });
 
-    test("a miss is the site's 404 page with status 404", async () => {
+    test("a miss is the site's 404 page with the script and status 404", async () => {
       const response = await get(`${url()}/nope`);
       expect(response.status).toBe(404);
       expect(response.headers.get('content-type')).toBe(html);
-      expect(await response.text()).toBe(await readFile(join(source, '404.html'), 'utf8'));
+      expect(await response.text()).toBe(injectClientScript(await readFile(join(source, '404.html'), 'utf8')));
     });
 
     test('a directory without an index is a miss', async () => {
@@ -147,7 +148,7 @@ describe('serveRequest', () => {
 
     test('is the root', async () => {
       const response = await get(`${url()}/anything`);
-      expect(await response.text()).toBe(await readFile(fixturePath('dev/source/index.html'), 'utf8'));
+      expect(await response.text()).toBe(injectClientScript(await readFile(fixturePath('dev/source/index.html'), 'utf8')));
     });
   });
 
@@ -158,7 +159,7 @@ describe('serveRequest', () => {
     test('serves its pages', async () => {
       const response = await get(`${url()}/blog/hello/`);
       expect(response.status).toBe(200);
-      expect(await response.text()).toBe(await readFile(join(expected, 'blog/hello/index.html'), 'utf8'));
+      expect(await response.text()).toBe(injectClientScript(await readFile(join(expected, 'blog/hello/index.html'), 'utf8')));
     });
   });
 

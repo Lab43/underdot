@@ -18,6 +18,10 @@ Run `node <repo>/dist/underdot.js dev` from a copy of a fixture, as the build co
 
 `--https` serves over HTTPS from `localhost.pem` and `localhost-key.pem` in the copy. Run `mkcert localhost` in the copy first, which writes both. Without them the session fails to start, naming the missing file and the command that generates it.
 
+With a page open in the browser, an edit to a page under `source/` rebuilds and reloads it, and the terminal prints another `Built in` line. An edit that breaks a page, such as an unclosed frontmatter block, shows the build's report in an overlay in the browser and prints it in the terminal, and the page behind the overlay stays. Fixing the page reloads it. Without a browser, `curl -N <url>_underdot/events` prints the `building`, `failed`, and `built` events as they are sent.
+
+An edit to `underdot.config.ts` reloads the configuration and builds in full, so a rewrite added there serves after the next `Built in` line. A configuration that fails to load is reported the same way, and the previous configuration stays in force until the file loads again.
+
 A module the configuration imports, such as a fixture's plugin module, is loaded once per session. An edit to it takes a restart.
 
 ## The published package

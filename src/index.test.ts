@@ -6,6 +6,7 @@ import { describe, expect, vi } from 'vitest';
 import defaultsConfiguration from '../test/fixtures/defaults/underdot.config.ts';
 import { fixturePath } from '../test/helpers/fixture-path.ts';
 import { test } from '../test/helpers/test.ts';
+import { injectClientScript } from './dev-server/inject-client-script.ts';
 import { build, dev } from './index.ts';
 import { walkSource } from './source-tree/walk-source.ts';
 
@@ -44,7 +45,7 @@ describe('dev', () => {
       await vi.waitFor(async () => {
         const response = await fetch(session.url);
         expect(response.status).toBe(200);
-        expect(await response.text()).toBe(await readFile(join(workingDirectory, 'source/index.html'), 'utf8'));
+        expect(await response.text()).toBe(injectClientScript(await readFile(join(workingDirectory, 'source/index.html'), 'utf8')));
       });
       expect(stdout[0]).toBe(`Serving ${session.url}\n`);
     } finally {

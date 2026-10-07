@@ -20,6 +20,8 @@ Run `node <repo>/dist/underdot.js dev` from a copy of a fixture, as the build co
 
 With a page open in the browser, an edit to a page under `source/` rebuilds and reloads it, and the terminal prints another `Built in` line. An edit that breaks a page, such as an unclosed frontmatter block, shows the build's report in an overlay in the browser and prints it in the terminal, and the page behind the overlay stays. Fixing the page reloads it. Without a browser, `curl -N <url>_underdot/events` prints the `building`, `failed`, and `built` events as they are sent.
 
+One save can print two or more `Built in` lines on macOS. The watcher reports a single write as several change events, and an event that lands while a build runs holds one more build after it. The builds after the first reuse every unit and take a few milliseconds. To tell what a save reran, look at what the destination gained or what the page shows, never at the count of lines.
+
 An edit to `underdot.config.ts` reloads the configuration and builds in full, so a rewrite added there serves after the next `Built in` line. A configuration that fails to load is reported the same way, and the previous configuration stays in force until the file loads again.
 
 A module the configuration imports, such as a fixture's plugin module, is loaded once per session. An edit to it takes a restart.

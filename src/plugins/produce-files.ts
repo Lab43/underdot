@@ -55,12 +55,12 @@ export const produceFiles = async (
   const outputsByPath = new Map(outputs.map((output) => [output.outputPath, output]));
   // Sorted, so a collision names its two sources the same way whichever
   // render finished first, and the first emit of a path stands for the rest.
-  const sorted = emits.toSorted((a, b) => compareStrings(a.outputPath, b.outputPath) || compareStrings(a.sourcePath, b.sourcePath));
-  const firsts: EmittedFile[] = [];
-  for (const emitted of sorted) {
-    const first = firsts.at(-1);
+  const orderedEmits = emits.toSorted((a, b) => compareStrings(a.outputPath, b.outputPath) || compareStrings(a.sourcePath, b.sourcePath));
+  const firstEmits: EmittedFile[] = [];
+  for (const emitted of orderedEmits) {
+    const first = firstEmits.at(-1);
     if (first?.outputPath !== emitted.outputPath) {
-      firsts.push(emitted);
+      firstEmits.push(emitted);
       continue;
     }
     if (emitted.pluginName !== first.pluginName) {
@@ -73,13 +73,13 @@ export const produceFiles = async (
       throw new Error(`Both ${first.sourcePath} and ${emitted.sourcePath} emit ${emitted.outputPath} with different inputs.`);
     }
   }
-  const produced = await mapUnits(firsts, async ({ pluginName, sourcePath, outputPath, parametersHash, produce }) => {
+  const outputsByUnit = await mapUnits(firstEmits, async ({ pluginName, sourcePath, outputPath, parametersHash, produce }) => {
     // A file whose bytes were dropped is whole only while the destination
     // holds what the build last wrote there, so a record with one missing
     // runs again.
     const record = records.get(outputPath);
     if (record !== undefined) {
-      const wholes = await Promise.all(record.result.map(async (output) => {
+      const outputsWhole = await Promise.all(record.result.map(async (output) => {
         if (output.contents !== undefined) {
           return true;
         }
@@ -89,7 +89,7 @@ export const produceFiles = async (
         const stats = await stat(join(destination, output.outputPath)).catch(() => undefined);
         return stats?.isFile() === true;
       }));
-      if (!wholes.every(Boolean)) {
+      if (!outputsWhole.every(Boolean)) {
         records.delete(outputPath);
       }
     }
@@ -115,9 +115,9 @@ export const produceFiles = async (
         throw new Error(`The producer ${pluginName} gave for ${outputPath} must return text or bytes.`);
       }
       const index = pluginNames.indexOf(pluginName);
-      const after = handlers.filter((handler) => pluginNames.indexOf(handler.pluginName) > index);
+      const handlersAfter = handlers.filter((handler) => pluginNames.indexOf(handler.pluginName) > index);
       const bytes = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
-      const handled = await runHandlers(outputPath, { outputPath, contents: bytes }, after);
+      const handled = await runHandlers(outputPath, { outputPath, contents: bytes }, handlersAfter);
       return handled.map((file) => ({ sourcePath, outputPath: file.outputPath, contents: file.contents, hash: hash('sha256', file.contents, 'hex') }));
     };
     const result = await reuseUnit(records, outputPath, lookup, run);
@@ -126,5 +126,5 @@ export const produceFiles = async (
     }
     return result;
   });
-  return produced.flat();
+  return outputsByUnit.flat();
 };

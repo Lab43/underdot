@@ -37,10 +37,14 @@ export interface Session {
   close: () => Promise<void>;
 }
 
-// What a connecting browser is shown: nothing, that a build runs, or a report.
+/**
+ * What a connecting browser is shown: nothing, that a build runs, or a report.
+ */
 type Status = { name: 'idle' } | { name: 'building' } | { name: 'failed'; report: string };
 
-// Under an underscore segment, which no site output can have.
+/**
+ * The event stream's path, under an underscore segment no site output can have.
+ */
 const eventsPath = '/_underdot/events';
 
 /**

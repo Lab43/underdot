@@ -1,8 +1,10 @@
 // spec: docs/specs/dev-server.md, Live reload
 
-// The script a served page carries, held as a string so the compiled
-// package carries it without a second file. It connects to the session's
-// event stream and shows a build's status in elements it creates once.
+/**
+ * The script a served page carries, held as a string so the compiled
+ * package carries it without a second file. It connects to the session's
+ * event stream and shows a build's status in elements it creates once.
+ */
 const script = `(() => {
   const status = document.createElement('div');
   status.style.cssText = 'position:fixed;right:1rem;bottom:1rem;z-index:2147483647;display:none;padding:.5rem 1rem;border-radius:4px;background:#222;color:#fff;font:14px system-ui,sans-serif';

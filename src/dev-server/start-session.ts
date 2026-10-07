@@ -166,6 +166,12 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       broadcast('failed', configurationError);
       return false;
     }
+    // A close during the root's stat has already closed the old watcher,
+    // so the new one is closed here rather than kept.
+    if (isClosed()) {
+      watcher.close();
+      return false;
+    }
     sourceWatcher.close();
     sourceWatcher = watcher;
     site = { destination: next.destination, rewrites: next.rewrites };

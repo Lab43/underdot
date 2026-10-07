@@ -3,7 +3,8 @@
 import { EventEmitter } from 'node:events';
 import { watch } from 'node:fs';
 import type * as fs from 'node:fs';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import type { Stats } from 'node:fs';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { get } from 'node:https';
 import { networkInterfaces } from 'node:os';
@@ -263,9 +264,11 @@ describe('startSession', () => {
       expect(await whenLast(events, 'failed')).toStrictEqual({ name: 'failed', data: badDataReport });
       expect(stderr).toContain(`${badDataReport}\n`);
       expect((await fetch(url)).status).toBe(200);
+      // A second event from the same save may have a build running on
+      // connect, which sends building first.
       const later = await subscribe(url);
       await vi.waitFor(() => {
-        expect(later[0]).toStrictEqual({ name: 'failed', data: badDataReport });
+        expect(later.find((event) => event.name !== 'building')).toStrictEqual({ name: 'failed', data: badDataReport });
       });
       await rm(join(directory, 'source/_data/bad.txt'));
       await whenLast(events, 'built');
@@ -303,7 +306,7 @@ describe('startSession', () => {
       await whenLast(events, 'built');
       const during = await subscribe(url);
       await vi.waitFor(() => {
-        expect(during[0]).toStrictEqual(failure);
+        expect(during.find((event) => event.name !== 'building')).toStrictEqual(failure);
       });
       await writeFile(file, 'export default {};\n');
       await whenLast(during, 'built');
@@ -338,6 +341,30 @@ describe('startSession', () => {
       expect(vi.mocked(bindBuild)).toHaveBeenCalledTimes(1);
       expect(names(events)).toStrictEqual([]);
       expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(1);
+    });
+
+    test('a session closed while the new source root is checked closes the watcher it then starts', async ({ directory, stdout }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const session = await startSession({ load: reloader(directory), configurationFile: file, port: 0 });
+      await vi.waitFor(() => {
+        expect(stdout.at(-1)).toMatch(/^Built in/);
+      });
+      let reached = false;
+      let settle: (stats: Stats) => void = () => undefined;
+      vi.mocked(stat).mockImplementationOnce(() => new Promise((resolve) => {
+        reached = true;
+        settle = resolve;
+      }));
+      const fake = driveNextWatcher();
+      await writeFile(file, 'export default {};\n');
+      await vi.waitFor(() => {
+        expect(reached).toBe(true);
+      });
+      const closing = session.close();
+      settle(await stat(join(directory, 'source')));
+      await closing;
+      expect(fake.close).toHaveBeenCalledOnce();
+      expect(vi.mocked(bindBuild)).toHaveBeenCalledTimes(1);
     });
 
     test('a session closed while the configuration loads prints no report when the load fails', async ({ directory, stderr, stdout }) => {

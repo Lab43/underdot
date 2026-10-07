@@ -1,11 +1,9 @@
 // spec: docs/specs/dev-server.md, Serving
 
 import type { Server } from 'node:net';
+import { hasErrorCode } from '../shared/has-error-code.ts';
 
 const firstPort = 3000;
-
-const isAddressInUse = (error: unknown): boolean =>
-  error instanceof Error && 'code' in error && error.code === 'EADDRINUSE';
 
 // One attempt, settled by whichever of listening and error fires first,
 // with both listeners removed so an attempt leaves none behind.
@@ -37,7 +35,7 @@ export const listen = async (server: Server, port: number | undefined): Promise<
         await attempt(server, candidate);
         break;
       } catch (error) {
-        if (!isAddressInUse(error)) {
+        if (!hasErrorCode(error, 'EADDRINUSE')) {
           throw error;
         }
         candidate += 1;

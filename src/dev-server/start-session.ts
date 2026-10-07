@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { bindBuild } from '../build/bind-build.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { describeError } from '../shared/describe-error.ts';
+import { hasErrorCode } from '../shared/has-error-code.ts';
 import { listen } from './listen.ts';
 import { serveRequest } from './serve-request.ts';
 import type { Site } from './serve-request.ts';
@@ -34,9 +35,6 @@ export interface Session {
   close: () => Promise<void>;
 }
 
-const isMissing = (error: unknown): boolean =>
-  error instanceof Error && 'code' in error && error.code === 'ENOENT';
-
 /**
  * Load the configuration, serve its destination, and run the first build,
  * printing the URLs and every build's outcome.
@@ -54,7 +52,7 @@ export const startSession = async ({ load, port, https = false }: SessionOptions
     try {
       return await readFile(join(configuration.projectDirectory, name));
     } catch (error) {
-      if (isMissing(error)) {
+      if (hasErrorCode(error, 'ENOENT')) {
         throw new Error(
           `No ${name} in ${configuration.projectDirectory}. Run \`mkcert localhost\` there to generate localhost.pem and localhost-key.pem.`,
           { cause: error },

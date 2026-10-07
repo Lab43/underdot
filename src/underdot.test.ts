@@ -1,12 +1,12 @@
 // spec: docs/specs/configuration.md, Commands
 
-import { execFile, spawn } from 'node:child_process';
+import { type ChildProcessWithoutNullStreams, execFile, spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { describe, expect, onTestFinished, vi } from 'vitest';
-import { test } from '../test/helpers/test.ts';
+import { test as base } from '../test/helpers/test.ts';
 import { runCommand } from './configuration/run-command.ts';
 import { injectClientScript } from './dev-server/inject-client-script.ts';
 
@@ -17,6 +17,19 @@ const shim = fileURLToPath(new URL('./underdot.ts', import.meta.url));
 // Type stripping runs the shim from source, so this needs no build.
 const runShim = (args: string[], cwd?: string): Promise<{ stdout: string; stderr: string }> =>
   promisify(execFile)(process.execPath, [shim, ...args], { cwd });
+
+// A dev server on the copy, killed and exited before the copy is removed.
+// Fixtures are torn down before onTestFinished runs, and a server killed
+// there is still rebuilding as its source disappears under it.
+const test = base.extend<{ dev: ChildProcessWithoutNullStreams }>({
+  dev: async ({ directory }, use) => {
+    const child = spawn(process.execPath, [shim, 'dev', '--port', '0'], { cwd: directory });
+    await use(child);
+    const exited = new Promise((resolve) => child.once('exit', resolve));
+    child.kill();
+    await exited;
+  },
+});
 
 describe('underdot', () => {
   test('the arguments after the script go to the command, and its status is the exit status', async () => {
@@ -37,21 +50,17 @@ describe('underdot', () => {
     await access(join(directory, 'build/index.html'));
   });
 
-  test('dev serves the working directory until it is killed', async ({ directory }) => {
-    const child = spawn(process.execPath, [shim, 'dev', '--port', '0'], { cwd: directory });
-    onTestFinished(() => {
-      child.kill();
-    });
+  test('dev serves the working directory until it is killed', async ({ directory, dev }) => {
     let output = '';
     const printed = await new Promise<string>((resolve, reject) => {
-      child.stdout.setEncoding('utf8');
-      child.stdout.on('data', (chunk: string) => {
+      dev.stdout.setEncoding('utf8');
+      dev.stdout.on('data', (chunk: string) => {
         output += chunk;
         if (output.includes('Built in')) {
           resolve(output);
         }
       });
-      child.on('exit', (code) => {
+      dev.on('exit', (code) => {
         reject(new Error(`The command exited with ${code} before building.`));
       });
     });

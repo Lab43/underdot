@@ -39,7 +39,7 @@ describe('underdot', () => {
   test('no arguments exits 2 with the usage on stderr', async () => {
     await expect(runShim([])).rejects.toMatchObject({
       code: 2,
-      stderr: 'No command given.\nUsage: underdot build [--config <path>]\n',
+      stderr: 'No command given.\nUsage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n',
     });
   });
 });

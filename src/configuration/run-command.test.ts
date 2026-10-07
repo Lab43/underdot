@@ -7,7 +7,7 @@ import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { test as base } from '../../test/helpers/test.ts';
 import { runCommand } from './run-command.ts';
 
-const usage = 'Usage: underdot build [--config <path>]\n';
+const usage = 'Usage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n';
 
 // Every write to stderr for the test's duration, in order.
 const test = base.extend<{ stderr: string[] }>({
@@ -56,6 +56,13 @@ describe('runCommand', () => {
     test('a failure that is not an Error is printed as a string', async ({ stderr }) => {
       expect(await runCommand(['build', '--config', fixturePath('throwing-config/underdot.config.js')])).toBe(1);
       expect(stderr).toStrictEqual(['The configuration refused to load.\n']);
+    });
+  });
+
+  describe('dev', () => {
+    test('is not available yet', async ({ stderr }) => {
+      expect(await runCommand(['dev'])).toBe(2);
+      expect(stderr).toStrictEqual(['The dev command is not available yet.\n']);
     });
   });
 

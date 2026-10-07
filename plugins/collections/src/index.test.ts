@@ -1,23 +1,17 @@
 // spec: docs/specs/collections.md
 
-import type { HookPage, RenderContext } from 'underdot';
+import type { HookPage } from 'underdot';
 import { describe, expect, test } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { collections } from './index.ts';
 import type { CollectionsOptions } from './index.ts';
 
 const hello: HookPage = { sourcePath: 'posts/hello.ejs', outputPath: 'posts/hello/index.html', url: '/posts/hello/', frontmatter: { title: 'Hello' } };
 
-const context: RenderContext = {
+const context = makeRenderContext({
   sourcePath: '_archive.ejs',
-  variables: {},
-  readFile: () => undefined,
-  readOutput: () => undefined,
   readBody: (url) => (url === '/posts/hello/' ? '<p>Hello, world.</p>\n' : ''),
-  enterFile: () => context,
-  emit: () => {
-    throw new Error('This test never emits.');
-  },
-};
+});
 
 describe('collections', () => {
   test('the plugin is named collections and registers a page hook and the pageBody helper', () => {

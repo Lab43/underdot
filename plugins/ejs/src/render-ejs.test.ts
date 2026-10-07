@@ -2,6 +2,7 @@
 
 import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { renderEjs } from './render-ejs.ts';
 
 // The files a read may reach, keyed by the absolute reference the renderer
@@ -29,16 +30,11 @@ interface Case {
 // A context over the files above. An entered file's context carries the
 // file's variables with the data over them, as the build's does, and a `here`
 // helper bound to the entered path.
-const makeContext = (sourcePath: string, variables: Record<string, unknown>, readFile: RenderContext['readFile']): RenderContext => ({
+const makeContext = (sourcePath: string, variables: Record<string, unknown>, readFile: RenderContext['readFile']): RenderContext => makeRenderContext({
   sourcePath,
   variables,
   readFile,
-  readOutput: () => undefined,
-  readBody: () => '',
   enterFile: (reference, data) => makeContext(reference.slice(1), { ...variables, ...data, here: () => reference.slice(1) }, readFile),
-  emit: () => {
-    throw new Error('This test never emits.');
-  },
 });
 
 // Render with a context over the files above. The renderer resolves every

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { listWriteTargets } from '../../test/helpers/list-write-targets.ts';
 import { test } from '../../test/helpers/test.ts';
 import type { Output } from '../plugins/handle-files.ts';
 import type { EmittedOutput } from '../plugins/produce-files.ts';
@@ -24,10 +25,10 @@ const planned = ['about/index.html', 'index.html'];
 
 // The destination paths written by the last call, in order.
 const writes = (): string[] => {
-  const written = [...vi.mocked(writeFile).mock.calls.map(([target]) => target), ...vi.mocked(copyFile).mock.calls.map(([, target]) => target)];
+  const written = listWriteTargets();
   vi.mocked(writeFile).mockClear();
   vi.mocked(copyFile).mockClear();
-  return written.map(String).sort();
+  return written.sort();
 };
 
 describe('writeDestination', () => {

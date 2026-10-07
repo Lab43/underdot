@@ -1,17 +1,16 @@
 // spec: docs/specs/build.md, Incremental builds
 
 import { describe, expect, test } from 'vitest';
-import type { FileEntry, FileTable } from './hash-files.ts';
+import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
+import type { FileTable } from './hash-files.ts';
 import { versionGlobals } from './version-globals.ts';
 
-const entry = (hash: string): FileEntry => ({ mtimeNs: 1n, size: 1n, hash });
-
 const files: FileTable = new Map([
-  ['_data/site.json', entry('site')],
-  ['_data/team.json', entry('teamfile')],
-  ['_data/team/leads.json', entry('leads')],
-  ['_data/team/motto.ts', entry('motto')],
-  ['index.tpl', entry('home')],
+  ['_data/site.json', makeFileEntry('site')],
+  ['_data/team.json', makeFileEntry('teamfile')],
+  ['_data/team/leads.json', makeFileEntry('leads')],
+  ['_data/team/motto.ts', makeFileEntry('motto')],
+  ['index.tpl', makeFileEntry('home')],
 ]);
 
 describe('versionGlobals', () => {
@@ -30,7 +29,7 @@ describe('versionGlobals', () => {
   });
 
   test("a directory's version changes when one file's hash does", () => {
-    const changed: FileTable = new Map([...files, ['_data/team/motto.ts', entry('motto2')]]);
+    const changed: FileTable = new Map([...files, ['_data/team/motto.ts', makeFileEntry('motto2')]]);
     const variables = [{ name: 'team', sourcePath: '_data/team', value: {} }];
     expect(versionGlobals({}, variables, [], changed).get('team')).not.toBe(versionGlobals({}, variables, [], files).get('team'));
   });

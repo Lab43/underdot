@@ -15,6 +15,7 @@ import svgoConfiguration from '../../test/fixtures/svgo/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { listWriteTargets } from '../../test/helpers/list-write-targets.ts';
 import { renderBody } from '../../test/helpers/render-body.ts';
 import { test } from '../../test/helpers/test.ts';
 import { resolveConfiguration } from '../configuration/resolve-configuration.ts';
@@ -42,6 +43,20 @@ const list = walkSource;
 
 const contents = async (directory: string, paths: string[]): Promise<string[]> =>
   Promise.all(paths.map((path) => readFile(join(directory, path), 'utf8')));
+
+// Hold a destination to a fixture's expected directory: the same files, each
+// text file to its expected file through the matcher, and every other file to
+// its expected bytes.
+const expectDestination = async (destination: string, expected: string, isText = (_path: string): boolean => true): Promise<void> => {
+  const paths = await list(destination);
+  expect(paths).toStrictEqual(await list(expected));
+  for (const path of paths.filter(isText)) {
+    await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+  }
+  for (const path of paths.filter((path) => !isText(path))) {
+    expect(await readFile(join(destination, path))).toStrictEqual(await readFile(join(expected, path)));
+  }
+};
 
 // A configuration's plugins with every renderer, handler, and page hook
 // wrapped in a spy, and every producer a helper emits noting its output path,
@@ -126,14 +141,13 @@ const bindCatalogue = (configuration: Configuration, directory: string) => {
     const renders = wrapped.renders.flatMap((render) => render.mock.calls.map(([, context]) => context));
     const isTemplate = (sourcePath: string): boolean => sourcePath.split('/').some((segment) => segment.startsWith('_'));
     const urlOf = (context: { variables: Record<string, unknown> }): string => String(context.variables._url);
-    const targets = [...vi.mocked(writeFile).mock.calls.map(([target]) => target), ...vi.mocked(copyFile).mock.calls.map(([, target]) => target)];
     const ran: Ran = {
       handled: wrapped.handles.flatMap((handle) => handle.mock.calls.map(([file]) => file.outputPath)).sort(),
       hooks: wrapped.hooks.reduce((count, hook) => count + hook.mock.calls.length, 0),
       bodies: unique(renders.filter(({ sourcePath }) => !isTemplate(sourcePath)).map(urlOf)),
       chains: unique(renders.filter(({ sourcePath }) => isTemplate(sourcePath)).map(urlOf)),
       produced: wrapped.produced.toSorted(),
-      written: targets.map(String).filter((target) => target.startsWith(`${destination}/`)).map((target) => target.slice(destination.length + 1)).sort(),
+      written: listWriteTargets().filter((target) => target.startsWith(`${destination}/`)).map((target) => target.slice(destination.length + 1)).sort(),
     };
     await bindBuild(resolveConfiguration({ ...configuration, destination: 'fresh' }, directory))();
     const paths = await list(destination);
@@ -195,11 +209,7 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('templated', 'expected');
       await bindBuild(resolveConfiguration(templatedConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
+      await expectDestination(destination, expected);
     });
 
     // spec: docs/specs/build.md, Incremental builds
@@ -305,11 +315,7 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('ejs', 'expected');
       await bindBuild(resolveConfiguration(ejsConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
+      await expectDestination(destination, expected);
     });
 
     // spec: docs/specs/build.md, Incremental builds
@@ -335,11 +341,7 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('bust', 'expected');
       await bindBuild(resolveConfiguration(bustConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
+      await expectDestination(destination, expected);
     });
   });
 
@@ -351,11 +353,7 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('helpers', 'expected');
       await bindBuild(resolveConfiguration(helpersConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
+      await expectDestination(destination, expected);
     });
   });
 
@@ -367,11 +365,7 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('svgo', 'expected');
       await bindBuild(resolveConfiguration(svgoConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
+      await expectDestination(destination, expected);
     });
   });
 
@@ -383,15 +377,8 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('srcset', 'expected');
       await bindBuild(resolveConfiguration(srcsetConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths.filter((path) => path.endsWith('.html'))) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
       // The matcher reads text, so an image is held to its expected bytes.
-      for (const path of paths.filter((path) => !path.endsWith('.html'))) {
-        expect(await readFile(join(destination, path))).toStrictEqual(await readFile(join(expected, path)));
-      }
+      await expectDestination(destination, expected, (path) => path.endsWith('.html'));
     });
 
     // spec: docs/specs/build.md, Incremental builds
@@ -417,11 +404,7 @@ describe('bindBuild', () => {
       const destination = join(directory, 'build');
       const expected = fixturePath('collections', 'expected');
       await bindBuild(resolveConfiguration(collectionsConfiguration, directory))();
-      const paths = await list(destination);
-      expect(paths).toStrictEqual(await list(expected));
-      for (const path of paths) {
-        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
-      }
+      await expectDestination(destination, expected);
     });
 
     // spec: docs/specs/build.md, Incremental builds

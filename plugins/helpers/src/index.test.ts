@@ -1,20 +1,14 @@
 // spec: docs/specs/helpers.md
 
-import type { RenderContext } from 'underdot';
 import { describe, expect, test } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { helpers } from './index.ts';
 
-const context: RenderContext = {
+const context = makeRenderContext({
   sourcePath: 'index.ejs',
   variables: { _url: '/' },
-  readFile: () => undefined,
   readOutput: (reference) => (reference === '/styles/site.css' ? Buffer.from('body { margin: 0; }\n') : undefined),
-  readBody: () => '',
-  enterFile: () => context,
-  emit: () => {
-    throw new Error('This test never emits.');
-  },
-};
+});
 
 describe('helpers', () => {
   test('the plugin is named helpers and registers activeLink, formatDate, and fileExists', () => {

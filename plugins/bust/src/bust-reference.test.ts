@@ -1,7 +1,7 @@
 // spec: docs/specs/bust.md
 
-import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { bustReference } from './bust-reference.ts';
 
 // The context as the spec defines it to a helper: the file being rendered, and
@@ -11,17 +11,7 @@ const makeContext = (sourcePath: string, outputs: Record<string, string>) => {
     const output = outputs[reference];
     return output === undefined ? undefined : Buffer.from(output);
   });
-  const context: RenderContext = {
-    sourcePath,
-    variables: {},
-    readFile: () => undefined,
-    readOutput,
-    readBody: () => '',
-    enterFile: () => context,
-    emit: () => {
-      throw new Error('This test never emits.');
-    },
-  };
+  const context = makeRenderContext({ sourcePath, readOutput });
   return { context, readOutput };
 };
 

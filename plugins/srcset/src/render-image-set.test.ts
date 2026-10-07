@@ -4,6 +4,7 @@ import { imageSize } from 'image-size';
 import sharp from 'sharp';
 import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import type { Sizing } from './check-sizing.ts';
 import { renderImageSet } from './render-image-set.ts';
 
@@ -38,15 +39,11 @@ const outputs = new Map<string, Buffer>([
 // an emit that records what it is given.
 const makeContext = () => {
   const emit = vi.fn<RenderContext['emit']>();
-  const context: RenderContext = {
+  const context = makeRenderContext({
     sourcePath: 'about/index.ejs',
-    variables: {},
-    readFile: () => undefined,
     readOutput: (reference) => outputs.get(reference),
-    readBody: () => '',
-    enterFile: () => context,
     emit,
-  };
+  });
   return { context, emit };
 };
 

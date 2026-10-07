@@ -1,7 +1,7 @@
 // spec: docs/specs/helpers.md
 
-import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
+import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { fileExists } from './file-exists.ts';
 
 // The context as the spec defines it to a helper, with a read of handled
@@ -11,17 +11,7 @@ const makeContext = (outputs: Record<string, string>) => {
     const output = outputs[reference];
     return output === undefined ? undefined : Buffer.from(output);
   });
-  const context: RenderContext = {
-    sourcePath: 'blog/_post.ejs',
-    variables: {},
-    readFile: () => undefined,
-    readOutput,
-    readBody: () => '',
-    enterFile: () => context,
-    emit: () => {
-      throw new Error('This test never emits.');
-    },
-  };
+  const context = makeRenderContext({ sourcePath: 'blog/_post.ejs', readOutput });
   return { context, readOutput };
 };
 

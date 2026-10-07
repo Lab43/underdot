@@ -61,6 +61,9 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   let reloadPending = false;
   let running: Promise<void> | undefined;
   let closed = false;
+  // Read through a call, because close runs while a load or a build is
+  // awaited and a read the narrowing has settled would not see it.
+  const isClosed = (): boolean => closed;
 
   // The pair is read beside the configuration, so a session started with
   // --config reads the project's own.
@@ -141,8 +144,14 @@ export const startSession = async ({ load, configurationFile, port, https = fals
     let watcher: FSWatcher;
     try {
       next = await load();
+      if (isClosed()) {
+        return false;
+      }
       watcher = watchSource(next.source);
     } catch (error) {
+      if (isClosed()) {
+        return false;
+      }
       configurationError = describeError(error);
       status = { name: 'failed', report: configurationError };
       process.stderr.write(`${configurationError}\n`);
@@ -162,7 +171,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   // closed sets, prints, and broadcasts nothing.
   // spec: docs/specs/dev-server.md, Watching
   const runBuilds = async (): Promise<void> => {
-    while (pending && !closed) {
+    while (pending && !isClosed()) {
       pending = false;
       if (reloadPending) {
         reloadPending = false;
@@ -176,8 +185,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       try {
         await build();
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- close runs while the build is awaited, which the narrowing cannot see
-        if (closed) {
+        if (isClosed()) {
           return;
         }
         const report = describeError(error);
@@ -186,8 +194,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
         broadcast('failed', report);
         continue;
       }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- as above
-      if (closed) {
+      if (isClosed()) {
         return;
       }
       // A standing configuration report outlasts a successful source build,
@@ -199,7 +206,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   };
 
   const scheduleBuild = (): void => {
-    if (closed) {
+    if (isClosed()) {
       return;
     }
     pending = true;

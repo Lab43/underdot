@@ -12,6 +12,7 @@ import { describe, expect, vi } from 'vitest';
 import { test as base } from '../../test/helpers/test.ts';
 import { bindBuild } from '../build/bind-build.ts';
 import { loadConfiguration } from '../configuration/load-configuration.ts';
+import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { injectClientScript } from './inject-client-script.ts';
 import { startSession } from './start-session.ts';
 import type { Session, SessionOptions } from './start-session.ts';
@@ -309,6 +310,55 @@ describe('startSession', () => {
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited again</h1></body>\n');
       await whenLast(after, 'built');
       expect(names(after)).toStrictEqual(['building', 'built']);
+    });
+
+    test('a session closed while the configuration loads starts no watcher and no build', async ({ directory, stdout }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const load = vi.fn(reloader(directory));
+      const session = await startSession({ load, configurationFile: file, port: 0 });
+      await vi.waitFor(() => {
+        expect(stdout.at(-1)).toMatch(/^Built in/);
+      });
+      let settle: (configuration: ResolvedConfiguration) => void = () => undefined;
+      load.mockImplementationOnce(() => new Promise((resolve) => {
+        settle = resolve;
+      }));
+      await writeFile(file, 'export default {};\n');
+      await vi.waitFor(() => {
+        expect(load).toHaveBeenCalledTimes(2);
+      });
+      const events = await subscribe(session.url);
+      const watches = vi.mocked(watch).mock.calls.length;
+      const closing = session.close();
+      settle(await loader(directory)());
+      await closing;
+      expect(vi.mocked(watch).mock.calls).toHaveLength(watches);
+      expect(vi.mocked(bindBuild)).toHaveBeenCalledTimes(1);
+      expect(names(events)).toStrictEqual([]);
+      expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(1);
+    });
+
+    test('a session closed while the configuration loads prints no report when the load fails', async ({ directory, stderr, stdout }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const load = vi.fn(reloader(directory));
+      const session = await startSession({ load, configurationFile: file, port: 0 });
+      await vi.waitFor(() => {
+        expect(stdout.at(-1)).toMatch(/^Built in/);
+      });
+      let fail: (error: Error) => void = () => undefined;
+      load.mockImplementationOnce(() => new Promise((_resolve, reject) => {
+        fail = reject;
+      }));
+      await writeFile(file, 'export default {};\n');
+      await vi.waitFor(() => {
+        expect(load).toHaveBeenCalledTimes(2);
+      });
+      const events = await subscribe(session.url);
+      const closing = session.close();
+      fail(new Error('Late failure.'));
+      await closing;
+      expect(stderr).toStrictEqual([]);
+      expect(names(events)).toStrictEqual([]);
     });
 
     test('a configuration naming a missing source root is reported and the site keeps serving', async ({ directory, start }) => {

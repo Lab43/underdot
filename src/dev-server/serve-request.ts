@@ -39,8 +39,8 @@ export const serveRequest = async ({ destination, rewrites }: Site, request: Inc
   const query = queryStart === -1 ? '' : target.slice(queryStart);
 
   // A file is read whole and typed by its extension, with the charset
-  // mime-types adds to every text type. HTML is read as the UTF-8 every
-  // renderer writes, so the session's script can go in.
+  // mime-types adds to every text type. HTML is decoded as text so the
+  // script can be inserted, as UTF-8 because that is what the build writes.
   // spec: docs/specs/dev-server.md, Live reload
   const readAnswer = async (status: number, file: string): Promise<Answer> => {
     const type = contentType(extname(file));

@@ -11,6 +11,9 @@ const context: RenderContext = {
   readOutput: (reference) => (reference === '/styles/site.css' ? Buffer.from('body { margin: 0; }\n') : undefined),
   readBody: () => '',
   enterFile: () => context,
+  emit: () => {
+    throw new Error('This test never emits.');
+  },
 };
 
 describe('helpers', () => {

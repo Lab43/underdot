@@ -75,6 +75,10 @@ export interface RegisteredHook {
  * and handlers and hooks each in the order they run.
  */
 export interface Registry {
+  /**
+   * The plugins' names in the order the configuration lists them.
+   */
+  pluginNames: string[];
   renderers: Map<string, RegisteredRenderer>;
   helpers: Map<string, RegisteredHelper>;
   handlers: RegisteredHandler[];
@@ -146,5 +150,5 @@ export const registerPlugins = (plugins: Plugin[]): Registry => {
       hooks.push({ pluginName: plugin.name, hook: plugin.pageHook });
     }
   }
-  return { renderers, helpers, handlers, hooks };
+  return { pluginNames: [...names], renderers, helpers, handlers, hooks };
 };

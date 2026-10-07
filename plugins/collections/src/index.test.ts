@@ -14,6 +14,9 @@ const context: RenderContext = {
   readOutput: () => undefined,
   readBody: (url) => (url === '/posts/hello/' ? '<p>Hello, world.</p>\n' : ''),
   enterFile: () => context,
+  emit: () => {
+    throw new Error('This test never emits.');
+  },
 };
 
 describe('collections', () => {

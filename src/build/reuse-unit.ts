@@ -2,10 +2,10 @@
 
 /**
  * What a unit can read: a source file, a handled output, a rendered body, one
- * global, every global at once, a page's resolved chain, or the pages a hook
- * sees.
+ * global, every global at once, a page's resolved chain, the pages a hook
+ * sees, or the parameters an emitted file was emitted with.
  */
-export type InputKind = 'file' | 'output' | 'body' | 'global' | 'globals' | 'chain' | 'pages';
+export type InputKind = 'file' | 'output' | 'body' | 'global' | 'globals' | 'chain' | 'pages' | 'parameters';
 
 /**
  * How an input stood when it was read, or no value for one that did not exist.

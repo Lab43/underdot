@@ -18,6 +18,9 @@ const makeContext = (sourcePath: string, outputs: Record<string, string>) => {
     readOutput,
     readBody: () => '',
     enterFile: () => context,
+    emit: () => {
+      throw new Error('This test never emits.');
+    },
   };
   return { context, readOutput };
 };

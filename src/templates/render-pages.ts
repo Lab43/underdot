@@ -9,26 +9,37 @@ import { reuseUnit } from '../build/reuse-unit.ts';
 import type { InputKind, Observe, UnitRecords, Version } from '../build/reuse-unit.ts';
 import { attributePluginError } from '../plugins/attribute-plugin-error.ts';
 import { PluginError } from '../plugins/bind-render-context.ts';
-import type { MakeRenderContext, RenderContext } from '../plugins/bind-render-context.ts';
+import type { EmittedFile, MakeRenderContext, RenderContext } from '../plugins/bind-render-context.ts';
 import type { PageChain } from './resolve-chains.ts';
 
 /**
- * A page as written: its source, where it goes, its finished document, and
- * the document's hash.
+ * A page as written: its source, where it goes, its finished document, the
+ * document's hash, and the files its templates' helpers emitted.
  */
 export interface RenderedPage {
   sourcePath: string;
   outputPath: string;
   contents: string;
   hash: string;
+  emits: EmittedFile[];
 }
 
 /**
- * A page's rendered body with its hash, before its templates wrap it.
+ * A page's rendered body with its hash, before its templates wrap it, and the
+ * files its helpers emitted.
  */
 export interface RenderedBody {
   body: string;
   hash: string;
+  emits: EmittedFile[];
+}
+
+/**
+ * Every page of the build, and every file their renders emitted.
+ */
+export interface RenderedPages {
+  pages: RenderedPage[];
+  emits: EmittedFile[];
 }
 
 type Variables = Record<string, unknown>;
@@ -72,8 +83,9 @@ const observeChain = (observe: Observe, { page, chain }: PageChain): void => {
 const renderBody = async (makeContext: MakeRenderContext, merged: MergedPage, observe: Observe): Promise<RenderedBody> => {
   const { page, variables } = merged;
   observeChain(observe, merged);
-  const body = await render(page, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined, observe));
-  return { body, hash: hash('sha256', body, 'hex') };
+  const emits: EmittedFile[] = [];
+  const body = await render(page, makeContext(page.sourcePath, { ...variables, _chain: [] }, undefined, observe, emits));
+  return { body, hash: hash('sha256', body, 'hex'), emits };
 };
 
 const renderChain = async (
@@ -82,23 +94,27 @@ const renderChain = async (
   rendered: RenderedPageBody,
   observe: Observe,
 ): Promise<RenderedPage> => {
+  // The body's emits stay out of the page's record: a body can rerun to the
+  // same text, which reuses this render, with different emits.
   const { page, chain, variables, body } = rendered;
   observeChain(observe, rendered);
   observe('body', page.url);
+  const emits: EmittedFile[] = [];
   let below = [page.frontmatter];
   let content = body;
   for (const template of chain) {
-    content = await render(template, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies, observe));
+    content = await render(template, makeContext(template.sourcePath, { ...variables, _content: content, _chain: below }, bodies, observe, emits));
     below = [template.frontmatter, ...below];
   }
-  return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content, hash: hash('sha256', content, 'hex') };
+  return { sourcePath: page.sourcePath, outputPath: page.outputPath, contents: content, hash: hash('sha256', content, 'hex'), emits };
 };
 
 /**
  * Every body renders before any chain, so a template can read any page's
  * rendered body. A body and a finished page are each reused while every
- * input they observed stands. The merge is a spread on values, so it runs for
- * every page whether or not its renders are reused.
+ * input they observed stands, and a reused render contributes the emits it
+ * recorded. The merge is a spread on values, so it runs for every page
+ * whether or not its renders are reused.
  */
 // spec: docs/specs/build.md, Order of work
 // spec: docs/specs/build.md, Incremental builds
@@ -109,7 +125,7 @@ export const renderPages = async (
   versions: Versions,
   bodyRecords: UnitRecords<RenderedBody>,
   pageRecords: UnitRecords<RenderedPage>,
-): Promise<RenderedPage[]> => {
+): Promise<RenderedPages> => {
   for (const { page, chain } of pageChains) {
     versions.chains.set(page.sourcePath, chain.map((template) => template.sourcePath).join('\n'));
   }
@@ -127,8 +143,11 @@ export const renderPages = async (
     versions.bodies.set(page.url, bodyHash);
   }
   const bodies = new Map(renderedBodies.map(({ page, body }) => [page.url, body]));
-  return mapUnits(renderedBodies, (rendered) => {
+  const pages = await mapUnits(renderedBodies, (rendered) => {
     const run = (observe: Observe): Promise<RenderedPage> => renderChain(makeContext, bodies, rendered, observe);
     return reuseUnit(pageRecords, rendered.page.sourcePath, lookup, run);
   });
+  // Read from this build's results and never the records, so a page removed
+  // in a session stops emitting with its render.
+  return { pages, emits: [...renderedBodies.flatMap(({ emits }) => emits), ...pages.flatMap(({ emits }) => emits)] };
 };

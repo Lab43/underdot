@@ -11,17 +11,18 @@ import { PluginError } from '../plugins/bind-render-context.ts';
 import type { MakeRenderContext } from '../plugins/bind-render-context.ts';
 import type { RegisteredRenderer, Renderer } from '../plugins/register-plugins.ts';
 import { renderPages } from './render-pages.ts';
-import type { RenderedBody, RenderedPage } from './render-pages.ts';
+import type { RenderedBody, RenderedPage, RenderedPages } from './render-pages.ts';
 import type { PageChain } from './resolve-chains.ts';
 
 // A rendered page as renderPages reports it.
-const rendered = (sourcePath: string, outputPath: string, contents: string) => ({ sourcePath, outputPath, contents, hash: hash('sha256', contents, 'hex') });
+const rendered = (sourcePath: string, outputPath: string, contents: string) => ({ sourcePath, outputPath, contents, hash: hash('sha256', contents, 'hex'), emits: [] });
 
 const fakeRenderer = (): ReturnType<typeof vi.fn<Renderer>> => vi.fn<Renderer>((_body, { sourcePath }) => `rendered ${sourcePath}`);
 
 // A context of the file's fields alone, observing a variable read and a body
-// read, with the other operations doing nothing.
-const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe) => ({
+// read and pushing an emit as the file's own, with the other operations doing
+// nothing.
+const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits) => ({
   sourcePath,
   variables: new Proxy(variables, {
     get: (target, key): unknown => {
@@ -37,7 +38,10 @@ const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe) 
     observe('body', url);
     return bodies?.get(url) ?? '';
   },
-  enterFile: (reference, entered) => makeContext(reference, entered, bodies, observe),
+  enterFile: (reference, entered) => makeContext(reference, entered, bodies, observe, emits),
+  emit: (outputPath, _parameters, produce) => {
+    emits.push({ pluginName: 'fixture', sourcePath, outputPath, parametersHash: '', produce });
+  },
 });
 
 const freshVersions = (overrides: Partial<Versions> = {}): Versions =>
@@ -46,8 +50,11 @@ const freshVersions = (overrides: Partial<Versions> = {}): Versions =>
 // Records no earlier run filled.
 const freshRecords = (): { bodies: UnitRecords<RenderedBody>; pages: UnitRecords<RenderedPage> } => ({ bodies: new Map(), pages: new Map() });
 
-const renderAll = (pageChains: PageChain[], globals: Record<string, unknown> = {}, versions = freshVersions(), records = freshRecords()): Promise<RenderedPage[]> =>
+const renderEverything = (pageChains: PageChain[], globals: Record<string, unknown> = {}, versions = freshVersions(), records = freshRecords()): Promise<RenderedPages> =>
   renderPages(pageChains, globals, makeContext, versions, records.bodies, records.pages);
+
+// The pages alone.
+const renderAll = async (...args: Parameters<typeof renderEverything>): Promise<RenderedPage[]> => (await renderEverything(...args)).pages;
 
 // The file table entries for the files named, each hashed as its own path.
 const hashed = (...sourcePaths: string[]): Versions['files'] => new Map(sourcePaths.map((sourcePath) => [sourcePath, { mtimeNs: 1n, size: 1n, hash: sourcePath }]));
@@ -183,6 +190,55 @@ describe('renderPages', () => {
     await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map());
     const bodies = new Map([['/a/', 'rendered a.tpl'], ['/b/', 'rendered b.tpl']]);
     expect(maker.mock.calls.slice(2).map(([sourcePath, , pageBodies]) => [sourcePath, pageBodies])).toStrictEqual([['_.tpl', bodies], ['_.tpl', bodies]]);
+  });
+
+  // spec: docs/specs/plugins.md, Emitted files
+  describe('emits', () => {
+    const produce = (): Promise<string> => Promise.resolve('derived');
+    // A renderer that emits one file named after the file rendering.
+    const emitting = (): RegisteredRenderer => ({
+      pluginName: 'fixture',
+      render: vi.fn<Renderer>((_body, context) => {
+        context.emit(`${context.sourcePath}.derived`, {}, produce);
+        return `rendered ${context.sourcePath}`;
+      }),
+    });
+    const emitted = (sourcePath: string) => ({ pluginName: 'fixture', sourcePath, outputPath: `${sourcePath}.derived`, parametersHash: '', produce });
+
+    test("a body's emits and a chain's come back on the result, the bodies' first, and the page carries its chain's alone", async () => {
+      const page = makePage({ sourcePath: 'index.tpl', renderer: emitting() });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: emitting() });
+      const { pages, emits } = await renderEverything([{ page, chain: [root] }]);
+      expect(emits).toStrictEqual([emitted('index.tpl'), emitted('_.tpl')]);
+      expect(pages[0]?.emits).toStrictEqual([emitted('_.tpl')]);
+    });
+
+    // spec: docs/specs/build.md, Incremental builds
+    test("a reused body's and chain's emits come back on the second call without a render", async () => {
+      const renderer = emitting();
+      const page = makePage({ sourcePath: 'index.tpl', renderer });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer });
+      const versions = freshVersions({ files: hashed('index.tpl', '_.tpl') });
+      const records = freshRecords();
+      await renderEverything([{ page, chain: [root] }], {}, versions, records);
+      vi.mocked(renderer.render).mockClear();
+      const { emits } = await renderEverything([{ page, chain: [root] }], {}, versions, records);
+      expect(renderer.render).not.toHaveBeenCalled();
+      expect(emits).toStrictEqual([emitted('index.tpl'), emitted('_.tpl')]);
+    });
+
+    // spec: docs/specs/build.md, Incremental builds
+    test('a page left out of the second call contributes no emits, though its records stand', async () => {
+      const renderer = emitting();
+      const first = makePage({ sourcePath: 'a.tpl', renderer, outputPath: 'a/index.html', url: '/a/' });
+      const second = makePage({ sourcePath: 'b.tpl', renderer, outputPath: 'b/index.html', url: '/b/' });
+      const versions = freshVersions({ files: hashed('a.tpl', 'b.tpl') });
+      const records = freshRecords();
+      await renderEverything([{ page: first, chain: [] }, { page: second, chain: [] }], {}, versions, records);
+      const { emits } = await renderEverything([{ page: first, chain: [] }], {}, versions, records);
+      expect(emits).toStrictEqual([emitted('a.tpl')]);
+      expect([...records.bodies.keys()]).toStrictEqual(['a.tpl', 'b.tpl']);
+    });
   });
 
   // spec: docs/specs/plugins.md, Errors

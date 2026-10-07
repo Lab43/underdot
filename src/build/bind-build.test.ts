@@ -18,7 +18,8 @@ import { renderBody } from '../../test/helpers/render-body.ts';
 import { test } from '../../test/helpers/test.ts';
 import { resolveConfiguration } from '../configuration/resolve-configuration.ts';
 import type { Configuration } from '../configuration/resolve-configuration.ts';
-import type { FileHandler, PageHook, Plugin, Renderer } from '../plugins/register-plugins.ts';
+import type { RenderContext } from '../plugins/bind-render-context.ts';
+import type { FileHandler, Helper, PageHook, Plugin, Renderer } from '../plugins/register-plugins.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { bindBuild } from './bind-build.ts';
 
@@ -42,16 +43,18 @@ const contents = async (directory: string, paths: string[]): Promise<string[]> =
   Promise.all(paths.map((path) => readFile(join(directory, path), 'utf8')));
 
 // A configuration's plugins with every renderer, handler, and page hook
-// wrapped in a spy, so a build can say which units ran.
+// wrapped in a spy, and every producer a helper emits noting its output path,
+// so a build can say which units ran.
 interface WrappedPlugins {
   plugins: Plugin[];
   renders: Mock<Renderer>[];
   handles: Mock<FileHandler>[];
   hooks: Mock<PageHook>[];
+  produced: string[];
 }
 
 const wrapPlugins = (plugins: Plugin[]): WrappedPlugins => {
-  const wrapped: WrappedPlugins = { plugins: [], renders: [], handles: [], hooks: [] };
+  const wrapped: WrappedPlugins = { plugins: [], renders: [], handles: [], hooks: [], produced: [] };
   for (const plugin of plugins) {
     const copy: Plugin = { ...plugin };
     if (plugin.renderers !== undefined) {
@@ -60,6 +63,17 @@ const wrapPlugins = (plugins: Plugin[]): WrappedPlugins => {
         wrapped.renders.push(spy);
         return [extension, spy];
       }));
+    }
+    if (plugin.helpers !== undefined) {
+      copy.helpers = Object.fromEntries(Object.entries(plugin.helpers).map(([name, helper]): [string, Helper] => [name, (context, ...args) => {
+        const emit: RenderContext['emit'] = (outputPath, parameters, produce) => {
+          context.emit(outputPath, parameters, (producerContext) => {
+            wrapped.produced.push(outputPath);
+            return produce(producerContext);
+          });
+        };
+        return helper({ ...context, emit }, ...args);
+      }]));
     }
     if (plugin.handlers !== undefined) {
       copy.handlers = Object.fromEntries(Object.entries(plugin.handlers).map(([glob, handle]) => {
@@ -79,13 +93,14 @@ const wrapPlugins = (plugins: Plugin[]): WrappedPlugins => {
 };
 
 // What one build did: the output paths the handlers received, how many hooks
-// ran, the URLs of the pages whose body and whose chain rendered, and the
-// destination paths written.
+// ran, the URLs of the pages whose body and whose chain rendered, the output
+// paths produced, and the destination paths written.
 interface Ran {
   handled: string[];
   hooks: number;
   bodies: string[];
   chains: string[];
+  produced: string[];
   written: string[];
 }
 
@@ -105,6 +120,7 @@ const bindCatalogue = (configuration: Configuration, directory: string) => {
     for (const spy of [...wrapped.renders, ...wrapped.handles, ...wrapped.hooks, vi.mocked(writeFile), vi.mocked(copyFile)]) {
       spy.mockClear();
     }
+    wrapped.produced.length = 0;
     await build();
     const renders = wrapped.renders.flatMap((render) => render.mock.calls.map(([, context]) => context));
     const isTemplate = (sourcePath: string): boolean => sourcePath.split('/').some((segment) => segment.startsWith('_'));
@@ -115,6 +131,7 @@ const bindCatalogue = (configuration: Configuration, directory: string) => {
       hooks: wrapped.hooks.reduce((count, hook) => count + hook.mock.calls.length, 0),
       bodies: unique(renders.filter(({ sourcePath }) => !isTemplate(sourcePath)).map(urlOf)),
       chains: unique(renders.filter(({ sourcePath }) => isTemplate(sourcePath)).map(urlOf)),
+      produced: wrapped.produced.toSorted(),
       written: targets.map(String).filter((target) => target.startsWith(`${destination}/`)).map((target) => target.slice(destination.length + 1)).sort(),
     };
     await bindBuild(resolveConfiguration({ ...configuration, destination: 'fresh' }, directory))();
@@ -139,7 +156,7 @@ const everyPage = ['/', '/404.html', '/about/', '/about/team/', '/blog/', '/blog
 const everyPageFile = ['404.html', 'about/index.html', 'about/team/index.html', 'blog/hello/index.html', 'blog/index.html', 'index.html', 'pages/index.html'];
 
 // What a build did, with nothing rerun unless said.
-const ran = (fields: Partial<Ran> = {}): Ran => ({ handled: [], hooks: 0, bodies: [], chains: [], written: [], ...fields });
+const ran = (fields: Partial<Ran> = {}): Ran => ({ handled: [], hooks: 0, bodies: [], chains: [], produced: [], written: [], ...fields });
 
 describe('bindBuild', () => {
   test('the defaults fixture builds its static files, each byte-equal to its source', async ({ directory }) => {
@@ -224,9 +241,15 @@ describe('bindBuild', () => {
       await edit('missing.txt', 'The found file.\n');
       expect(await rebuild()).toStrictEqual(ran({ handled: ['missing.text', 'missing.txt'], bodies: ['/about/'], chains: ['/about/'], written: ['about/index.html', 'missing.text'] }));
 
-      // 9. Edit the notes file, whose output the blog template reads.
+      // 9. Edit the notes file, whose output the blog template reads and the
+      // derived files' producers read, though no render that emits them does.
       await edit('notes.txt', 'The notes file, edited.\n');
-      expect(await rebuild()).toStrictEqual(ran({ handled: ['notes.text', 'notes.txt'], chains: ['/blog/', '/blog/hello/'], written: ['blog/hello/index.html', 'blog/index.html', 'notes.text'] }));
+      expect(await rebuild()).toStrictEqual(ran({
+        handled: ['notes.derived.text', 'notes.text', 'notes.txt'],
+        chains: ['/blog/', '/blog/hello/'],
+        produced: ['notes.derived.text', 'notes.derived.txt'],
+        written: ['blog/hello/index.html', 'blog/index.html', 'notes.derived.text', 'notes.derived.txt', 'notes.text'],
+      }));
 
       // 10. Edit the body of the post the archive template reads.
       await edit('blog/hello.tpl', '---\ntemplate: post\ntitle: Hello\n---\nThe hello post: layout {{ layout }}, edited.\n');
@@ -262,6 +285,13 @@ describe('bindBuild', () => {
       // 17. Touch a page.
       const now = new Date();
       await utimes(join(source, 'index.tpl'), now, now);
+      expect(await rebuild()).toStrictEqual(ran());
+
+      // 18. Remove a derived file from the destination.
+      await rm(join(destination, 'notes.derived.txt'));
+      expect(await rebuild()).toStrictEqual(ran({ produced: ['notes.derived.txt'], written: ['notes.derived.txt'] }));
+
+      // 19. No change, after the derived file came back.
       expect(await rebuild()).toStrictEqual(ran());
     });
   });

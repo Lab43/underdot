@@ -1,5 +1,6 @@
 // spec: docs/specs/plugins.md, File handlers
 
+import { isPlainPath } from '../shared/is-plain-path.ts';
 import { matchGlob } from '../shared/match-glob.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
@@ -47,7 +48,7 @@ export const runHandlers = async (sourcePath: string, file: HandledFile, handler
       }
       for (const { outputPath, contents } of outputs) {
         // A returned path is plain, and its contents are text or bytes.
-        if (typeof outputPath !== 'string' || outputPath.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) {
+        if (!isPlainPath(outputPath)) {
           throw new Error(`The handler ${pluginName} registers for ${glob} returned a file at ${JSON.stringify(outputPath)}, which is not a plain path under the destination.`);
         }
         if (typeof contents !== 'string' && !(contents instanceof Uint8Array)) {

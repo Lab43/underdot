@@ -13,7 +13,7 @@ const shout: Helper = (_context, word) => String(word).toUpperCase();
 const keep: FileHandler = (file) => [file];
 const drop: FileHandler = () => [];
 
-const empty = { renderers: new Map(), helpers: new Map(), handlers: [], hooks: [] };
+const empty = { pluginNames: [], renderers: new Map(), helpers: new Map(), handlers: [], hooks: [] };
 
 const listing: PageHook = (pages) => ({ pages });
 const count: PageHook = (pages) => ({ count: pages.length });
@@ -24,12 +24,13 @@ describe('registerPlugins', () => {
   });
 
   test('a plugin with neither renderers, helpers, handlers, nor a page hook registers nothing', () => {
-    expect(registerPlugins([{ name: 'quiet' }])).toStrictEqual(empty);
+    expect(registerPlugins([{ name: 'quiet' }])).toStrictEqual({ ...empty, pluginNames: ['quiet'] });
   });
 
   test("one plugin's renderers are keyed by extension under its name", () => {
     expect(registerPlugins([{ name: 'text', renderers: { md: render, txt: other } }])).toStrictEqual({
       ...empty,
+      pluginNames: ['text'],
       renderers: new Map([
         ['md', { pluginName: 'text', render }],
         ['txt', { pluginName: 'text', render: other }],
@@ -44,11 +45,16 @@ describe('registerPlugins', () => {
     ];
     expect(registerPlugins(plugins)).toStrictEqual({
       ...empty,
+      pluginNames: ['markdown', 'ejs'],
       renderers: new Map([
         ['md', { pluginName: 'markdown', render }],
         ['ejs', { pluginName: 'ejs', render: other }],
       ]),
     });
+  });
+
+  test("the plugins' names are listed in configuration order", () => {
+    expect(registerPlugins([{ name: 'zebra' }, { name: 'apple' }, { name: 'mango' }]).pluginNames).toStrictEqual(['zebra', 'apple', 'mango']);
   });
 
   test('two plugins with one name fail naming it', () => {
@@ -81,6 +87,7 @@ describe('registerPlugins', () => {
     test("one plugin's helpers are keyed by name under its name, in the plugin's order", () => {
       expect(registerPlugins([{ name: 'tools', helpers: { shout, here } }])).toStrictEqual({
         ...empty,
+        pluginNames: ['tools'],
         helpers: new Map([
           ['shout', { pluginName: 'tools', helper: shout }],
           ['here', { pluginName: 'tools', helper: here }],
@@ -123,6 +130,7 @@ describe('registerPlugins', () => {
     test("one plugin's handlers are listed in key order under its name", () => {
       expect(registerPlugins([{ name: 'sass', handlers: { '**/*.scss': keep, '**/*.drop': drop } }])).toStrictEqual({
         ...empty,
+        pluginNames: ['sass'],
         handlers: [
           { pluginName: 'sass', glob: '**/*.scss', handle: keep },
           { pluginName: 'sass', glob: '**/*.drop', handle: drop },
@@ -163,6 +171,7 @@ describe('registerPlugins', () => {
       ];
       expect(registerPlugins(plugins)).toStrictEqual({
         ...empty,
+        pluginNames: ['listing', 'counting'],
         renderers: new Map([['md', { pluginName: 'listing', render }]]),
         hooks: [
           { pluginName: 'listing', hook: listing },

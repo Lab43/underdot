@@ -4,7 +4,8 @@ import { EventEmitter } from 'node:events';
 import { watch } from 'node:fs';
 import type * as fs from 'node:fs';
 import type { Stats } from 'node:fs';
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import type * as fsPromises from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { get } from 'node:https';
 import { networkInterfaces } from 'node:os';
@@ -28,10 +29,23 @@ vi.mock('node:fs', async (importOriginal) => {
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:os', { spy: true });
 
+const { stat: realStat } = await vi.importActual<typeof fsPromises>('node:fs/promises');
+
 interface Event {
   name: string;
   data: string;
 }
+
+// vi.waitFor's own second is shorter than a first build can take on a busy
+// CI runner.
+const waitFor = <T>(callback: () => T | Promise<T>): Promise<T> => vi.waitFor(callback, { timeout: 3_000 });
+
+// Replace the configuration in one step, as an editor's save does, so the
+// watcher never loads it half written.
+const replaceConfiguration = async (file: string, text: string): Promise<void> => {
+  await writeFile(`${file}.tmp`, text);
+  await rename(`${file}.tmp`, file);
+};
 
 const loader = (directory: string) => () => loadConfiguration(join(directory, 'underdot.config.ts'));
 
@@ -58,7 +72,7 @@ const test = base.extend<{ start: (options?: Partial<SessionOptions>) => Promise
 
 // The page at the URL once the session serves it.
 const whenServed = (url: string): Promise<string> =>
-  vi.waitFor(async () => {
+  waitFor(async () => {
     const response = await fetch(url);
     expect(response.status).toBe(200);
     return response.text();
@@ -100,7 +114,7 @@ const names = (events: Event[]): string[] => events.map((event) => event.name);
 
 // Until the stream's last event is the named one.
 const whenLast = (events: Event[], name: string): Promise<Event> =>
-  vi.waitFor(() => {
+  waitFor(() => {
     const last = events.at(-1);
     expect(last?.name).toBe(name);
     return last!;
@@ -156,7 +170,7 @@ describe('startSession', () => {
     const { url } = await start();
     expect(url).toMatch(/^http:\/\/localhost:\d+\/$/);
     expect(await whenServed(url)).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(stdout.at(-1)).toMatch(/^Built in \d+ ms\n$/);
     });
     const { port } = new URL(url);
@@ -164,7 +178,8 @@ describe('startSession', () => {
       .flatMap((addresses) => addresses ?? [])
       .find((each) => each.family === 'IPv4' && !each.internal);
     const network = address === undefined ? [] : [`Network http://${address.address}:${port}/\n`];
-    expect(stdout.slice(0, -1)).toStrictEqual([`Serving ${url}\n`, ...network]);
+    // A late watcher event can start a second build, which prints a second line.
+    expect(stdout.filter((line) => !line.startsWith('Built'))).toStrictEqual([`Serving ${url}\n`, ...network]);
   });
 
   test('prints no network line when no interface is reachable', async ({ start, stdout }) => {
@@ -179,9 +194,11 @@ describe('startSession', () => {
     await mkdir(join(directory, 'source/_data'));
     await writeFile(join(directory, 'source/_data/bad.txt'), 'bad');
     const { url } = await start();
-    await vi.waitFor(() => {
-      expect(stderr).toStrictEqual([`${badDataReport}\n`]);
+    await waitFor(() => {
+      expect(stderr).toContain(`${badDataReport}\n`);
     });
+    // One write can start more than one build, and each prints the report.
+    expect(new Set(stderr)).toStrictEqual(new Set([`${badDataReport}\n`]));
     expect((await fetch(url)).status).toBe(404);
     const events = await subscribe(url);
     await whenLast(events, 'failed');
@@ -204,7 +221,7 @@ describe('startSession', () => {
 
   test('close without a build in flight returns', async ({ directory, stdout }) => {
     const session = await startSession({ load: loader(directory), port: 0 });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(stdout.at(-1)).toMatch(/^Built in/);
     });
     await expect(session.close()).resolves.toBeUndefined();
@@ -247,7 +264,7 @@ describe('startSession', () => {
       await whenServed(url);
       const events = await subscribe(url);
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
-      await vi.waitFor(async () => {
+      await waitFor(async () => {
         expect(await (await fetch(url)).text()).toContain('Edited');
       });
       await whenLast(events, 'built');
@@ -267,7 +284,7 @@ describe('startSession', () => {
       // A second event from the same save may have a build running on
       // connect, which sends building first.
       const later = await subscribe(url);
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(later.find((event) => event.name !== 'building')).toStrictEqual({ name: 'failed', data: badDataReport });
       });
       await rm(join(directory, 'source/_data/bad.txt'));
@@ -283,8 +300,8 @@ describe('startSession', () => {
       const { url } = await start({ load: reloader(directory), configurationFile: file });
       await whenServed(url);
       const events = await subscribe(url);
-      await writeFile(file, "export default { rewrites: { '/cart': '/about/' } };\n");
-      await vi.waitFor(async () => {
+      await replaceConfiguration(file, "export default { rewrites: { '/cart': '/about/' } };\n");
+      await waitFor(async () => {
         expect(await (await fetch(`${url}cart`)).text()).toContain('About');
       });
       await whenLast(events, 'built');
@@ -297,18 +314,21 @@ describe('startSession', () => {
       const { url } = await start({ load: reloader(directory), configurationFile: file });
       await whenServed(url);
       const events = await subscribe(url);
-      await writeFile(file, 'export default {\n');
+      await replaceConfiguration(file, 'export default {\n');
       const failure = await whenLast(events, 'failed');
       expect(failure.data).not.toBe('');
       expect(stderr).toContain(`${failure.data}\n`);
       expect(await (await fetch(`${url}cart`)).text()).toContain('Store');
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
       await whenLast(events, 'built');
+      // One save can reload more than once, and each report names the load's
+      // version, so the one standing is the latest.
+      const standing = events.findLast((event) => event.name === 'failed');
       const during = await subscribe(url);
-      await vi.waitFor(() => {
-        expect(during.find((event) => event.name !== 'building')).toStrictEqual(failure);
+      await waitFor(() => {
+        expect(during.find((event) => event.name !== 'building')).toStrictEqual(standing);
       });
-      await writeFile(file, 'export default {};\n');
+      await replaceConfiguration(file, 'export default {};\n');
       await whenLast(during, 'built');
       const after = await subscribe(url);
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited again</h1></body>\n');
@@ -321,66 +341,83 @@ describe('startSession', () => {
       const file = join(directory, 'underdot.config.ts');
       const load = vi.fn(reloader(directory));
       const session = await startSession({ load, configurationFile: file, port: 0 });
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(stdout.at(-1)).toMatch(/^Built in/);
       });
+      // Every load from here is held, since a late watcher event can start
+      // one before the save does, and only what follows the save is counted.
       let settle: (configuration: ResolvedConfiguration) => void = () => undefined;
-      load.mockImplementationOnce(() => new Promise((resolve) => {
+      load.mockImplementation(() => new Promise((resolve) => {
         settle = resolve;
       }));
-      await writeFile(file, 'export default {};\n');
-      await vi.waitFor(() => {
-        expect(load).toHaveBeenCalledTimes(2);
+      const loads = load.mock.calls.length;
+      const binds = vi.mocked(bindBuild).mock.calls.length;
+      await replaceConfiguration(file, 'export default {};\n');
+      await waitFor(() => {
+        expect(load.mock.calls.length).toBeGreaterThan(loads);
       });
       const events = await subscribe(session.url);
       const watches = vi.mocked(watch).mock.calls.length;
+      const built = stdout.filter((line) => line.startsWith('Built')).length;
       const closing = session.close();
       settle(await loader(directory)());
       await closing;
       expect(vi.mocked(watch).mock.calls).toHaveLength(watches);
-      expect(vi.mocked(bindBuild)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(bindBuild).mock.calls).toHaveLength(binds);
       expect(names(events)).toStrictEqual([]);
-      expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(1);
+      expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(built);
     });
 
     test('a session closed while the new source root is checked closes the watcher it then starts', async ({ directory, stdout }) => {
       const file = join(directory, 'underdot.config.ts');
       const session = await startSession({ load: reloader(directory), configurationFile: file, port: 0 });
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(stdout.at(-1)).toMatch(/^Built in/);
       });
+      // Only the source root's stat is held. A build a late watcher event
+      // starts stats every source file through the same function.
+      const source = join(directory, 'source');
+      const sourceStats = await stat(source);
       let reached = false;
       let settle: (stats: Stats) => void = () => undefined;
-      vi.mocked(stat).mockImplementationOnce(() => new Promise((resolve) => {
-        reached = true;
-        settle = resolve;
-      }));
+      vi.mocked(stat).mockImplementation((path, options) => {
+        if (path !== source) {
+          return realStat(path, options);
+        }
+        return new Promise((resolve) => {
+          reached = true;
+          settle = resolve;
+        });
+      });
+      const binds = vi.mocked(bindBuild).mock.calls.length;
       const fake = driveNextWatcher();
-      await writeFile(file, 'export default {};\n');
-      await vi.waitFor(() => {
+      await replaceConfiguration(file, 'export default {};\n');
+      await waitFor(() => {
         expect(reached).toBe(true);
       });
       const closing = session.close();
-      settle(await stat(join(directory, 'source')));
+      settle(sourceStats);
       await closing;
       expect(fake.close).toHaveBeenCalledOnce();
-      expect(vi.mocked(bindBuild)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(bindBuild).mock.calls).toHaveLength(binds);
     });
 
     test('a session closed while the configuration loads prints no report when the load fails', async ({ directory, stderr, stdout }) => {
       const file = join(directory, 'underdot.config.ts');
       const load = vi.fn(reloader(directory));
       const session = await startSession({ load, configurationFile: file, port: 0 });
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(stdout.at(-1)).toMatch(/^Built in/);
       });
+      // Every load from here is held, as in the test above.
       let fail: (error: Error) => void = () => undefined;
-      load.mockImplementationOnce(() => new Promise((_resolve, reject) => {
+      load.mockImplementation(() => new Promise((_resolve, reject) => {
         fail = reject;
       }));
-      await writeFile(file, 'export default {};\n');
-      await vi.waitFor(() => {
-        expect(load).toHaveBeenCalledTimes(2);
+      const loads = load.mock.calls.length;
+      await replaceConfiguration(file, 'export default {};\n');
+      await waitFor(() => {
+        expect(load.mock.calls.length).toBeGreaterThan(loads);
       });
       const events = await subscribe(session.url);
       const closing = session.close();
@@ -395,7 +432,7 @@ describe('startSession', () => {
       const { url } = await start({ load: reloader(directory), configurationFile: file });
       await whenServed(url);
       const events = await subscribe(url);
-      await writeFile(file, "export default { source: 'missing' };\n");
+      await replaceConfiguration(file, "export default { source: 'missing' };\n");
       const failure = await whenLast(events, 'failed');
       expect(failure.data).toMatch(/ENOENT/);
       expect((await fetch(url)).status).toBe(200);
@@ -409,7 +446,7 @@ describe('startSession', () => {
       const { url } = await start();
       await whenServed(url);
       fake.emit('error', new Error('The watcher broke.'));
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(stderr).toContain('The watcher broke.\n');
       });
       expect((await fetch(url)).status).toBe(200);
@@ -423,7 +460,7 @@ describe('startSession', () => {
       await whenServed(url);
       fake.emit('change', 'rename', null);
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(stdout.filter((line) => line.startsWith('Built')).length).toBeGreaterThanOrEqual(2);
       });
       expect(load).toHaveBeenCalledTimes(1);
@@ -437,7 +474,7 @@ describe('startSession', () => {
       await whenServed(url);
       fake.emit('change', 'rename', 'build');
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(stdout.filter((line) => line.startsWith('Built')).length).toBeGreaterThanOrEqual(2);
       });
       expect(load).toHaveBeenCalledTimes(1);
@@ -451,14 +488,14 @@ describe('startSession', () => {
       const fake = driveNextWatcher();
       const { url } = await start();
       const events = await subscribe(url);
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(events[0]).toStrictEqual({ name: 'building', data: '' });
       });
       fake.emit('change', 'rename', 'a.html');
       fake.emit('change', 'rename', 'b.html');
       fake.emit('change', 'rename', 'c.html');
       release();
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(names(events).filter((name) => name === 'built')).toHaveLength(2);
       });
       expect(build).toHaveBeenCalledTimes(2);
@@ -510,7 +547,7 @@ describe('startSession', () => {
     test('serves from the pair in the project directory', async ({ directory, start, stdout }) => {
       const { url } = await start({ https: true });
       expect(url).toMatch(/^https:\/\/localhost:\d+\/$/);
-      const { body } = await vi.waitFor(async () => {
+      const { body } = await waitFor(async () => {
         const got = await getInsecurely(url);
         expect(got.status).toBe(200);
         return got;

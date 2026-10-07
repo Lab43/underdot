@@ -40,7 +40,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
 7. [x] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.
 8. [x] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
 9. [x] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.
-10. [ ] **Markdown plugin.**
+10. [x] **Markdown plugin.** A renderer for `.md` pages, and a helper rendering a string of Markdown from a template.
 11. [ ] **Sass plugin.**
 12. [ ] **PostCSS plugin.** A file handler over CSS, chained after Sass by plugin order.
 

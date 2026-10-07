@@ -82,6 +82,14 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **Every derivative is WebP unless the preset says `webp: false`.** A site keeping its JPEG derivatives adds that to each preset. One that does not sees every derivative's path change from `-400.jpg` to `-400.webp` and updates nothing else, since the helper writes the paths (see: docs/specs/srcset.md, Options).
 - **Every derivative's bytes change once in the first v2 build.** sharp is newer, a JPEG's orientation is applied, and metadata is stripped. They change again on a sharp upgrade. Expect them in a committed destination's diff (see: docs/specs/srcset.md, Derivatives).
 
+## The Markdown plugin
+
+- **The plugin is imported from `underdot-md` and called with no options.** `import { markdown } from 'underdot-md'` in the configuration, and `markdown()` in its plugin list. Every option v1 passed to marked is dropped. The helper keeps its name, `markdown` (see: docs/specs/markdown.md, Options).
+- **`ext` is gone.** A site that registered another extension renames those files to `.md` (see: docs/specs/markdown.md, Options).
+- **A Markdown template fails the build.** A `_*.md` template becomes an EJS template that prints `_content` (see: docs/specs/markdown.md, Rendering).
+- **Headings no longer carry an `id`.** A link to a heading's anchor needs that heading written as HTML with the `id` (see: docs/specs/markdown.md, Rendering).
+- **Every rendered page's bytes change once in the first v2 build.** marked is newer, and an email autolink is now a readable `mailto:` link rather than character references scrambled differently on every build. The bytes change again on a marked upgrade. Expect both in a committed destination's diff (see: docs/specs/markdown.md, Rendering).
+
 ## Plugin authors
 
 Every plugin is rewritten for v2. The registrations keep their roles, and these are the changes that alter what a plugin does rather than how it is spelled.

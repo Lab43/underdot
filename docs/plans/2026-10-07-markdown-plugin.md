@@ -82,7 +82,7 @@ The following was read from the registry and run against `marked` installed in a
      - The plugin is named `markdown` and registers a renderer for the `md` extension.
      - A body renders as GitHub Flavored Markdown, as marked renders it: tables, strikethrough, and bare-URL autolinks. Raw HTML passes through as written.
      - A heading carries no `id`.
-     - An email autolink is written as plain text.
+     - An email autolink is written as plain text. *(deviation: the spec says a readable `mailto:` link, never character references. marked writes an `<a href="mailto:…">` anchor, so "plain text" misdescribed it.)*
      - Link and image targets are written as given.
      - The output is a function of the body and marked's version alone.
      - A body reads no variable.
@@ -120,7 +120,7 @@ The following was read from the registry and run against `marked` installed in a
    - **`ext` is gone. A site that registered another extension renames those files to `.md` (see: docs/specs/markdown.md, Options).**
    - **A Markdown template fails the build. A `_*.md` template becomes EJS that prints `_content` (see: docs/specs/markdown.md, Rendering).**
    - **Headings no longer carry an `id`. A link to a heading's anchor writes that heading as HTML with the `id` (see: docs/specs/markdown.md, Rendering).**
-   - **Every rendered page's bytes change once in the first v2 build, and again on a marked upgrade. An email autolink is now written as plain text rather than scrambled differently on every build. Expect both in a committed destination's diff (see: docs/specs/markdown.md, Rendering).**
+   - **Every rendered page's bytes change once in the first v2 build, and again on a marked upgrade. An email autolink is now written as plain text rather than scrambled differently on every build. Expect both in a committed destination's diff (see: docs/specs/markdown.md, Rendering).** *(deviation: the entry says a readable `mailto:` link rather than "plain text", as the spec does, because marked writes an `<a href="mailto:…">` anchor.)*
 
    **The driving manual's section adds `underdot-md` to the packages a scratch copy cannot resolve, the packs in step 1, and the tarballs in step 3, so it packs the core and seven plugins. Its fixture list adds the `markdown` fixture as a site on `underdot-ejs` and `underdot-md`, and "the five runs together prove every plugin" becomes "the six runs". Step 2 copies the new fixture. The closing paragraph says the modules under `node_modules/underdot-md/dist/` import `marked` and nothing under `src/`. The README ticks step 10.**
 

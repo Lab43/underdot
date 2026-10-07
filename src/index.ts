@@ -3,12 +3,14 @@
 import { bindBuild } from './build/bind-build.ts';
 import { resolveConfiguration } from './configuration/resolve-configuration.ts';
 import type { Configuration } from './configuration/resolve-configuration.ts';
+import { startSession } from './dev-server/start-session.ts';
+import type { Session } from './dev-server/start-session.ts';
 import type { RenderContext } from './plugins/bind-render-context.ts';
 import type { FileHandler, Helper, PageHook, Plugin, Renderer } from './plugins/register-plugins.ts';
 import type { HandledFile, HandlerOutput } from './plugins/run-handlers.ts';
 import type { HookPage } from './plugins/run-page-hooks.ts';
 
-export type { Configuration, FileHandler, HandledFile, HandlerOutput, Helper, HookPage, PageHook, Plugin, RenderContext, Renderer };
+export type { Configuration, FileHandler, HandledFile, HandlerOutput, Helper, HookPage, PageHook, Plugin, RenderContext, Renderer, Session };
 
 /**
  * Resolve the configuration a script passes, then build it once.
@@ -17,3 +19,15 @@ export type { Configuration, FileHandler, HandledFile, HandlerOutput, Helper, Ho
 export const build = async (configuration: Configuration, projectDirectory = process.cwd()): Promise<void> => {
   await bindBuild(resolveConfiguration(configuration, projectDirectory))();
 };
+
+/**
+ * Resolve the configuration a script passes, then run a session on it. The
+ * session never reloads: the script owns the value, and a script that
+ * changes it starts a session again.
+ */
+export const dev = (
+  configuration: Configuration,
+  options: { port?: number; https?: boolean } = {},
+  projectDirectory = process.cwd(),
+): Promise<Session> =>
+  startSession({ load: () => Promise.resolve(resolveConfiguration(configuration, projectDirectory)), ...options });

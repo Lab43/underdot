@@ -1,6 +1,7 @@
 // spec: docs/specs/configuration.md, Commands
 
 import { bindBuild } from '../build/bind-build.ts';
+import { startSession } from '../dev-server/start-session.ts';
 import { describeError } from '../shared/describe-error.ts';
 import { loadConfiguration } from './load-configuration.ts';
 import { locateConfiguration } from './locate-configuration.ts';
@@ -21,9 +22,20 @@ const runBuildCommand = async ({ configurationPath }: Command): Promise<number> 
   }
 };
 
-const runDevCommand = (): number => {
-  process.stderr.write('The dev command is not available yet.\n');
-  return 2;
+// Locate the file once, then start a session whose loader imports the file
+// as it stands on each reload. The listening server keeps the process alive
+// after the status is returned, until the author interrupts it.
+// spec: docs/specs/dev-server.md, Session
+const runDevCommand = async ({ configurationPath, port, https }: Extract<Command, { name: 'dev' }>): Promise<number> => {
+  try {
+    const file = await locateConfiguration(configurationPath);
+    let reloads = 0;
+    await startSession({ load: () => loadConfiguration(file, String(reloads++)), configurationFile: file, port, https });
+    return 0;
+  } catch (error) {
+    process.stderr.write(`${describeError(error)}\n`);
+    return 1;
+  }
 };
 
 /**
@@ -39,7 +51,7 @@ export const runCommand = async (args: string[]): Promise<number> => {
     return 2;
   }
   if (command.name === 'dev') {
-    return runDevCommand();
+    return runDevCommand(command);
   }
   return runBuildCommand(command);
 };

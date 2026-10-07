@@ -1,10 +1,10 @@
 # Dev server
 
-What a development session gives an author: one command that builds the site, serves it locally, rebuilds when the source changes, and reloads the browser. What a rebuild does is the build's rule (see: docs/specs/build.md). This doc covers the session around it.
+What a development session gives an author: one command that builds the site, serves it to this machine and its network, rebuilds when the source changes, and reloads the browser. What a rebuild does is the build's rule (see: docs/specs/build.md). This doc covers the session around it.
 
 ## Session
 
-A session builds the site once in full, then serves the destination and watches for changes until it is stopped. The session is the scope of incremental builds: every build after the first reruns only what changed (see: docs/specs/build.md, Incremental builds). The session serves whether or not the first build succeeded, so an author can start with a broken site and fix it while watching (see: Build status).
+A session builds the site once in full, then serves the destination and watches for changes until it is stopped. The session is the scope of incremental builds: every build after the first reruns only what changed (see: docs/specs/build.md, Incremental builds). The session serves whether or not the first build succeeded, so an author can start with a broken site and fix it while watching (see: Build status). A configuration that fails to load when the session starts fails the start, since there is nothing to serve or watch.
 
 ## Watching
 
@@ -14,7 +14,7 @@ Changes that arrive while a build runs are held and start one build when it fini
 
 ## Serving
 
-The session serves the destination over HTTP on a local port and prints the URL. It first applies the configuration's rewrites to the requested URL (see: docs/specs/configuration.md, Rewrites), then serves what the rewritten URL names. It serves a directory's `index.html` for a URL ending in a slash, and redirects a URL without one to the URL with it when that is a directory, so `/about` reaches `/about/`. Rationale: that is what static hosts do with the directory form (see: docs/specs/source-tree.md, Output paths), and a link that works in development and breaks in production is the worst kind.
+The session serves the destination over HTTP on every interface of this machine and prints two URLs, one naming `localhost` and one naming the machine's network address. Rationale: a marketing site is checked on a phone, and a session only the machine can reach cannot be. It first applies the configuration's rewrites to the requested URL (see: docs/specs/configuration.md, Rewrites), then serves what the rewritten URL names. It serves a directory's `index.html` for a URL ending in a slash, and redirects a URL without one to the URL with it when that is a directory, so `/about` reaches `/about/`. Rationale: that is what static hosts do with the directory form (see: docs/specs/source-tree.md, Output paths), and a link that works in development and breaks in production is the worst kind.
 
 A URL that matches nothing is answered with a 404 status and the site's `/404.html` when the site produces one (see: docs/specs/source-tree.md, Output paths). Rationale: a site designs its own not-found page, the dev server is where its author looks at it, and serving the file static hosts serve shows the author what visitors will see.
 

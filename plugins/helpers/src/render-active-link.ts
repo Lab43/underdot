@@ -56,6 +56,7 @@ export const renderActiveLink = (context: RenderContext, href: unknown, title: u
     rendered.set('class', existing === undefined || existing === '' ? className : `${existing} ${className}`);
   }
 
+  // Keep in sync with the escape in plugins/srcset/src/render-image-set.ts.
   const escape = (value: string): string =>
     value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
   const renderedAttributes = [...rendered].map(([name, value]) => ` ${name}="${escape(value)}"`).join('');

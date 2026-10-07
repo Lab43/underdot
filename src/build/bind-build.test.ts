@@ -1,6 +1,6 @@
 // spec: docs/specs/build.md
 
-import { copyFile, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises';
+import { copyFile, cp, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import type { Mock } from 'vitest';
@@ -10,6 +10,7 @@ import defaultsConfiguration from '../../test/fixtures/defaults/underdot.config.
 import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import helpersConfiguration from '../../test/fixtures/helpers/underdot.config.ts';
+import srcsetConfiguration from '../../test/fixtures/srcset/underdot.config.ts';
 import svgoConfiguration from '../../test/fixtures/svgo/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
@@ -371,6 +372,40 @@ describe('bindBuild', () => {
       for (const path of paths) {
         await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
       }
+    });
+  });
+
+  // spec: docs/specs/srcset.md
+  describe('the srcset fixture', () => {
+    test.override({ fixture: 'srcset' });
+
+    test('offers each image at the widths it can fill and writes derivatives beside the originals, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('srcset', 'expected');
+      await bindBuild(resolveConfiguration(srcsetConfiguration, directory))();
+      const paths = await list(destination);
+      expect(paths).toStrictEqual(await list(expected));
+      for (const path of paths.filter((path) => path.endsWith('.html'))) {
+        await expect(await readFile(join(destination, path), 'utf8')).toMatchFileSnapshot(join(expected, path));
+      }
+      // The matcher reads text, so an image is held to its expected bytes.
+      for (const path of paths.filter((path) => !path.endsWith('.html'))) {
+        expect(await readFile(join(destination, path))).toStrictEqual(await readFile(join(expected, path)));
+      }
+    });
+
+    // spec: docs/specs/build.md, Incremental builds
+    // The hero stands as wide upright as the photo, so the body renders to
+    // the same text and the chain is reused.
+    test("a changed image re-renders the body that sized it and reproduces that image's derivatives alone", async ({ directory }) => {
+      const { build, source, rebuild } = bindCatalogue(srcsetConfiguration, directory);
+      await build();
+      await cp(join(source, '_images/hero.jpg'), join(source, 'images/photo.jpg'));
+      expect(await rebuild()).toStrictEqual(ran({
+        bodies: ['/'],
+        produced: ['images/photo-200.webp', 'images/photo-300.jpg', 'images/photo-450.jpg'],
+        written: ['images/photo-200.webp', 'images/photo-300.jpg', 'images/photo-450.jpg', 'images/photo.jpg'],
+      }));
     });
   });
 

@@ -6,6 +6,8 @@ What one build of a site guarantees: how the destination relates to the source, 
 
 The same source directory, configuration, and plugins produce a byte-identical destination, on every run and on every machine. Nothing in the output depends on the time, the order files were read, or how the work was scheduled. Rationale: a site that commits its destination gets, from a diff after each build, proof that only what the author changed has changed. An output that varies on its own hides that signal.
 
+A file a plugin's spec names as exempt may differ from one machine to another, and is still the same on every run of one machine. Rationale: an encoder a plugin wraps may write different bytes on different machines, and a plugin's spec weighs that cost against what the file serves (see: docs/specs/srcset.md, Derivatives).
+
 An incremental build produces the same destination as a full build of the same source (see: Incremental builds). Rationale: reuse that changes the output is a bug wearing a performance improvement's clothes.
 
 ## Order of work

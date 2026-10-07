@@ -20,6 +20,8 @@ Run `node <repo>/dist/underdot.js dev` from a copy of a fixture, as the build co
 
 With a page open in the browser, an edit to a page under `source/` rebuilds and reloads it, and the terminal prints another `Built in` line. An edit that breaks a page, such as an unclosed frontmatter block, shows the build's report in an overlay in the browser and prints it in the terminal, and the page behind the overlay stays. Fixing the page reloads it. Without a browser, `curl -N <url>_underdot/events` prints the `building`, `failed`, and `built` events as they are sent.
 
+One save can print two or more `Built in` lines on macOS. The watcher reports a single write as several change events, and an event that lands while a build runs holds one more build after it. The builds after the first reuse every unit and take a few milliseconds. To tell what a save reran, look at what the destination gained or what the page shows, never at the count of lines.
+
 An edit to `underdot.config.ts` reloads the configuration and builds in full, so a rewrite added there serves after the next `Built in` line. A configuration that fails to load is reported the same way, and the previous configuration stays in force until the file loads again.
 
 A module the configuration imports, such as a fixture's plugin module, is loaded once per session. An edit to it takes a restart.
@@ -30,14 +32,20 @@ A module the configuration imports, such as a fixture's plugin module, is loaded
 
 ## A site on the published packages
 
-The compiled command cannot resolve `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, or `underdot-collections` from a scratch copy that installs nothing, so a site that uses a plugin is driven on the packed packages. That is also the one run that proves a plugin's `dist`, its `exports` map without the `development` condition, and its peer dependency. No one fixture uses every package: the `bust` fixture is a site on `underdot-ejs` and `underdot-bust`, the `helpers` fixture is one on `underdot-ejs` and `underdot-helpers`, the `svgo` fixture is one on `underdot-ejs` and `underdot-svgo`, and the `collections` fixture is one on `underdot-ejs` and `underdot-collections`, so the four runs together prove every plugin.
+The compiled command cannot resolve `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, `underdot-collections`, or `underdot-srcset` from a scratch copy that installs nothing, so a site that uses a plugin is driven on the packed packages. That is also the one run that proves a plugin's `dist`, its `exports` map without the `development` condition, and its peer dependency. No one fixture uses every package: the `bust` fixture is a site on `underdot-ejs` and `underdot-bust`, the `helpers` fixture is one on `underdot-ejs` and `underdot-helpers`, the `svgo` fixture is one on `underdot-ejs` and `underdot-svgo`, the `collections` fixture is one on `underdot-ejs` and `underdot-collections`, and the `srcset` fixture is one on `underdot-ejs` and `underdot-srcset`, so the five runs together prove every plugin.
 
-1. Pack the core and the plugins into a scratch directory that already exists, since `npm pack` does not create it: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace <plugin> --pack-destination <dir>` for `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, and `underdot-collections`. Each pack runs its package's `prepack` build.
-2. Copy `test/fixtures/bust/`, `test/fixtures/helpers/`, `test/fixtures/svgo/`, and `test/fixtures/collections/` each to its own scratch directory.
-3. In each copy, run `npm install` with the tarballs its `package.json` declares: `<dir>/underdot-2.0.0-alpha.0.tgz`, `<dir>/underdot-ejs-2.0.0-alpha.0.tgz`, and the copy's own plugin, `<dir>/underdot-bust-2.0.0-alpha.0.tgz`, `<dir>/underdot-helpers-2.0.0-alpha.0.tgz`, `<dir>/underdot-svgo-2.0.0-alpha.0.tgz`, or `<dir>/underdot-collections-2.0.0-alpha.0.tgz`.
+1. Pack the core and the plugins into a scratch directory that already exists, since `npm pack` does not create it: `npm pack --pack-destination <dir>` at the repo root, then `npm pack --workspace <plugin> --pack-destination <dir>` for `underdot-ejs`, `underdot-bust`, `underdot-helpers`, `underdot-svgo`, `underdot-collections`, and `underdot-srcset`. Each pack runs its package's `prepack` build.
+2. Copy `test/fixtures/bust/`, `test/fixtures/helpers/`, `test/fixtures/svgo/`, `test/fixtures/collections/`, and `test/fixtures/srcset/` each to its own scratch directory.
+3. In each copy, run `npm install` with the tarballs its `package.json` declares: `<dir>/underdot-2.0.0-alpha.0.tgz`, `<dir>/underdot-ejs-2.0.0-alpha.0.tgz`, and the copy's own plugin, `<dir>/underdot-bust-2.0.0-alpha.0.tgz`, `<dir>/underdot-helpers-2.0.0-alpha.0.tgz`, `<dir>/underdot-svgo-2.0.0-alpha.0.tgz`, `<dir>/underdot-collections-2.0.0-alpha.0.tgz`, or `<dir>/underdot-srcset-2.0.0-alpha.0.tgz`.
 4. In each copy, run `npx underdot build`. It exits 0, and `diff -r <copy>/build test/fixtures/<fixture>/expected` shows nothing. Run the `helpers` copy as `TZ=America/Los_Angeles npx underdot build`, which proves the UTC pin against the compiled package on a machine formatting in another zone.
 
-The copy's `node_modules/underdot-ejs/dist/index.js` imports `ejs` and nothing under `src/`, its `node_modules/underdot-bust/dist/index.js` imports nothing under `src/`, the modules under `node_modules/underdot-helpers/dist/` import `date-fns` and `@date-fns/tz` and nothing under `src/`, the modules under `node_modules/underdot-svgo/dist/` import `svgo` and nothing under `src/`, and the modules under `node_modules/underdot-collections/dist/` import nothing under `src/`.
+The copy's `node_modules/underdot-ejs/dist/index.js` imports `ejs` and nothing under `src/`, its `node_modules/underdot-bust/dist/index.js` imports nothing under `src/`, the modules under `node_modules/underdot-helpers/dist/` import `date-fns` and `@date-fns/tz` and nothing under `src/`, the modules under `node_modules/underdot-svgo/dist/` import `svgo` and nothing under `src/`, the modules under `node_modules/underdot-collections/dist/` import nothing under `src/`, and the modules under `node_modules/underdot-srcset/dist/` import `sharp` and `image-size` and nothing under `src/`.
+
+The `srcset` fixture's derivatives under `expected/` are the build's output, which no one writes by hand, so a sharp upgrade that changes them is regenerated from a build:
+
+1. Build a scratch copy of the fixture on the upgraded packages, as above.
+2. Open each derivative under the copy's `build/images/` with sharp's `metadata()`, and confirm its format and its width and height against the element in `expected/index.html` that names it.
+3. Copy the derivatives into `test/fixtures/srcset/expected/images/`.
 
 ## The Node floor
 

@@ -27,7 +27,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    2. [x] **Templates.** Template resolution and its errors, rendering the chain, variables merged from frontmatter, the built-in variables, and writing rendered pages.
    3. [x] **Globals and data files.** The `globals` setting, the `_data` directory, the first layer of the variable merge, and the collision errors.
 4. [x] **EJS and the render context.** Two plans:
-   1. [x] **The render context.** The file being rendered and its directory, reading a file under the source root with relative paths resolved against that file and absolute paths against the source root, and reading another page's rendered body by URL with the page-body error naming both pages, proven with the fixture renderer. Reading handled output and emitting files arrive with step 5.
+   1. [x] **The render context.** The file being rendered and its directory, reading a file under the source root with relative paths resolved against that file and absolute paths against the source root, and reading another page's rendered body by URL with the page-body error naming both pages, proven with the fixture renderer. Reading handled output arrives with step 5, and emitting files with step 9.
    2. [x] **The EJS plugin.** The first workspace package, the renderer, the unset-variable rule, includes resolved through the render context, the configured views directories, its spec written inside the plan, and its site-facing conventions.
 5. [x] **File handlers and helpers.** Four plans:
    1. [x] **The mechanisms.** File handlers and template helpers, proven with fixture plugins.
@@ -39,7 +39,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
    2. [x] **The collections plugin.** A page hook defining a collection of pages, and a helper reading a page's rendered body.
 7. [x] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.
 8. [x] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
-9. [ ] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.
+9. [x] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.
 10. [ ] **Markdown plugin.**
 11. [ ] **Sass plugin.**
 12. [ ] **PostCSS plugin.** A file handler over CSS, chained after Sass by plugin order.

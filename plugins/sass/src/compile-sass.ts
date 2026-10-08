@@ -7,9 +7,8 @@ import { compileStringAsync } from 'sass';
 import type { HandledFile, HandlerContext, HandlerOutput } from 'underdot';
 
 /**
- * The stylesheet compiled to CSS beside itself, or nothing for a partial.
- * Every file Sass loaded for it is declared, and Sass's warnings and debug
- * output go to the build.
+ * Compile a stylesheet to a CSS file at the same path with a .css extension.
+ * A partial, whose name starts with an underscore, compiles to no file.
  */
 export const compileSass = async (file: HandledFile, context: HandlerContext): Promise<HandlerOutput[]> => {
   if (basename(file.outputPath).startsWith('_')) {

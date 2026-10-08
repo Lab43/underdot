@@ -24,7 +24,7 @@ describe('compileSass', () => {
     await expect(compileSass(file('styles/_vars.scss', '$accent: red;\n'), makeHandlerContext({ sourceDirectory }))).resolves.toStrictEqual([]);
   });
 
-  test('a stylesheet compiles to CSS beside itself, as Sass writes it, with every file it loaded declared', async () => {
+  test('a stylesheet compiles to CSS at its own path with a .css extension, as Sass writes it, with every file it loaded declared', async () => {
     const declareFile = vi.fn();
     const text = await readFile(join(sourceDirectory, 'styles/site.scss'), 'utf8');
     const [output] = await compileSass(file('styles/site.scss', text), makeHandlerContext({ sourceDirectory, declareFile }));

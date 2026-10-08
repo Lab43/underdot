@@ -11,6 +11,7 @@ import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import helpersConfiguration from '../../test/fixtures/helpers/underdot.config.ts';
 import markdownConfiguration from '../../test/fixtures/markdown/underdot.config.ts';
+import sassConfiguration from '../../test/fixtures/sass/underdot.config.ts';
 import srcsetConfiguration from '../../test/fixtures/srcset/underdot.config.ts';
 import svgoConfiguration from '../../test/fixtures/svgo/underdot.config.ts';
 import templatedConfiguration from '../../test/fixtures/templated/underdot.config.ts';
@@ -367,6 +368,26 @@ describe('bindBuild', () => {
       const expected = fixturePath('svgo', 'expected');
       await bindBuild(resolveConfiguration(svgoConfiguration, directory))();
       await expectDestination(destination, expected);
+    });
+  });
+
+  describe('the sass fixture', () => {
+    test.override({ fixture: 'sass' });
+
+    // spec: docs/specs/sass.md
+    test('compiles each stylesheet through its imports and writes no partial, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('sass', 'expected');
+      await bindBuild(resolveConfiguration(sassConfiguration, directory))();
+      await expectDestination(destination, expected);
+    });
+
+    // spec: docs/specs/sass.md, Imports
+    test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
+      await writeFile(join(directory, 'source/styles/site.scss'), "@use '../../outside';\n");
+      await expect(bindBuild(resolveConfiguration(sassConfiguration, directory))()).rejects.toThrow(
+        new Error('Handling styles/site.scss failed in sass: The handler declares "../outside.scss", which is not a plain path under the source root.'),
+      );
     });
   });
 

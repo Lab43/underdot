@@ -41,7 +41,7 @@ The rewrite proceeds through these steps, in this order. Each step is one or mor
 8. [x] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
 9. [x] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.
 10. [x] **Markdown plugin.** A renderer for `.md` pages, and a helper rendering a string of Markdown from a template.
-11. [ ] **Sass plugin.**
+11. [x] **Sass plugin.** A file handler compiling SCSS to CSS, the handler context that declares the files Sass imports, and the warnings every plugin context now carries.
 12. [ ] **PostCSS plugin.** A file handler over CSS, chained after Sass by plugin order.
 
 Each plugin's spec is written inside the plan that builds it. The `underdot` package ships a q extension for sites that use it, carrying conventions for authoring a site. Each step writes the site-facing conventions it decides into that payload as it ships.

@@ -1,0 +1,9 @@
+{
+  "name": "sass-site",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "underdot": "^2.0.0-alpha.0",
+    "underdot-sass": "^2.0.0-alpha.0"
+  }
+}

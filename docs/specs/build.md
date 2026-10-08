@@ -43,6 +43,8 @@ The inputs a build tracks for a render are the page's own file, every template i
 
 A change to the set of files, not only to their contents, is a change to inputs. Adding, removing, or renaming a template re-resolves the chain of every page whose search path includes the template's directory, and a page whose chain changed re-renders. A page added, removed, or renamed, or a page whose frontmatter changed, reruns every hook, and a change to a page's body reruns none, because the list of pages is everything a hook is given. Adding or removing any file re-evaluates the uniqueness rule. Rationale: template resolution is a search, and a search's result depends on what exists.
 
+A plugin's warning prints when its unit runs, so a reused unit prints nothing (see: docs/specs/plugins.md, Errors). A build run on its own prints every warning, and a dev-server session prints a unit's warnings again whenever the unit reruns. Rationale: replaying recorded warnings on reuse would repeat every warning on every save.
+
 A change to the configuration or to a plugin's code invalidates everything, and the next build runs every unit. A data module's own file is its input. A module it imports is treated as a plugin's code: it is not watched, and a change to it takes a restart.
 
 ## Concurrency
@@ -52,5 +54,7 @@ Units with no dependency between them may run at the same time, up to a limit th
 ## Errors
 
 A build stops at the first unit that fails. Units already running finish or are abandoned, nothing further starts, and the failure is reported with the attribution the plugin contract defines (see: docs/specs/plugins.md, Errors). Run on its own, the build exits with a non-zero status. Run by a dev-server session, it reports the failure to the session, which builds again on the next change (see: docs/specs/dev-server.md, Build status). Rationale: an error usually means the author is mid-edit or has one thing to fix, the fix is a rebuild away either way, and stopping keeps the report from being buried under the log of everything that ran after it.
+
+A plugin's warning is not a failure. The build continues, and the warning leaves the exit status alone (see: docs/specs/plugins.md, Errors).
 
 A failed build leaves whatever it had written before stopping. The guarantee that the destination holds exactly what the build produced applies to a successful build only (see: Destination). Rationale: the exit status and the report are what tell an author or a deploy script that the build is bad, and unwinding partial output buys nothing they do not already know.

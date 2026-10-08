@@ -1,7 +1,7 @@
 // spec: docs/specs/srcset.md
 
 import sharp from 'sharp';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { produceDerivative } from './produce-derivative.ts';
 
 // A solid image of the size given, in the format given, tagged with an EXIF
@@ -16,7 +16,10 @@ const makeImage = async (width: number, height: number, format: 'jpeg' | 'png', 
 
 // The producer run with the source at `images/photo`, and what sharp reads of its result.
 const produce = async (bytes: Buffer, width: number, webp: boolean) => {
-  const contents = await produceDerivative('images/photo', width, webp)({ readOutput: (outputPath) => (outputPath === 'images/photo' ? bytes : undefined) });
+  const contents = await produceDerivative('images/photo', width, webp)({
+    readOutput: (outputPath) => (outputPath === 'images/photo' ? bytes : undefined),
+    warn: vi.fn(),
+  });
   const { format, width: producedWidth, height, orientation } = await sharp(contents).metadata();
   return { format, width: producedWidth, height, orientation };
 };
@@ -44,7 +47,7 @@ describe('produceDerivative', () => {
   });
 
   test('a source no output is at fails naming it', async () => {
-    await expect(produceDerivative('images/missing.jpg', 300, true)({ readOutput: () => undefined })).rejects.toThrow(
+    await expect(produceDerivative('images/missing.jpg', 300, true)({ readOutput: () => undefined, warn: vi.fn() })).rejects.toThrow(
       new Error("No static file's output is at images/missing.jpg."),
     );
   });

@@ -6,6 +6,7 @@ import { reuseUnit } from '../build/reuse-unit.ts';
 import type { Observe, UnitRecords } from '../build/reuse-unit.ts';
 import { isObject } from '../shared/is-object.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
+import { printWarning } from './print-warning.ts';
 import type { RegisteredHook } from './register-plugins.ts';
 
 /**
@@ -17,6 +18,16 @@ export interface HookPage {
   outputPath: string;
   url: string;
   frontmatter: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * What a page hook receives beside the pages.
+ */
+export interface HookContext {
+  /**
+   * Print a warning naming the hook's plugin. The build goes on.
+   */
+  warn: (message: string) => void;
 }
 
 /**
@@ -45,9 +56,12 @@ export const runPageHooks = async (pages: readonly HookPage[], hooks: Registered
     const run = async (observe: Observe): Promise<HookGlobal[]> => {
       observe('pages', '');
       let defined: unknown;
+      const warn = (message: string): void => {
+        printWarning('Running the page hook', pluginName, message);
+      };
       // spec: docs/specs/plugins.md, Errors
       try {
-        defined = await hook(hookPages);
+        defined = await hook(hookPages, { warn });
       } catch (error) {
         throw attributePluginError('Running the page hook', pluginName, error);
       }

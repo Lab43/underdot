@@ -14,7 +14,7 @@ import { classifySource } from '../source-tree/classify-source.ts';
 import { walkSource } from '../source-tree/walk-source.ts';
 import { handleFiles } from './handle-files.ts';
 import type { Output } from './handle-files.ts';
-import type { RegisteredHandler } from './register-plugins.ts';
+import type { FileHandler, RegisteredHandler } from './register-plugins.ts';
 
 const source = join(fixturePath('templated'), 'source');
 const renderers = new Map([['tpl', { pluginName: 'fixture', render: renderBody }]]);
@@ -90,6 +90,31 @@ describe('handleFiles', () => {
       expect(second).toStrictEqual(first);
       expect(spied[0]?.handle).toHaveBeenCalledTimes(1);
       expect(spied[1]?.handle).toHaveBeenCalledTimes(1);
+    });
+
+    // spec: docs/specs/plugins.md, Dependencies
+    test('a handling is reused while a file its handler declared stands, printing nothing, and reruns and warns again when it changes', async ({ directory, stderr }) => {
+      const root = join(directory, 'source');
+      const first = await hashSource(root);
+      const declaring: RegisteredHandler = {
+        pluginName: 'sass',
+        glob: '**/*.css',
+        handle: vi.fn<FileHandler>((file, { declareFile, warn }) => {
+          declareFile('notes.txt');
+          warn('Deprecated.');
+          return [file];
+        }),
+      };
+      const records: UnitRecords<Output[]> = new Map();
+      await handleFiles(root, [{ sourcePath: 'styles/site.css' }], [declaring], first, records);
+      await handleFiles(root, [{ sourcePath: 'styles/site.css' }], [declaring], first, records);
+      expect(declaring.handle).toHaveBeenCalledOnce();
+      expect(stderr).toStrictEqual(['Handling styles/site.css warned in sass: Deprecated.\n']);
+      await writeFile(join(root, 'notes.txt'), 'The notes file, edited.\n');
+      const second = await hashFiles(root, [...first.keys()], first);
+      await handleFiles(root, [{ sourcePath: 'styles/site.css' }], [declaring], second, records);
+      expect(declaring.handle).toHaveBeenCalledTimes(2);
+      expect(stderr).toHaveLength(2);
     });
 
     test("a changed file's handlers run again and the rest are reused", async ({ directory }) => {

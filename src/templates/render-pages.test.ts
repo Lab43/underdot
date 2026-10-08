@@ -2,14 +2,16 @@
 
 import { hash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
 import { makePage } from '../../test/helpers/make-page.ts';
 import { makeTemplate } from '../../test/helpers/make-template.ts';
+import { test } from '../../test/helpers/test.ts';
 import type { Versions } from '../build/bind-build.ts';
 import type { UnitRecords } from '../build/reuse-unit.ts';
 import { PluginError } from '../plugins/bind-render-context.ts';
 import type { MakeRenderContext } from '../plugins/bind-render-context.ts';
+import { printWarning } from '../plugins/print-warning.ts';
 import type { RegisteredRenderer, Renderer } from '../plugins/register-plugins.ts';
 import { renderPages } from './render-pages.ts';
 import type { RenderedBody, RenderedPage, RenderedPages } from './render-pages.ts';
@@ -21,9 +23,9 @@ const rendered = (sourcePath: string, outputPath: string, contents: string) => (
 const fakeRenderer = (): ReturnType<typeof vi.fn<Renderer>> => vi.fn<Renderer>((_body, { sourcePath }) => `rendered ${sourcePath}`);
 
 // A context of the file's fields alone, observing a variable read and a body
-// read and pushing an emit as the file's own, with the other operations doing
-// nothing.
-const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits) => ({
+// read, pushing an emit as the file's own, and printing a warning under its
+// attribution, with the other operations doing nothing.
+const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits, attribution) => ({
   sourcePath,
   variables: new Proxy(variables, {
     get: (target, key): unknown => {
@@ -39,9 +41,12 @@ const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, 
     observe('body', url);
     return bodies?.get(url) ?? '';
   },
-  enterFile: (reference, entered) => makeContext(reference, entered, bodies, observe, emits),
+  enterFile: (reference, entered) => makeContext(reference, entered, bodies, observe, emits, attribution),
   emit: (outputPath, _parameters, produce) => {
     emits.push({ pluginName: 'fixture', sourcePath, outputPath, parametersHash: '', produce });
+  },
+  warn: (message) => {
+    printWarning(attribution.unit, attribution.pluginName, message);
   },
 });
 
@@ -239,6 +244,35 @@ describe('renderPages', () => {
       const { emits } = await renderEverything([{ page: first, chain: [] }], {}, versions, records);
       expect(emits).toStrictEqual([emitted('a.tpl')]);
       expect([...records.bodies.keys()]).toStrictEqual(['a.tpl', 'b.tpl']);
+    });
+  });
+
+  // spec: docs/specs/plugins.md, Errors
+  describe('a warning while rendering', () => {
+    const warning = (pluginName: string): RegisteredRenderer => ({
+      pluginName,
+      render: (body, context) => {
+        context.warn('Deprecated.');
+        return body;
+      },
+    });
+
+    test("a warning names the file rendering and its renderer's plugin, in the page and in its template", async ({ stderr }) => {
+      const page = makePage({ sourcePath: 'index.tpl', renderer: warning('markdown') });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: warning('ejs') });
+      await renderAll([{ page, chain: [root] }], {});
+      expect(stderr).toStrictEqual(['Rendering index.tpl warned in markdown: Deprecated.\n', 'Rendering _.tpl warned in ejs: Deprecated.\n']);
+    });
+
+    // spec: docs/specs/build.md, Incremental builds
+    test('a reused render prints nothing', async ({ stderr }) => {
+      const page = makePage({ sourcePath: 'index.tpl', renderer: warning('markdown') });
+      const root = makeTemplate({ sourcePath: '_.tpl', renderer: warning('ejs') });
+      const versions = freshVersions({ files: hashed('index.tpl', '_.tpl') });
+      const records = freshRecords();
+      await renderAll([{ page, chain: [root] }], {}, versions, records);
+      await renderAll([{ page, chain: [root] }], {}, versions, records);
+      expect(stderr).toHaveLength(2);
     });
   });
 

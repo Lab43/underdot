@@ -85,7 +85,17 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
       bodyRecords,
       pageRecords,
     );
-    const emitted = await produceFiles(source, destination, emits, handlers, pluginNames, outputs, written, producedRecords);
+    const emitted = await produceFiles(
+      source,
+      destination,
+      emits,
+      handlers,
+      pluginNames,
+      outputs,
+      files,
+      written,
+      producedRecords,
+    );
     await writeDestination(source, destination, outputs, emitted, renderedPages, written);
   };
 };

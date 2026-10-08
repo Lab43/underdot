@@ -1,6 +1,7 @@
 // spec: docs/specs/svgo.md
 
 import { describe, expect, test } from 'vitest';
+import { makeHandlerContext } from '../../../test/helpers/make-handler-context.ts';
 import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';
 import { svgo } from './index.ts';
 import type { SvgoOptions } from './index.ts';
@@ -26,7 +27,7 @@ const context = makeRenderContext({
 
 // The icon through the handler the plugin registers, awaited because a
 // registered handler may return a promise.
-const handle = (options?: SvgoOptions) => svgo(options).handlers!['**/*.svg']!({ outputPath: '_icons/mail.svg', contents: Buffer.from(icon) });
+const handle = (options?: SvgoOptions) => svgo(options).handlers!['**/*.svg']!({ outputPath: '_icons/mail.svg', contents: Buffer.from(icon) }, makeHandlerContext());
 
 describe('svgo', () => {
   test('the plugin is named svgo and registers a handler for every SVG and the inlineSvg helper', () => {
@@ -42,7 +43,7 @@ describe('svgo', () => {
   });
 
   test('the default keeps a stylesheet and prefixes its classes with the file name', async () => {
-    const [output] = await svgo().handlers!['**/*.svg']!({ outputPath: '_icons/mail.svg', contents: Buffer.from(styledIcon) });
+    const [output] = await svgo().handlers!['**/*.svg']!({ outputPath: '_icons/mail.svg', contents: Buffer.from(styledIcon) }, makeHandlerContext());
     expect(output!.contents).toBe(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><style>.mail_svg__a{fill:red}</style><path d="M2 4h20v16H2Z" class="mail_svg__a"/></svg>',
     );

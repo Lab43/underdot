@@ -31,3 +31,5 @@ Every HTML response the session serves carries a small script that keeps a conne
 ## Build status
 
 While a build runs, connected browsers show that a build is in progress. When a build fails, the failure report, with the attribution the build gives it (see: docs/specs/build.md, Errors), is shown in every connected browser as well as in the terminal, and the browser keeps showing the page it had. When the next build succeeds, the report is gone and the browser reloads. Rationale: the author is looking at the browser, not the terminal, when they save. A standing configuration report stays through a successful source build until a reload succeeds. Rationale: those builds run under a configuration the author has already replaced, and a browser that cleared the report on one of them would tell the author the edit took.
+
+A plugin's warning prints in the terminal and is never shown in the browser (see: docs/specs/plugins.md, Errors). Rationale: a warning fails nothing, so the build it came from succeeds and the browser reloads as it does after any success.

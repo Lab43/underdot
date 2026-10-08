@@ -5,6 +5,7 @@ import { hash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { FileTable } from '../build/hash-files.ts';
 import { mapUnits } from '../build/map-units.ts';
 import { reuseUnit } from '../build/reuse-unit.ts';
 import type { InputKind, Observe, UnitRecords, Version } from '../build/reuse-unit.ts';
@@ -12,6 +13,7 @@ import { compareStrings } from '../shared/compare-strings.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
 import type { EmittedFile } from './bind-render-context.ts';
 import type { Output } from './handle-files.ts';
+import { printWarning } from './print-warning.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 import { runHandlers } from './run-handlers.ts';
 
@@ -22,6 +24,10 @@ import { runHandlers } from './run-handlers.ts';
  */
 export interface ProducerContext {
   readOutput: (outputPath: string) => Buffer | undefined;
+  /**
+   * Print a warning naming the emitting plugin. The build goes on.
+   */
+  warn: (message: string) => void;
 }
 
 /**
@@ -49,6 +55,7 @@ export const produceFiles = async (
   handlers: RegisteredHandler[],
   pluginNames: string[],
   outputs: Output[],
+  files: FileTable,
   written: ReadonlyMap<string, string>,
   records: UnitRecords<EmittedOutput[]>,
 ): Promise<EmittedOutput[]> => {
@@ -93,7 +100,15 @@ export const produceFiles = async (
         records.delete(outputPath);
       }
     }
-    const lookup = (kind: InputKind, name: string): Version => (kind === 'parameters' ? parametersHash : outputsByPath.get(name)?.hash);
+    const lookup = (kind: InputKind, name: string): Version => {
+      if (kind === 'parameters') {
+        return parametersHash;
+      }
+      if (kind === 'file') {
+        return files.get(name)?.hash;
+      }
+      return outputsByPath.get(name)?.hash;
+    };
     const run = async (observe: Observe): Promise<EmittedOutput[]> => {
       observe('parameters', '');
       const readOutput = (readPath: string): Buffer | undefined => {
@@ -104,10 +119,13 @@ export const produceFiles = async (
         }
         return output.contents ?? readFileSync(join(source, output.sourcePath));
       };
+      const warn = (message: string): void => {
+        printWarning(`Producing ${outputPath}`, pluginName, message);
+      };
       let contents: unknown;
       // spec: docs/specs/plugins.md, Errors
       try {
-        contents = await produce({ readOutput });
+        contents = await produce({ readOutput, warn });
       } catch (error) {
         throw attributePluginError(`Producing ${outputPath}`, pluginName, error);
       }
@@ -117,7 +135,14 @@ export const produceFiles = async (
       const index = pluginNames.indexOf(pluginName);
       const handlersAfter = handlers.filter((handler) => pluginNames.indexOf(handler.pluginName) > index);
       const bytes = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
-      const handled = await runHandlers(outputPath, { outputPath, contents: bytes }, handlersAfter);
+      const handled = await runHandlers(
+        outputPath,
+        { outputPath, contents: bytes },
+        handlersAfter,
+        source,
+        files,
+        observe,
+      );
       return handled.map((file) => ({ sourcePath, outputPath: file.outputPath, contents: file.contents, hash: hash('sha256', file.contents, 'hex') }));
     };
     const result = await reuseUnit(records, outputPath, lookup, run);

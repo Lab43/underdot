@@ -61,6 +61,7 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 - `docs/specs/collections.md` — what the collections plugin commits to: the page hook that defines a global per collection, the list of the pages below a directory, and the one helper that reads a page's rendered body into a template
 - `docs/specs/srcset.md` — what the srcset plugin commits to: the one helper that renders an image with a `srcset`, the derivatives it has the build produce, and the one option the plugin takes
 - `docs/specs/sass.md` — what the Sass plugin commits to: the file handler that compiles every SCSS stylesheet to CSS, how its imports resolve and become inputs, how Sass's warnings reach the author, and that the plugin takes no options
+- `docs/specs/postcss.md` — what the PostCSS plugin commits to: the file handler that runs every CSS file through the site's PostCSS plugins, how the files they read become inputs, how their warnings reach the author, and the one option the plugin takes
 - `docs/specs/markdown.md` — what the Markdown plugin commits to: how a file renders with Markdown, the one helper it registers, and that the plugin takes no options
 
 ### Guides

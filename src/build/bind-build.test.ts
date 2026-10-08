@@ -11,6 +11,7 @@ import ejsConfiguration from '../../test/fixtures/ejs/underdot.config.ts';
 import excludingConfiguration from '../../test/fixtures/excluding/underdot.config.ts';
 import helpersConfiguration from '../../test/fixtures/helpers/underdot.config.ts';
 import markdownConfiguration from '../../test/fixtures/markdown/underdot.config.ts';
+import postcssConfiguration from '../../test/fixtures/postcss/underdot.config.ts';
 import sassConfiguration from '../../test/fixtures/sass/underdot.config.ts';
 import srcsetConfiguration from '../../test/fixtures/srcset/underdot.config.ts';
 import svgoConfiguration from '../../test/fixtures/svgo/underdot.config.ts';
@@ -387,6 +388,26 @@ describe('bindBuild', () => {
       await writeFile(join(directory, 'source/styles/site.scss'), "@use '../../outside';\n");
       await expect(bindBuild(resolveConfiguration(sassConfiguration, directory))()).rejects.toThrow(
         new Error('Handling styles/site.scss failed in sass: The handler declares "../outside.scss", which is not a plain path under the source root.'),
+      );
+    });
+  });
+
+  describe('the postcss fixture', () => {
+    test.override({ fixture: 'postcss' });
+
+    // spec: docs/specs/postcss.md
+    test('runs every CSS file through its plugins after Sass, inlining each import, file for file as expected', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const expected = fixturePath('postcss', 'expected');
+      await bindBuild(resolveConfiguration(postcssConfiguration, directory))();
+      await expectDestination(destination, expected);
+    });
+
+    // spec: docs/specs/postcss.md, Dependencies
+    test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
+      await writeFile(join(directory, 'source/styles/print.css'), '@import "../../outside.css";\n');
+      await expect(bindBuild(resolveConfiguration(postcssConfiguration, directory))()).rejects.toThrow(
+        new Error('Handling styles/print.css failed in postcss: The handler declares "../outside.css", which is not a plain path under the source root.'),
       );
     });
   });

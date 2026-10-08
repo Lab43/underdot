@@ -1,0 +1,11 @@
+{
+  "name": "postcss-site",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "postcss-import": "^17.0.0",
+    "underdot": "^2.0.0-alpha.0",
+    "underdot-postcss": "^2.0.0-alpha.0",
+    "underdot-sass": "^2.0.0-alpha.0"
+  }
+}

@@ -47,7 +47,7 @@ A tool a handler wraps that resolves imports itself, as Sass does, reports the f
 
 A plugin's warning prints when its unit runs, so a reused unit prints nothing (see: docs/specs/plugins.md, Errors). A build run on its own prints every warning, and a dev-server session prints a unit's warnings again whenever the unit reruns. Rationale: replaying recorded warnings on reuse would repeat every warning on every save.
 
-A change to the configuration or to a plugin's code invalidates everything, and the next build runs every unit. A data module's own file is its input. A module it imports is treated as a plugin's code: it is not watched, and a change to it takes a restart.
+A change to the configuration or to a plugin's code invalidates everything, and the next build runs every unit. A data module's own file is its input. A module it imports is treated as a plugin's code: it is not watched, and a change to it takes a restart. So is configuration a plugin reads from outside the source root, such as Browserslist's. Rationale: a plugin can declare only files under the source root (see: docs/specs/plugins.md, Reading and writing), and data a plugin release carries, such as Autoprefixer's browser tables, belongs to that release.
 
 ## Concurrency
 

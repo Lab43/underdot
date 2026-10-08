@@ -1,0 +1,5 @@
+@import "parts/_base.css";
+
+nav {
+  display: none;
+}

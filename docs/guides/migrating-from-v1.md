@@ -96,6 +96,12 @@ What to change in a site built on Underdot v1 so it builds on v2. Each entry nam
 - **An import from outside the source root fails the build.** A stylesheet that imported a file from `node_modules` or beside the project copies it under the source root, in an underscore directory such as `_sass/` so it is never written (see: docs/specs/sass.md, Imports).
 - **Sass's warnings print and the build continues.** A deprecation shows in the terminal on every build that compiles the stylesheet, until the stylesheet is updated (see: docs/specs/sass.md, Errors and warnings).
 
+## The PostCSS plugin
+
+- **The plugin is imported from `underdot-postcss` and given its PostCSS plugins.** `import { postcss } from 'underdot-postcss'` in the configuration, and `postcss({ plugins: [...] })` in its plugin list. A `postcss.config.js` is not read (see: docs/specs/postcss.md, Options).
+- **List `sass()` ahead of it to process compiled CSS.** Handlers run in plugin order, so Sass's output reaches PostCSS only when Sass comes first (see: docs/specs/postcss.md, The handler).
+- **An import from outside the source root fails the build, and so does a dependency on a directory.** A stylesheet that imported a file from `node_modules` copies it under the source root, in an underscore directory such as `_css/`. A plugin that scans directories, such as Tailwind, cannot be used (see: docs/specs/postcss.md, Dependencies).
+
 ## Plugin authors
 
 Every plugin is rewritten for v2. The registrations keep their roles, and these are the changes that alter what a plugin does rather than how it is spelled.

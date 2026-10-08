@@ -59,6 +59,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^22.20.4",
+    "@types/postcss-import": "^14.0.3",
     "@vitest/coverage-v8": "5.0.2",
     "@vitest/eslint-plugin": "^1.6.27",
     "eslint": "^10.11.0",
@@ -67,6 +68,7 @@
     "globals": "^17.12.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.5.1",
+    "postcss-import": "^17.0.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.1",
     "vitest": "5.0.2"

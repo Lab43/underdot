@@ -84,8 +84,13 @@ The documentation is in four places:
 
 - `docs/specs/` states what Underdot commits to.
 - `docs/conventions/` holds the rules its code follows.
-- `docs/guides/` holds how to drive Underdot by hand.
+- `docs/guides/` holds how to drive Underdot by hand and how to publish it.
 - `q-extension/` holds what ships to sites that use Underdot: the rules for writing a site, and the changes a version 1 site makes to build on version 2.
+
+## Publishing
+
+Every package is released at one version, from `main`. [`docs/guides/publishing.md`](https://github.com/Lab43/underdot/blob/main/docs/guides/publishing.md) walks through the version bump, the checks, the publish, and the tag.
+<!-- source: docs/guides/publishing.md -->
 
 ## Working with q
 

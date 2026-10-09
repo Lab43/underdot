@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md
+// spec: q-docs/specs/plugins.md
 
 import { hash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -113,7 +113,7 @@ export type MakeRenderContext = (
 /**
  * Bind what the build lends every render. The result makes a context per file.
  */
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 export const bindRenderContext = (
   source: string,
   files: FileTable,
@@ -126,7 +126,7 @@ export const bindRenderContext = (
   const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits, attribution) => {
     // A relative reference resolves against the file's directory and an
     // absolute one against the source root.
-    // spec: docs/specs/templates.md, Relative paths
+    // spec: q-docs/specs/templates.md, Relative paths
     const resolve = (reference: string): string => {
       const referencedPath = joinPosix(reference.startsWith('/') ? '.' : dirname(sourcePath), reference);
       if (referencedPath === '..' || referencedPath.startsWith('../')) {
@@ -140,7 +140,7 @@ export const bindRenderContext = (
       const referencedPath = resolve(reference);
       observe('file', referencedPath);
       // A file the walk did not see, an excluded one among them, is absent.
-      // spec: docs/specs/configuration.md, Excluded files
+      // spec: q-docs/specs/configuration.md, Excluded files
       if (!files.has(referencedPath)) {
         return undefined;
       }
@@ -202,7 +202,7 @@ export const bindRenderContext = (
 
     // A throw is tagged with the helper's plugin. An engine rethrows the same
     // object with the file and line added, so the tag survives its rewrite.
-    // spec: docs/specs/plugins.md, Errors
+    // spec: q-docs/specs/plugins.md, Errors
     const boundHelpers = new Map<string, (...args: unknown[]) => unknown>();
     for (const [name, { pluginName, helper }] of helpers) {
       // An emit is the helper's plugin's, so the build knows whose handlers

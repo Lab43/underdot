@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Output
+// spec: q-docs/specs/build.md, Output
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';

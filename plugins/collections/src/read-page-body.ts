@@ -1,4 +1,4 @@
-// spec: docs/specs/collections.md
+// spec: q-docs/specs/collections.md
 
 import type { RenderContext } from 'underdot';
 

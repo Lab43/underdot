@@ -1,4 +1,4 @@
-// spec: docs/specs/helpers.md
+// spec: q-docs/specs/helpers.md
 
 import { tz } from '@date-fns/tz';
 import { format } from 'date-fns';

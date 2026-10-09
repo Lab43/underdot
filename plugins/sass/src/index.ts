@@ -1,4 +1,4 @@
-// spec: docs/specs/sass.md
+// spec: q-docs/specs/sass.md
 
 import type { Plugin } from 'underdot';
 import { compileSass } from './compile-sass.ts';

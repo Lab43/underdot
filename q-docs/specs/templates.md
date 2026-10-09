@@ -1,6 +1,6 @@
 # Templates
 
-How a page becomes a finished document: the frontmatter a page or template carries, how a page finds its template chain, and which variables every file in the chain sees. Which files are pages and templates is the source tree's call (see: docs/specs/source-tree.md, Classification). A site with no registered renderer has no pages and no templates, and nothing here applies to it.
+How a page becomes a finished document: the frontmatter a page or template carries, how a page finds its template chain, and which variables every file in the chain sees. Which files are pages and templates is the source tree's call (see: q-docs/specs/source-tree.md, Classification). A site with no registered renderer has no pages and no templates, and nothing here applies to it.
 
 ## Frontmatter
 
@@ -29,7 +29,7 @@ Every page renders through a chain of templates that ends at a root template. Ea
 
 The chain ends at the first template whose default search finds nothing above it. That template is a root template. The source root's `_` is the usual root but is not required: a `_` template with no `_` above it is a root wherever it sits, so a site may have several roots or none at the source root. Rationale: a section can be fully self-contained, and a page that needed a root the site lacks is caught by the error below.
 
-The directory a file searches from is the directory it belongs to (see: docs/specs/source-tree.md, A page and a directory may share a name).
+The directory a file searches from is the directory it belongs to (see: q-docs/specs/source-tree.md, A page and a directory may share a name).
 
 Three failures are build errors that name the file and the template it asked for:
 
@@ -41,7 +41,7 @@ Two templates in one directory with the same name and different extensions are a
 
 ## Rendering the chain
 
-A page's body renders first, with the renderer registered for its extension (see: docs/specs/plugins.md, Renderers). Its output becomes `_content` for its parent template, whose output becomes `_content` for the next parent, up to the root. Each file renders with the renderer for its own extension, so a Markdown page renders inside an EJS template.
+A page's body renders first, with the renderer registered for its extension (see: q-docs/specs/plugins.md, Renderers). Its output becomes `_content` for its parent template, whose output becomes `_content` for the next parent, up to the root. Each file renders with the renderer for its own extension, so a Markdown page renders inside an EJS template.
 
 ## Variables
 
@@ -49,11 +49,11 @@ Frontmatter carries two kinds of value, and every file in the chain gets a view 
 
 **Page attributes** mean the same thing at every level of the chain: a title, a body class, a color scheme. A template supplies a default and the page overrides it. They reach every file as one merged set of variables, built in this order, each layer overriding the keys of the layers before it:
 
-1. The site's globals, from the configuration (see: docs/specs/configuration.md, Globals) and from data files (see: Data files).
+1. The site's globals, from the configuration (see: q-docs/specs/configuration.md, Globals) and from data files (see: Data files).
 2. Each template's frontmatter, from the root template down to the template nearest the page.
 3. The page's frontmatter.
 
-The built-in variables (see: Built-in variables) are added to the set and can collide with nothing, because their names are reserved. The registered helpers join the set under their names (see: docs/specs/plugins.md, Template helpers). Only frontmatter flows between files: a value a body computes while rendering is local to that render and reaches no other file in the chain. Rationale: a template nearer the page knows more about it than one further away, and the page knows most. The whole chain sees the same set, so a root template can read a body class that a section template set, and the page can override both.
+The built-in variables (see: Built-in variables) are added to the set and can collide with nothing, because their names are reserved. The registered helpers join the set under their names (see: q-docs/specs/plugins.md, Template helpers). Only frontmatter flows between files: a value a body computes while rendering is local to that render and reaches no other file in the chain. Rationale: a template nearer the page knows more about it than one further away, and the page knows most. The whole chain sees the same set, so a root template can read a body class that a section template set, and the page can override both.
 
 **Template parameters** steer the specific template a file selected, such as a `layout` choice that means one thing to a section template and another to the root. The merged set cannot carry them, because the page's value would shadow a middle template's value of the same name. A template reads a parameter from `_chain` instead (see: Built-in variables), where every file's frontmatter is kept apart. The same view serves a template that needs every value of one name across the stack, such as a root collecting the body classes each file declared.
 
@@ -69,7 +69,7 @@ Three collisions are build errors naming both sides:
 
 - Two files at one level with one name and different extensions.
 - A file and a directory at one level with one name.
-- A variable defined both by a data file and by the configuration's globals (see: docs/specs/configuration.md, Globals).
+- A variable defined both by a data file and by the configuration's globals (see: q-docs/specs/configuration.md, Globals).
 
 Rationale: the build has no rule to pick by, as it has none for two templates with one name (see: Template resolution).
 
@@ -77,14 +77,14 @@ Rationale: the build has no rule to pick by, as it has none for two templates wi
 
 Three variables exist regardless of frontmatter. Their names start with an underscore, the prefix the source tree already gives to what belongs to the build rather than the site.
 
-- `_url`: the page's URL (see: docs/specs/source-tree.md, URLs). It is the same in every file of the page's chain.
+- `_url`: the page's URL (see: q-docs/specs/source-tree.md, URLs). It is the same in every file of the page's chain.
 - `_content`: the rendered output of the file directly below in the chain. It exists only in templates, because a page has nothing below it.
 - `_chain`: the frontmatter variables of each file below in the chain, nearest first, each without its `template` directive and with no merging. Rendering the root of a page that selected `_post` under `_wide`, `_chain[0]` is `_wide`'s frontmatter, `_chain[1]` is `_post`'s, and `_chain[2]` is the page's. In a page, `_chain` is empty. Rationale: the direct child is the most common read, so it sits at index zero, and a template knows its own frontmatter, so the list stops below it.
 
-A template author reads a frontmatter variable that a page may not have set without an error. How an absent variable reads is the renderer's rule (see: docs/specs/plugins.md, Renderers).
+A template author reads a frontmatter variable that a page may not have set without an error. How an absent variable reads is the renderer's rule (see: q-docs/specs/plugins.md, Renderers).
 
 ## Relative paths
 
-A relative path resolves against the directory of the file being rendered when the path is used, not against the page's directory when that file is a template. This binds every helper that takes a path and every include that names a path (see: docs/specs/plugins.md, Render context). A relative path a page's frontmatter hands to a template therefore resolves against the template's directory, so a frontmatter path meant to survive any template is written absolute. An absolute path resolves against the source root. Rationale: a template's include must resolve the same way whichever page is rendering it, and the build knows which file is rendering but not which file a string was written in.
+A relative path resolves against the directory of the file being rendered when the path is used, not against the page's directory when that file is a template. This binds every helper that takes a path and every include that names a path (see: q-docs/specs/plugins.md, Render context). A relative path a page's frontmatter hands to a template therefore resolves against the template's directory, so a frontmatter path meant to survive any template is written absolute. An absolute path resolves against the source root. Rationale: a template's include must resolve the same way whichever page is rendering it, and the build knows which file is rendering but not which file a string was written in.
 
 A partial an include renders is the file being rendered while it renders, so a relative path inside it resolves against the partial's directory. A renderer may also search directories its plugin is configured with, after the file's own directory, so an include can name a shared partial without a path. Rationale: a site keeps its partials in one directory and includes them by name from files at every depth.

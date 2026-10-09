@@ -1,4 +1,4 @@
-// spec: docs/specs/srcset.md
+// spec: q-docs/specs/srcset.md
 
 import { describe, expect, test } from 'vitest';
 import { checkSizing } from './check-sizing.ts';

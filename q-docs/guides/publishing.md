@@ -9,7 +9,7 @@ Every package moves to the same version together, the core and the nine plugins 
 - `version` in `package.json` and in each `plugins/*/package.json`.
 - Each plugin's `underdot` peer range, as `^<version>`.
 - The ranges in each `test/fixtures/*/package.json`, as `^<version>`.
-- The tarball names in the driving manual's run on the published packages (see: docs/guides/driving-manual.md, A site on the published packages).
+- The tarball names in the driving manual's run on the published packages (see: q-docs/guides/driving-manual.md, A site on the published packages).
 
 Run `npm install` to carry the new versions into `package-lock.json`.
 
@@ -18,7 +18,7 @@ A major version that changes what a site writes also extends `q-extension/guides
 ## Check before publishing
 
 1. Run `npm run check`.
-2. Follow the driving manual's run on the published packages, every fixture included (see: docs/guides/driving-manual.md, A site on the published packages). It is the one run that proves the packed `dist/`, each `exports` map, and each peer dependency, which is what a site installs.
+2. Follow the driving manual's run on the published packages, every fixture included (see: q-docs/guides/driving-manual.md, A site on the published packages). It is the one run that proves the packed `dist/`, each `exports` map, and each peer dependency, which is what a site installs.
 3. Merge the release PR once CI is green on it.
 
 ## Publish

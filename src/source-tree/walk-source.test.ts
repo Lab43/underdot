@@ -1,4 +1,4 @@
-// spec: docs/specs/source-tree.md, Dotfiles
+// spec: q-docs/specs/source-tree.md, Dotfiles
 
 import { describe, expect, test } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';

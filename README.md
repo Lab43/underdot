@@ -40,8 +40,8 @@ Then build or develop the site:
 - `npx underdot dev` builds, serves the site, rebuilds on every change, and reloads the browser. It serves on port 3000, or the next free port when 3000 is busy.
 
 Both take `--config <path>` and `--verbose`. `underdot dev` also takes `--port <n>` and `--https`.
-<!-- source: docs/specs/configuration.md, Commands -->
-<!-- source: docs/specs/dev-server.md, Serving -->
+<!-- source: q-docs/specs/configuration.md, Commands -->
+<!-- source: q-docs/specs/dev-server.md, Serving -->
 
 This tree builds `index.html`, `about/index.html`, and `styles.css`:
 
@@ -50,9 +50,9 @@ This tree builds `index.html`, `about/index.html`, and `styles.css`:
 - Every other file is copied as it is.
 - A file or directory whose name starts with an underscore is never written, so partials, data, and icons live in directories such as `_includes/`.
 
-[`docs/specs/source-tree.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/source-tree.md) and [`docs/specs/templates.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/templates.md) give the full rules.
-<!-- source: docs/specs/source-tree.md -->
-<!-- source: docs/specs/templates.md, Template resolution -->
+[`q-docs/specs/source-tree.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/source-tree.md) and [`q-docs/specs/templates.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/templates.md) give the full rules.
+<!-- source: q-docs/specs/source-tree.md -->
+<!-- source: q-docs/specs/templates.md, Template resolution -->
 
 ## Plugins
 
@@ -67,10 +67,10 @@ Each plugin is its own package:
 - [`underdot-svgo`](https://github.com/Lab43/underdot/tree/main/plugins/svgo#readme) optimizes every SVG, and inlines one into a page.
 - [`underdot-sass`](https://github.com/Lab43/underdot/tree/main/plugins/sass#readme) compiles SCSS to CSS.
 - [`underdot-postcss`](https://github.com/Lab43/underdot/tree/main/plugins/postcss#readme) runs every CSS file through PostCSS plugins.
-<!-- source: docs/specs/ -->
+<!-- source: q-docs/specs/ -->
 
-Plugins run in the order the configuration lists them, so `sass()` listed before `postcss()` has its compiled CSS processed by PostCSS. A plugin of your own is a function returning an object of the exported `Plugin` type, as [`docs/specs/plugins.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/plugins.md) describes.
-<!-- source: docs/specs/plugins.md, Plugin identity and order -->
+Plugins run in the order the configuration lists them, so `sass()` listed before `postcss()` has its compiled CSS processed by PostCSS. A plugin of your own is a function returning an object of the exported `Plugin` type, as [`q-docs/specs/plugins.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/plugins.md) describes.
+<!-- source: q-docs/specs/plugins.md, Plugin identity and order -->
 
 ## Upgrading from version 1
 
@@ -82,21 +82,21 @@ Plugins run in the order the configuration lists them, so `sass()` listed before
 The documentation is in four places:
 <!-- source: CLAUDE.md, Documentation -->
 
-- `docs/specs/` states what Underdot commits to.
-- `docs/conventions/` holds the rules its code follows.
-- `docs/guides/` holds how to drive Underdot by hand and how to publish it.
+- `q-docs/specs/` states what Underdot commits to.
+- `q-docs/conventions/` holds the rules its code follows.
+- `q-docs/guides/` holds how to drive Underdot by hand and how to publish it.
 - `q-extension/` holds what ships to sites that use Underdot: the rules for writing a site, and the changes a version 1 site makes to build on version 2.
 
 ## Publishing
 
-Every package is released at one version, from `main`. [`docs/guides/publishing.md`](https://github.com/Lab43/underdot/blob/main/docs/guides/publishing.md) walks through the version bump, the checks, the publish, confirming it landed, and the tag.
-<!-- source: docs/guides/publishing.md -->
+Every package is released at one version, from `main`. [`q-docs/guides/publishing.md`](https://github.com/Lab43/underdot/blob/main/q-docs/guides/publishing.md) walks through the version bump, the checks, the publish, confirming it landed, and the tag.
+<!-- source: q-docs/guides/publishing.md -->
 
 ## Working with q
 
 This project uses [q](https://www.npmjs.com/package/@lab43/q), an agentic coding workflow that grounds Claude Code sessions in the project's own conventions. It arrives with the project's dependencies, and Claude Code loads it from the repo's tracked settings.
 
-The project's rules live in `docs/conventions/`, and q ships rules of its own inside the package. Sessions read both before writing code, and record new decisions into the project's docs as they are made — the docs assemble themselves out of the work.
+The project's rules live in `q-docs/conventions/`, and q ships rules of its own inside the package. Sessions read both before writing code, and record new decisions into the project's docs as they are made — the docs assemble themselves out of the work.
 
 A session lists every `/q:` skill. Start with these:
 

@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md
+// spec: q-docs/specs/dev-server.md
 
 import { EventEmitter } from 'node:events';
 import { watch } from 'node:fs';
@@ -188,7 +188,7 @@ describe('startSession', () => {
     expect(untimed(stdout).filter((line) => !line.startsWith('✓ Built'))).toStrictEqual([`Serving ${url}\n`, ...network]);
   });
 
-  // spec: docs/specs/dev-server.md, Terminal
+  // spec: q-docs/specs/dev-server.md, Terminal
   test('starts each report with the local time', async ({ start, stdout }) => {
     const { url } = await start();
     await whenServed(url);
@@ -202,7 +202,7 @@ describe('startSession', () => {
     expect(untimed(stdout).filter((line) => line.startsWith('Network'))).toStrictEqual([]);
   });
 
-  // spec: docs/specs/dev-server.md, Session
+  // spec: q-docs/specs/dev-server.md, Session
   test('a site whose first build fails serves, prints the report, and builds once the fix lands', async ({ directory, start, stderr }) => {
     await mkdir(join(directory, 'source/_data'));
     await writeFile(join(directory, 'source/_data/bad.txt'), 'bad');
@@ -240,7 +240,7 @@ describe('startSession', () => {
     await expect(session.close()).resolves.toBeUndefined();
   });
 
-  // spec: docs/specs/dev-server.md, Watching
+  // spec: q-docs/specs/dev-server.md, Watching
   describe('a missing source root', () => {
     test('fails the start and frees the port', async ({ directory }) => {
       const file = join(directory, 'underdot.config.ts');
@@ -270,7 +270,7 @@ describe('startSession', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Build status
+  // spec: q-docs/specs/dev-server.md, Build status
   describe('a source change', () => {
     test('rebuilds, serves the edit, and tells the browsers', async ({ directory, start }) => {
       const { url } = await start();
@@ -285,7 +285,7 @@ describe('startSession', () => {
       expect(new Set(names(events))).toStrictEqual(new Set(['building', 'built']));
     });
 
-    // spec: docs/specs/build.md, Output
+    // spec: q-docs/specs/build.md, Output
     test('with verbose, an edit prints the units that reran for it before the next Built line', async ({ directory, start, stdout }) => {
       const { url } = await start({ verbose: true });
       await whenServed(url);
@@ -327,7 +327,7 @@ describe('startSession', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Session
+  // spec: q-docs/specs/dev-server.md, Session
   describe('a configuration change', () => {
     test('reloads the configuration and builds in full', async ({ directory, start }) => {
       const file = join(directory, 'underdot.config.ts');
@@ -343,7 +343,7 @@ describe('startSession', () => {
       expect(vi.mocked(bindBuild).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
 
-    // spec: docs/specs/dev-server.md, Terminal
+    // spec: q-docs/specs/dev-server.md, Terminal
     test('a reload prints the configuration file before the build it starts', async ({ directory, start, stdout }) => {
       const file = join(directory, 'underdot.config.ts');
       const { url } = await start({ load: reloader(directory), configurationFile: file });
@@ -492,7 +492,7 @@ describe('startSession', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Watching
+  // spec: q-docs/specs/dev-server.md, Watching
   describe('with a driven watcher', () => {
     test("a watcher's error is printed and the site keeps serving", async ({ start, stderr }) => {
       const fake = driveNextWatcher();
@@ -534,7 +534,7 @@ describe('startSession', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Watching
+  // spec: q-docs/specs/dev-server.md, Watching
   describe('with the first build held', () => {
     test('changes during a build are held into one build after it', async ({ start }) => {
       const { build, release } = holdBuild();
@@ -580,7 +580,7 @@ describe('startSession', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Serving
+  // spec: q-docs/specs/dev-server.md, Serving
   describe('HTTPS', () => {
     // A GET that trusts the fixture's throwaway certificate.
     const getInsecurely = (url: string): Promise<{ status: number | undefined; body: string }> =>

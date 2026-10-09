@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 
 /**
  * A unit of work, started by the runner when a slot frees.

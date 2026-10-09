@@ -1,7 +1,7 @@
 # underdot-ejs
 
 Renders `.ejs` pages and templates for [Underdot](https://github.com/Lab43/underdot#readme) with [EJS](https://ejs.co).
-<!-- source: docs/specs/ejs.md -->
+<!-- source: q-docs/specs/ejs.md -->
 
 ## Install
 
@@ -19,8 +19,8 @@ export default {
 ```
 
 ## Rendering
-<!-- source: docs/specs/ejs.md, Rendering -->
-<!-- source: docs/specs/ejs.md, Variables -->
+<!-- source: q-docs/specs/ejs.md, Rendering -->
+<!-- source: q-docs/specs/ejs.md, Variables -->
 
 - `<%= %>` prints a value escaped, `<%- %>` prints it as it is, and `<% %>` runs a scriptlet.
 - Every variable is reachable by its name, as `title`, and through `locals`, as `locals.title`. A name no file set reads as `undefined`.
@@ -28,7 +28,7 @@ export default {
 - The legacy `<% include name %>` directive is a syntax error. Call `include()` instead.
 
 ## Includes
-<!-- source: docs/specs/ejs.md, Includes -->
+<!-- source: q-docs/specs/ejs.md, Includes -->
 
 `include(reference, data)` renders a partial with the including file's variables, and the keys of `data` merged over them. A reference with no extension gets `.ejs`.
 
@@ -36,8 +36,8 @@ export default {
 - Any other reference is tried under the including file's directory, then under each `views` directory in order.
 
 ## Options
-<!-- source: docs/specs/ejs.md, Options -->
+<!-- source: q-docs/specs/ejs.md, Options -->
 
 - `views`: directories under the source root, written without a leading slash, searched for an include after the including file's own directory. Defaults to none.
 
-[`docs/specs/ejs.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/ejs.md) holds every rule the plugin commits to.
+[`q-docs/specs/ejs.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/ejs.md) holds every rule the plugin commits to.

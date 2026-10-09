@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md
+// spec: q-docs/specs/templates.md
 
 import { CORE_SCHEMA, loadAll, timestampTag, YAMLException } from 'js-yaml';
 

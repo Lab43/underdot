@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md
+// spec: q-docs/specs/templates.md
 
 import { hash } from 'node:crypto';
 import type { Versions } from '../build/bind-build.ts';
@@ -61,7 +61,7 @@ const mergeVariables = (globals: Variables, { page, chain }: PageChain): Variabl
 
 // A throw names the file that was rendering and the plugin whose function
 // threw: the helper's where a helper tagged it, the renderer's otherwise.
-// spec: docs/specs/plugins.md, Errors
+// spec: q-docs/specs/plugins.md, Errors
 const render = async (file: Page | Template, context: RenderContext): Promise<string> => {
   try {
     return await file.renderer.render(file.body, context);
@@ -133,8 +133,8 @@ const renderChain = async (
  * recorded. The merge is a spread on values, so it runs for every page
  * whether or not its renders are reused.
  */
-// spec: docs/specs/build.md, Order of work
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Order of work
+// spec: q-docs/specs/build.md, Incremental builds
 export const renderPages = async (
   pageChains: PageChain[],
   globals: Variables,

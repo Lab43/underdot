@@ -1,4 +1,4 @@
-// spec: docs/specs/postcss.md
+// spec: q-docs/specs/postcss.md
 
 import createProcessor from 'postcss';
 import type { AcceptedPlugin } from 'postcss';

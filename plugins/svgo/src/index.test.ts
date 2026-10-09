@@ -1,4 +1,4 @@
-// spec: docs/specs/svgo.md
+// spec: q-docs/specs/svgo.md
 
 import { describe, expect, test } from 'vitest';
 import { makeHandlerContext } from '../../../test/helpers/make-handler-context.ts';

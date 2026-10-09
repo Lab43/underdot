@@ -1,6 +1,6 @@
 # Markdown
 
-What the Markdown plugin commits to: how a file renders with Markdown, the one helper it registers, and that the plugin takes no options. The plugin is a renderer and a helper under the plugin contract (see: docs/specs/plugins.md, Renderers) (see: docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
+What the Markdown plugin commits to: how a file renders with Markdown, the one helper it registers, and that the plugin takes no options. The plugin is a renderer and a helper under the plugin contract (see: q-docs/specs/plugins.md, Renderers) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
 
 ## Rendering
 
@@ -14,11 +14,11 @@ A body renders as GitHub Flavored Markdown, as marked renders it with its defaul
 - An email autolink is written as a readable `mailto:` link, never as character references.
 - Link and image targets are written as given. Rationale: a relative target resolves in the browser against the page's URL and never against the source file, as a `src` attribute in an EJS page does.
 
-The output is a function of the body and marked's version alone, so every machine produces the same destination (see: docs/specs/build.md, Determinism). A marked upgrade can change it.
+The output is a function of the body and marked's version alone, so every machine produces the same destination (see: q-docs/specs/build.md, Determinism). A marked upgrade can change it.
 
-A body reads no variable. Markdown has no syntax that prints one, so the renderer contract's rule for a variable no file set has nothing to apply to (see: docs/specs/plugins.md, Renderers). A page that needs a variable or a helper in its body is written in another engine. Rationale: interpolating variables before parsing would make the plugin a second template engine for a need no site has stated.
+A body reads no variable. Markdown has no syntax that prints one, so the renderer contract's rule for a variable no file set has nothing to apply to (see: q-docs/specs/plugins.md, Renderers). A page that needs a variable or a helper in its body is written in another engine. Rationale: interpolating variables before parsing would make the plugin a second template engine for a need no site has stated.
 
-A Markdown template is a Markdown file whose name starts with an underscore (see: docs/specs/source-tree.md, Classification). Rendering one is an error. Rationale: with no way to place `_content`, a Markdown template would replace every page beneath it with its own body, which is never what an author means. A Markdown template no page's chain reaches is never rendered, so it fails nothing.
+A Markdown template is a Markdown file whose name starts with an underscore (see: q-docs/specs/source-tree.md, Classification). Rendering one is an error. Rationale: with no way to place `_content`, a Markdown template would replace every page beneath it with its own body, which is never what an author means. A Markdown template no page's chain reaches is never rendered, so it fails nothing.
 
 ## The helper
 

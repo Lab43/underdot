@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, Page hooks
+// spec: q-docs/specs/plugins.md, Page hooks
 
 import { hash } from 'node:crypto';
 import { serialize } from 'node:v8';
@@ -46,7 +46,7 @@ export interface HookGlobal {
  * globals come back in the order the hooks ran and their keys were defined. A
  * hook's run is reused while the list it sees is the same.
  */
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 export const runPageHooks = async (
   pages: readonly HookPage[],
   hooks: RegisteredHook[],
@@ -64,7 +64,7 @@ export const runPageHooks = async (
       const warn = (message: string): void => {
         reporter.warned('Running the page hook', pluginName, message);
       };
-      // spec: docs/specs/plugins.md, Errors
+      // spec: q-docs/specs/plugins.md, Errors
       try {
         defined = await hook(hookPages, { warn });
       } catch (error) {

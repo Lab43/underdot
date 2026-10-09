@@ -1,4 +1,4 @@
-// spec: docs/specs/svgo.md
+// spec: q-docs/specs/svgo.md
 
 import type { Config } from 'svgo';
 import { describe, expect, test } from 'vitest';

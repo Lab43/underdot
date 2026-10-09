@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md
+// spec: q-docs/specs/configuration.md
 
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

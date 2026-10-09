@@ -1,4 +1,4 @@
-// spec: docs/specs/helpers.md
+// spec: q-docs/specs/helpers.md
 
 import type { Plugin } from 'underdot';
 import { fileExists } from './file-exists.ts';

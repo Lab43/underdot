@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md, Data files
+// spec: q-docs/specs/templates.md, Data files
 
 import { describe, expect, test } from 'vitest';
 import type { Helper } from '../plugins/register-plugins.ts';
@@ -46,7 +46,7 @@ describe('defineGlobals', () => {
     );
   });
 
-  // spec: docs/specs/plugins.md, Page hooks
+  // spec: q-docs/specs/plugins.md, Page hooks
   describe('hook globals', () => {
     test('hook globals merge under their names beside the globals and the data variables', () => {
       expect(defineGlobals({ siteName: 'Site' }, [{ name: 'site', sourcePath: '_data/site.json', value: { year: 2024 } }], [pages, { name: 'count', pluginName: 'counting', value: 1, version: 'pages' }], none)).toStrictEqual({
@@ -73,18 +73,18 @@ describe('defineGlobals', () => {
       );
     });
 
-    // spec: docs/specs/plugins.md, Template helpers
+    // spec: q-docs/specs/plugins.md, Template helpers
     test("a hook global sharing a helper's name is rejected naming the hook and the plugin", () => {
       expect(() => defineGlobals({}, [], [team], helpers)).toThrow(new Error('Both the page hook of listing and the plugin tools define team.'));
     });
   });
 
-  // spec: docs/specs/plugins.md, Template helpers
+  // spec: q-docs/specs/plugins.md, Template helpers
   test("a global sharing a helper's name is rejected naming the setting and the plugin", () => {
     expect(() => defineGlobals({ team: 'Everyone' }, [], [], helpers)).toThrow(new Error('Both the globals setting and the plugin tools define team.'));
   });
 
-  // spec: docs/specs/plugins.md, Template helpers
+  // spec: q-docs/specs/plugins.md, Template helpers
   test("a data variable sharing a helper's name is rejected naming the file and the plugin", () => {
     expect(() => defineGlobals({}, [{ name: 'team', sourcePath: '_data/team.json', value: [] }], [], helpers)).toThrow(
       new Error('Both _data/team.json and the plugin tools define team.'),

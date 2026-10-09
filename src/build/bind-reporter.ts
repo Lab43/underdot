@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Output
+// spec: q-docs/specs/build.md, Output
 
 import { basename } from 'node:path';
 import { styleText } from 'node:util';
@@ -49,7 +49,7 @@ export const bindReporter = ({ timestamps, verbose }: { timestamps: boolean; ver
       stream.write(`${report}\n`);
       return;
     }
-    // spec: docs/specs/dev-server.md, Terminal
+    // spec: q-docs/specs/dev-server.md, Terminal
     const now = new Date();
     const parts = [now.getHours(), now.getMinutes(), now.getSeconds()];
     const time = parts.map((part) => String(part).padStart(2, '0')).join(':');
@@ -57,7 +57,7 @@ export const bindReporter = ({ timestamps, verbose }: { timestamps: boolean; ver
   };
 
   return {
-    // spec: docs/specs/dev-server.md, Terminal
+    // spec: q-docs/specs/dev-server.md, Terminal
     serving: (url, networkUrl) => {
       const stream = process.stdout;
       write(stream, `Serving ${styleText('cyan', url, { stream })}`);
@@ -65,11 +65,11 @@ export const bindReporter = ({ timestamps, verbose }: { timestamps: boolean; ver
         write(stream, `Network ${styleText('cyan', networkUrl, { stream })}`);
       }
     },
-    // spec: docs/specs/dev-server.md, Terminal
+    // spec: q-docs/specs/dev-server.md, Terminal
     reloaded: (configurationFile) => {
       write(process.stdout, `Reloaded ${basename(configurationFile)}`);
     },
-    // spec: docs/specs/plugins.md, Errors
+    // spec: q-docs/specs/plugins.md, Errors
     warned: (unit, pluginName, message) => {
       const stream = process.stderr;
       write(stream, `${styleText('yellow', `! ${unit} warned in ${pluginName}:`, { stream })} ${message}`);

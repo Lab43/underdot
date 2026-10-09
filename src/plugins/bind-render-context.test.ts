@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md
+// spec: q-docs/specs/plugins.md
 
 import { hash } from 'node:crypto';
 import { join } from 'node:path';
@@ -55,7 +55,7 @@ describe('bindRenderContext', () => {
     expect(makeContext('index.tpl')).toMatchObject({ sourcePath: 'index.tpl', variables: { title: 'Home' } });
   });
 
-  // spec: docs/specs/plugins.md, Template helpers
+  // spec: q-docs/specs/plugins.md, Template helpers
   describe('helpers', () => {
     test('a helper sits among the variables under its name and receives the context ahead of the arguments', () => {
       const helper = vi.fn<Helper>(() => 'shouted');
@@ -76,7 +76,7 @@ describe('bindRenderContext', () => {
     });
   });
 
-  // spec: docs/specs/plugins.md, Emitted files
+  // spec: q-docs/specs/plugins.md, Emitted files
   describe('emit', () => {
     const produce: Producer = () => Promise.resolve('derived');
 
@@ -154,7 +154,7 @@ describe('bindRenderContext', () => {
     });
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   describe("a helper's throw", () => {
     const bind = (helper: Helper, pluginName = 'tools') =>
       bindRenderContext(source, files, new Map([['fail', { pluginName, helper }]]), outputs, makeReporter())('index.tpl', variables, bodies, vi.fn(), [], attribution);
@@ -179,8 +179,8 @@ describe('bindRenderContext', () => {
     });
   });
 
-  // spec: docs/specs/templates.md, Relative paths
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/templates.md, Relative paths
+  // spec: q-docs/specs/plugins.md, Errors
   describe('warn', () => {
     // A context whose `caution` helper, of the plugin `tools`, warns what it is called with.
     const bind = (reporter: Reporter) => {
@@ -337,7 +337,7 @@ describe('bindRenderContext', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('observing', () => {
     const bind = (sourcePath: string, observe: Observe, handed: Record<string, unknown> = { title: 'Home' }) =>
       bindRenderContext(source, files, helpers, outputs, makeReporter())(sourcePath, handed, bodies, observe, [], attribution);

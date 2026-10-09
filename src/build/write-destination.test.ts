@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Destination
+// spec: q-docs/specs/build.md, Destination
 
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -77,7 +77,7 @@ describe('writeDestination', () => {
     expect(await readFile(join(destination, 'about/index.html'), 'utf8')).toBe('the rendered page');
   });
 
-  // spec: docs/specs/source-tree.md, Underscore prefix
+  // spec: q-docs/specs/source-tree.md, Underscore prefix
   test('an output whose path has an underscore-prefixed segment is not written', async ({ directory }) => {
     const destination = join(directory, 'build');
     const outputs = [copy('index.html'), copy('_private.txt'), copy('_includes/header.html'), handled('notes.txt', 'about/_notes.txt', 'renamed into the prefix')];
@@ -93,7 +93,7 @@ describe('writeDestination', () => {
     expect(await walkSource(destination)).toStrictEqual([]);
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('across two calls with one table', () => {
     test('a second write of the same plan writes nothing, and the table holds every file written', async ({ directory }) => {
       const destination = join(directory, 'build');
@@ -147,7 +147,7 @@ describe('writeDestination', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   describe('the report', () => {
     // The first argument of every call, sorted, since the writes run concurrently.
     const reported = (method: (outputPath: string) => void): string[] => vi.mocked(method).mock.calls.map(([outputPath]) => outputPath).sort();
@@ -190,7 +190,7 @@ describe('writeDestination', () => {
       expect(written).toStrictEqual(new Map([['images/photo-300.webp', 'the derivative']]));
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test('an emitted output without bytes, in place with its hash written, is skipped', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
@@ -202,7 +202,7 @@ describe('writeDestination', () => {
       expect(await readFile(join(destination, 'images/photo-300.webp'), 'utf8')).toBe('the derivative');
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test('an emitted output without bytes that is not skipped fails naming its path', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
@@ -214,7 +214,7 @@ describe('writeDestination', () => {
       );
     });
 
-    // spec: docs/specs/source-tree.md, Underscore prefix
+    // spec: q-docs/specs/source-tree.md, Underscore prefix
     test('a private emitted output is never written and keeps its bytes', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
@@ -226,7 +226,7 @@ describe('writeDestination', () => {
     });
   });
 
-  // spec: docs/specs/source-tree.md, Output paths are unique
+  // spec: q-docs/specs/source-tree.md, Output paths are unique
   describe('two sources with one output path', () => {
     const source = fixturePath('defaults', 'source');
     const destination = fixturePath('defaults', 'build');

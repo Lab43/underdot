@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, File handlers
+// spec: q-docs/specs/plugins.md, File handlers
 
 import { hash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -30,8 +30,8 @@ export interface Output {
  * handled before any page renders, and a file's handling is reused while its
  * hash stands.
  */
-// spec: docs/specs/build.md, Order of work
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Order of work
+// spec: q-docs/specs/build.md, Incremental builds
 export const handleFiles = async (
   source: string,
   staticFiles: StaticFile[],

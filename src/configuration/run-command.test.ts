@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Commands
+// spec: q-docs/specs/configuration.md, Commands
 
 import { access, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -14,7 +14,7 @@ const usage = 'Usage: underdot build [--config <path>] [--verbose]\n       under
 
 describe('runCommand', () => {
   describe('build', () => {
-    // spec: docs/specs/build.md, Output
+    // spec: q-docs/specs/build.md, Output
     test('builds the working directory and prints the Built line', async ({ stdout, stderr, workingDirectory }) => {
       expect(await runCommand(['build'])).toBe(0);
       expect(stdout).toHaveLength(1);
@@ -23,7 +23,7 @@ describe('runCommand', () => {
       await access(join(workingDirectory, 'build/index.html'));
     });
 
-    // spec: docs/specs/build.md, Output
+    // spec: q-docs/specs/build.md, Output
     test('--verbose lists the units that ran before the Built line', async ({ stdout, workingDirectory }) => {
       expect(await runCommand(['build', '--verbose'])).toBe(0);
       expect(stdout).toContain('  Handled index.html\n');
@@ -39,7 +39,7 @@ describe('runCommand', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Errors
+  // spec: q-docs/specs/build.md, Errors
   describe('build failures', () => {
     describe('in the no-config fixture', () => {
       test.override({ fixture: 'no-config' });
@@ -62,7 +62,7 @@ describe('runCommand', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Session
+  // spec: q-docs/specs/dev-server.md, Session
   describe('dev', () => {
     test('starts a session on the located file with the port and the HTTPS flag, loading the file as it stands', async ({ stderr, stdout, workingDirectory }) => {
       expect(await runCommand(['dev', '--port', '0'])).toBe(0);

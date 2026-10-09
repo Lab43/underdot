@@ -1,5 +1,5 @@
-// spec: docs/specs/plugins.md, Emitted files
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/plugins.md, Emitted files
+// spec: q-docs/specs/build.md, Incremental builds
 
 import { hash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -124,7 +124,7 @@ export const produceFiles = async (
         reporter.warned(`Producing ${outputPath}`, pluginName, message);
       };
       let contents: unknown;
-      // spec: docs/specs/plugins.md, Errors
+      // spec: q-docs/specs/plugins.md, Errors
       try {
         contents = await produce({ readOutput, warn });
       } catch (error) {

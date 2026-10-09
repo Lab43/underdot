@@ -1,4 +1,4 @@
-// spec: docs/specs/srcset.md
+// spec: q-docs/specs/srcset.md
 
 import type { Plugin } from 'underdot';
 import { checkSizing } from './check-sizing.ts';

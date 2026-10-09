@@ -1,4 +1,4 @@
-// spec: docs/specs/ejs.md
+// spec: q-docs/specs/ejs.md
 
 import { dirname, extname, join } from 'node:path/posix';
 import ejs from 'ejs';
@@ -20,7 +20,7 @@ export const renderEjs = (body: string, context: RenderContext, views: string[])
 
     // A partial renders as the file being rendered, so an include inside it
     // resolves against the partial's directory, not the including file's.
-    // spec: docs/specs/templates.md, Relative paths
+    // spec: q-docs/specs/templates.md, Relative paths
     const include = (reference: string, data: Variables = {}): string => {
       const file = extname(reference) === '' ? `${reference}.ejs` : reference;
       const candidates = file.startsWith('/') ? [file] : [directory, ...views].map((base) => `/${join(base, file)}`);

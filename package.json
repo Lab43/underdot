@@ -55,7 +55,7 @@
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
     "@eslint/js": "^10.0.1",
-    "@lab43/q": "0.9.0",
+    "@lab43/q": "1.0.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^22.20.4",

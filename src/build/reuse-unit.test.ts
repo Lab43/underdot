@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import { describe, expect, test, vi } from 'vitest';
 import { makeReporter } from '../../test/helpers/make-reporter.ts';
@@ -98,7 +98,7 @@ describe('reuseUnit', () => {
     expect([...records.keys()]).toStrictEqual(['a', 'b']);
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   describe('the report', () => {
     // A unit observing the two files, run once into fresh records at the versions given.
     const run = (observe: Observe): Promise<string> => {

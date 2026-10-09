@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -31,7 +31,7 @@ export interface Site {
 }
 
 // Parse a file's frontmatter. An error names the file.
-// spec: docs/specs/templates.md
+// spec: q-docs/specs/templates.md
 const parseContents = (sourcePath: string, text: string): FileContents => {
   try {
     const { keys, template, body } = parseFrontmatter(text);
@@ -58,7 +58,7 @@ const readContents = async (
   };
   const contents = await reuseUnit(records, sourcePath, lookup, run, reporter, `Read ${sourcePath}`);
   // A helper is reachable under its name, so no frontmatter key may carry it.
-  // spec: docs/specs/plugins.md, Template helpers
+  // spec: q-docs/specs/plugins.md, Template helpers
   for (const [name, { pluginName }] of helpers) {
     if (Object.hasOwn(contents.frontmatter, name)) {
       throw new Error(`Both ${sourcePath} and the plugin ${pluginName} define ${name}.`);

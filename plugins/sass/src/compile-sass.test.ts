@@ -1,4 +1,4 @@
-// spec: docs/specs/sass.md
+// spec: q-docs/specs/sass.md
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';

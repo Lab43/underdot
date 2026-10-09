@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, Errors
+// spec: q-docs/specs/plugins.md, Errors
 
 import { describeError } from '../shared/describe-error.ts';
 

@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Programmatic use
+// spec: q-docs/specs/configuration.md, Programmatic use
 
 import { bindReporter } from './build/bind-reporter.ts';
 import { runBuild } from './build/run-build.ts';

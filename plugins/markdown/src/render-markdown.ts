@@ -1,4 +1,4 @@
-// spec: docs/specs/markdown.md
+// spec: q-docs/specs/markdown.md
 
 import { basename } from 'node:path/posix';
 import type { RenderContext } from 'underdot';

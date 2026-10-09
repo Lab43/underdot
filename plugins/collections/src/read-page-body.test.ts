@@ -1,4 +1,4 @@
-// spec: docs/specs/collections.md
+// spec: q-docs/specs/collections.md
 
 import { describe, expect, test, vi } from 'vitest';
 import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';

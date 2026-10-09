@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md, Live reload
+// spec: q-docs/specs/dev-server.md, Live reload
 
 import { describe, expect, test } from 'vitest';
 import { injectClientScript } from './inject-client-script.ts';

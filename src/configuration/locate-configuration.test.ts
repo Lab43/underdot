@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, The configuration file
+// spec: q-docs/specs/configuration.md, The configuration file
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';

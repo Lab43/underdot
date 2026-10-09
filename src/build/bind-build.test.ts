@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 
 import { copyFile, cp, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -208,7 +208,7 @@ describe('bindBuild', () => {
   describe('the templated fixture', () => {
     test.override({ fixture: 'templated' });
 
-    // spec: docs/specs/plugins.md, Render context
+    // spec: q-docs/specs/plugins.md, Render context
     test('builds every page through its chain beside its static files, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('templated', 'expected');
@@ -216,7 +216,7 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected);
     });
 
-    // spec: docs/specs/build.md, Output
+    // spec: q-docs/specs/build.md, Output
     test('a rebuild reports the units an edit reran, each naming the edited file, and counts every unit once', async ({ directory }) => {
       const reporter = makeReporter();
       const build = bindBuild(resolveConfiguration(templatedConfiguration, directory), reporter);
@@ -236,8 +236,8 @@ describe('bindBuild', () => {
       expect(second).toStrictEqual({ ran: 3, reused: first.ran - 3 });
     });
 
-    // spec: docs/specs/build.md, Incremental builds
-    // spec: docs/specs/build.md, Determinism
+    // spec: q-docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Determinism
     test('a bound build run again reruns only the units whose inputs changed, and its destination equals a fresh build after every change', async ({ directory }) => {
       const { build, source, destination, edit, rebuild } = bindCatalogue(templatedConfiguration, directory);
       await build();
@@ -334,7 +334,7 @@ describe('bindBuild', () => {
   describe('the ejs fixture', () => {
     test.override({ fixture: 'ejs' });
 
-    // spec: docs/specs/ejs.md
+    // spec: q-docs/specs/ejs.md
     test('builds every page through EJS, its includes and data among them, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('ejs', 'expected');
@@ -342,7 +342,7 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected);
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test('a bound build run again re-renders only the EJS files that read what changed, through the plugin as published', async ({ directory }) => {
       const { build, edit, rebuild } = bindCatalogue(ejsConfiguration, directory);
       await build();
@@ -360,7 +360,7 @@ describe('bindBuild', () => {
   describe('the bust fixture', () => {
     test.override({ fixture: 'bust' });
 
-    // spec: docs/specs/bust.md
+    // spec: q-docs/specs/bust.md
     test('busts each link with the hash of the handled output, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('bust', 'expected');
@@ -372,7 +372,7 @@ describe('bindBuild', () => {
   describe('the helpers fixture', () => {
     test.override({ fixture: 'helpers' });
 
-    // spec: docs/specs/helpers.md
+    // spec: q-docs/specs/helpers.md
     test('marks each link, formats the date, and guards each include on the served output, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('helpers', 'expected');
@@ -384,7 +384,7 @@ describe('bindBuild', () => {
   describe('the svgo fixture', () => {
     test.override({ fixture: 'svgo' });
 
-    // spec: docs/specs/svgo.md
+    // spec: q-docs/specs/svgo.md
     test('optimizes every SVG and inlines a private one, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('svgo', 'expected');
@@ -396,7 +396,7 @@ describe('bindBuild', () => {
   describe('the sass fixture', () => {
     test.override({ fixture: 'sass' });
 
-    // spec: docs/specs/sass.md
+    // spec: q-docs/specs/sass.md
     test('compiles each stylesheet through its imports and writes no partial, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('sass', 'expected');
@@ -404,7 +404,7 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected);
     });
 
-    // spec: docs/specs/sass.md, Imports
+    // spec: q-docs/specs/sass.md, Imports
     test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
       await writeFile(join(directory, 'source/styles/site.scss'), "@use '../../outside';\n");
       await expect(bindBuild(resolveConfiguration(sassConfiguration, directory), makeReporter())()).rejects.toThrow(
@@ -416,7 +416,7 @@ describe('bindBuild', () => {
   describe('the postcss fixture', () => {
     test.override({ fixture: 'postcss' });
 
-    // spec: docs/specs/postcss.md
+    // spec: q-docs/specs/postcss.md
     test('runs every CSS file through its plugins after Sass, inlining each import, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('postcss', 'expected');
@@ -424,7 +424,7 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected);
     });
 
-    // spec: docs/specs/postcss.md, Dependencies
+    // spec: q-docs/specs/postcss.md, Dependencies
     test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
       await writeFile(join(directory, 'source/styles/print.css'), '@import "../../outside.css";\n');
       await expect(bindBuild(resolveConfiguration(postcssConfiguration, directory), makeReporter())()).rejects.toThrow(
@@ -433,7 +433,7 @@ describe('bindBuild', () => {
     });
   });
 
-  // spec: docs/specs/srcset.md
+  // spec: q-docs/specs/srcset.md
   describe('the srcset fixture', () => {
     test.override({ fixture: 'srcset' });
 
@@ -445,7 +445,7 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected, (path) => path.endsWith('.html'));
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     // The hero stands as wide upright as the photo, so the body renders to
     // the same text and the chain is reused.
     test("a changed image re-renders the body that sized it and reproduces that image's derivatives alone", async ({ directory }) => {
@@ -463,7 +463,7 @@ describe('bindBuild', () => {
   describe('the markdown fixture', () => {
     test.override({ fixture: 'markdown' });
 
-    // spec: docs/specs/markdown.md
+    // spec: q-docs/specs/markdown.md
     test('renders a Markdown page inside an EJS template and a frontmatter value through the helper, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('markdown', 'expected');
@@ -475,7 +475,7 @@ describe('bindBuild', () => {
   describe('the collections fixture', () => {
     test.override({ fixture: 'collections' });
 
-    // spec: docs/specs/collections.md
+    // spec: q-docs/specs/collections.md
     test('lists the posts in source-path order and embeds each body sorted by date, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('collections', 'expected');
@@ -483,7 +483,7 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected);
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test("a bound build run again re-renders a post's body and the chains that read it through the collections helper", async ({ directory }) => {
       const { build, edit, rebuild } = bindCatalogue(collectionsConfiguration, directory);
       await build();
@@ -501,7 +501,7 @@ describe('bindBuild', () => {
     await assertAbsent(join(directory, 'build'));
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test("a helper's throw names the template that was rendering and the helper's plugin, and fails before any write", async () => {
     const directory = fixturePath('templated');
     // Only the root template calls the helper, so the report is the same
@@ -525,7 +525,7 @@ describe('bindBuild', () => {
     await assertAbsent(join(directory, 'build'));
   });
 
-  // spec: docs/specs/plugins.md, Page hooks
+  // spec: q-docs/specs/plugins.md, Page hooks
   test("a page hook's throw names the plugin and fails before any write", async () => {
     const directory = fixturePath('templated');
     const plugins: Plugin[] = [
@@ -536,7 +536,7 @@ describe('bindBuild', () => {
     await assertAbsent(join(directory, 'build'));
   });
 
-  // spec: docs/specs/build.md, Errors
+  // spec: q-docs/specs/build.md, Errors
   test('a warning is reported and the build completes', async ({ directory }) => {
     const plugins: Plugin[] = [{ name: 'listing', pageHook: (_pages, { warn }) => {
       warn('Deprecated.');

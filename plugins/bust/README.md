@@ -1,7 +1,7 @@
 # underdot-bust
 
 Gives [Underdot](https://github.com/Lab43/underdot#readme) templates a helper that links to a static file with a hash of its contents, so a browser reloads the file when it changes and keeps it cached otherwise.
-<!-- source: docs/specs/bust.md -->
+<!-- source: q-docs/specs/bust.md -->
 
 ## Install
 
@@ -20,8 +20,8 @@ export default {
 ```
 
 ## The helper
-<!-- source: docs/specs/bust.md, The helper -->
-<!-- source: docs/specs/bust.md, References -->
+<!-- source: q-docs/specs/bust.md, The helper -->
+<!-- source: q-docs/specs/bust.md, References -->
 
 `bust(reference)` returns the file's absolute URL followed by `?v=` and eight hexadecimal characters of the SHA-256 of the bytes the build writes:
 
@@ -39,8 +39,8 @@ export default {
 - A reference no static file's output is at is an error.
 
 ## Options
-<!-- source: docs/specs/bust.md, Options -->
+<!-- source: q-docs/specs/bust.md, Options -->
 
 The plugin takes no options.
 
-[`docs/specs/bust.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/bust.md) holds every rule the plugin commits to.
+[`q-docs/specs/bust.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/bust.md) holds every rule the plugin commits to.

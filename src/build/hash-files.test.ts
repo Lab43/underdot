@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import { readFile, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

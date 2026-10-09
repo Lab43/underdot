@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Excluded files
+// spec: q-docs/specs/configuration.md, Excluded files
 
 import { describe, expect, test } from 'vitest';
 import { removeExcludedFiles } from './remove-excluded-files.ts';

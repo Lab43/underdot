@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md
+// spec: q-docs/specs/templates.md
 
 import * as yaml from 'js-yaml';
 import { describe, expect, test, vi } from 'vitest';

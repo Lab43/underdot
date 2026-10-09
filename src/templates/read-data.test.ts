@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md, Data files
+// spec: q-docs/specs/templates.md, Data files
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -87,7 +87,7 @@ describe('readData', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('across two calls with one table', () => {
     test.override({ fixture: 'templated' });
 
@@ -114,7 +114,7 @@ describe('readData', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('a read reports its label', async () => {
     const reporter = makeReporter();
     await readData(join(fixturePath('templated'), 'source'), ['_data/site.json'], unhashed, new Map(), reporter);

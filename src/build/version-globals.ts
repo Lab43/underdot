@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import type { HookGlobal } from '../plugins/run-page-hooks.ts';
 import type { DataVariable } from '../templates/read-data.ts';

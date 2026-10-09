@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, The configuration file
+// spec: q-docs/specs/configuration.md, The configuration file
 
 import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';

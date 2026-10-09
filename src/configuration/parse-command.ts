@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Commands
+// spec: q-docs/specs/configuration.md, Commands
 
 import { parseArgs } from 'node:util';
 

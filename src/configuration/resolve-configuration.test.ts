@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md
+// spec: q-docs/specs/configuration.md
 
 import { describe, expect, test } from 'vitest';
 import { resolveConfiguration } from './resolve-configuration.ts';
@@ -137,7 +137,7 @@ describe('resolveConfiguration', () => {
       );
     });
 
-    // spec: docs/specs/configuration.md, Rewrites
+    // spec: q-docs/specs/configuration.md, Rewrites
     test('rewrites must be an object', () => {
       expect(() => resolveConfiguration({ rewrites: [['/cart', '/store/']] }, project)).toThrow(
         new Error('The rewrites setting must be an object.'),
@@ -163,7 +163,7 @@ describe('resolveConfiguration', () => {
     });
   });
 
-  // spec: docs/specs/build.md
+  // spec: q-docs/specs/build.md
   describe('placement', () => {
     test('the destination may not be the project directory', () => {
       expect(() => resolveConfiguration({ destination: '.' }, project)).toThrow(

@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 
 import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -21,7 +21,7 @@ const comparePlannedFiles = (a: PlannedFile, b: PlannedFile): number =>
 
 // Sorted, so a collision names its two sources the same way whichever order
 // they arrived in.
-// spec: docs/specs/source-tree.md, Output paths are unique
+// spec: q-docs/specs/source-tree.md, Output paths are unique
 const planFiles = (files: PlannedFile[]): PlannedFile[] => {
   const planned: PlannedFile[] = files.map(({ sourcePath, outputPath, hash }) => ({ sourcePath, outputPath, hash })).sort(comparePlannedFiles);
   const sourcePaths = new Map<string, string>();
@@ -90,7 +90,7 @@ const clean = async (
  * there is left alone, and `written` is kept true to the disk across builds.
  * An emitted output's bytes are dropped once it is in place.
  */
-// spec: docs/specs/source-tree.md, Underscore prefix
+// spec: q-docs/specs/source-tree.md, Underscore prefix
 export const writeDestination = async (
   source: string,
   destination: string,

@@ -1,6 +1,6 @@
 # Srcset
 
-What the srcset plugin commits to: the one helper that renders an image with a `srcset`, the derivatives it has the build produce, and the one option the plugin takes. The plugin is a helper that emits files under the plugin contract (see: docs/specs/plugins.md, Template helpers) (see: docs/specs/plugins.md, Emitted files), and this spec holds what it adds to that contract.
+What the srcset plugin commits to: the one helper that renders an image with a `srcset`, the derivatives it has the build produce, and the one option the plugin takes. The plugin is a helper that emits files under the plugin contract (see: q-docs/specs/plugins.md, Template helpers) (see: q-docs/specs/plugins.md, Emitted files), and this spec holds what it adds to that contract.
 
 ## The plugin
 
@@ -8,7 +8,7 @@ The plugin is named `srcset` and registers one helper, `imageSet`. Rationale: `s
 
 ## The helper
 
-A page or template calls `imageSet(reference, sizing, attributes)`. The reference names a static file's output and resolves as a read through the render context does (see: docs/specs/templates.md, Relative paths). The sizing is a preset's name, or a sizing written in the call for a one-off image (see: Options). The attributes are an object, and default to none.
+A page or template calls `imageSet(reference, sizing, attributes)`. The reference names a static file's output and resolves as a read through the render context does (see: q-docs/specs/templates.md, Relative paths). The sizing is a preset's name, or a sizing written in the call for a one-off image (see: Options). The attributes are an object, and default to none.
 
 The helper returns one `<img>` element. It carries `src`, `srcset`, and `sizes` first, then the given attributes in the order given. An attribute whose value is `false` is omitted. Every value is escaped: `&`, `"`, `<`, and `>`. Rationale: a conditional attribute is awkward to spread in a template, so `false` drops it, and a value is the author's text, which the element must not let close the attribute.
 
@@ -28,7 +28,7 @@ The derivatives' paths keep the original's directory:
 - The extension is `webp` when the sizing converts, and otherwise the original's own.
 - The largest candidate is the original itself when its path has no underscore-prefixed segment and the sizing keeps its format. Otherwise it is a derivative at `<base>.<extension>`, at the image's width.
 
-Rationale: the underscore gives the author a per-image choice with no option. A public original is copied as it is and serves as the largest candidate. A private one is never written (see: docs/specs/source-tree.md, Underscore prefix) and ships as derivatives alone, at public paths, which is where a large camera file gets recompressed. A converting sizing gets a full-size derivative even for a public original, since the original cannot serve as WebP.
+Rationale: the underscore gives the author a per-image choice with no option. A public original is copied as it is and serves as the largest candidate. A private one is never written (see: q-docs/specs/source-tree.md, Underscore prefix) and ships as derivatives alone, at public paths, which is where a large camera file gets recompressed. A converting sizing gets a full-size derivative even for a public original, since the original cannot serve as WebP.
 
 A WebP original is never converted, since it is WebP already, so it is treated as under a sizing that keeps its format. Rationale: converting it would emit its full-size derivative at its own path, a collision with the copied original.
 
@@ -54,9 +54,9 @@ Each derivative is sharp's output for the original's bytes at its width:
 - It is WebP unless the sizing keeps the original's format.
 - Every other encoding setting, quality included, is sharp's default.
 
-A derivative is produced through the build's emit, so it is produced again only when the original's bytes or the derivative's width or format changed (see: docs/specs/plugins.md, Emitted files). A sharp upgrade changes every derivative once. Rationale: a derivative is a function of the original's bytes, the width, the format, and the sharp version, so every machine on one lockfile writes the same derivative.
+A derivative is produced through the build's emit, so it is produced again only when the original's bytes or the derivative's width or format changed (see: q-docs/specs/plugins.md, Emitted files). A sharp upgrade changes every derivative once. Rationale: a derivative is a function of the original's bytes, the width, the format, and the sharp version, so every machine on one lockfile writes the same derivative.
 
-A derivative of a GIF or AVIF original under a sizing that keeps its format is exempt from byte-identity across machines (see: docs/specs/build.md, Determinism). Rationale: sharp encodes those formats differently on different machines. One machine still writes the same bytes on every run, so reuse is unaffected, and the cost is a committed destination's diff and a deploy's caches showing those files changed when a second machine builds. A sizing stays usable for every source type rather than failing on these two. AVIF is never an output format: its bytes at sharp's default effort differ by machine and by thread count, and its one deterministic effort costs fifty times a WebP encode.
+A derivative of a GIF or AVIF original under a sizing that keeps its format is exempt from byte-identity across machines (see: q-docs/specs/build.md, Determinism). Rationale: sharp encodes those formats differently on different machines. One machine still writes the same bytes on every run, so reuse is unaffected, and the cost is a committed destination's diff and a deploy's caches showing those files changed when a second machine builds. A sizing stays usable for every source type rather than failing on these two. AVIF is never an output format: its bytes at sharp's default effort differ by machine and by thread count, and its one deterministic effort costs fifty times a WebP encode.
 
 ## Options
 

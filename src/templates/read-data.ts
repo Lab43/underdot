@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md, Data files
+// spec: q-docs/specs/templates.md, Data files
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -51,7 +51,7 @@ const importValue = async (file: string, sourcePath: string, version: string | u
 
 // The extension and reserved-name rules are properties of the path, so they
 // run before the read. The read is reused while the file's hash stands.
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 const readDataFile = async (
   source: string,
   sourcePath: string,

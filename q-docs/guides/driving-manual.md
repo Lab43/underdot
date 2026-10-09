@@ -4,7 +4,7 @@ How to bring Underdot up and exercise it by hand: the compiled command, the publ
 
 ## The compiled command
 
-Run the command from a copy of a fixture, never from a fixture itself, because a build writes the destination and nothing under `test/fixtures/` is ever written (see: docs/conventions/testing.md, Fixtures). Copy a fixture to a scratch directory, run `npm run build`, and from inside the copy run `node <repo>/dist/underdot.js build`. A successful build prints `✓ Built in <duration>` and exits 0. Run `node <repo>/dist/underdot.js` with no arguments to see a usage error and its exit status of 2.
+Run the command from a copy of a fixture, never from a fixture itself, because a build writes the destination and nothing under `test/fixtures/` is ever written (see: q-docs/conventions/testing.md, Fixtures). Copy a fixture to a scratch directory, run `npm run build`, and from inside the copy run `node <repo>/dist/underdot.js build`. A successful build prints `✓ Built in <duration>` and exits 0. Run `node <repo>/dist/underdot.js` with no arguments to see a usage error and its exit status of 2.
 
 Output piped to a file, or read through an agent's shell tool, prints plain, because color appears on a terminal only. To see the colors, run the command on a pseudo-terminal and show the escape codes: `script -q /dev/null node <repo>/dist/underdot.js build </dev/null | cat -v`. Without `</dev/null`, `script` fails with `tcgetattr/ioctl: Operation not supported on socket` when its input is a socket, as an agent's shell tool can give it.
 

@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md, Serving
+// spec: q-docs/specs/dev-server.md, Serving
 
 import { createServer } from 'node:http';
 import type { Server } from 'node:net';

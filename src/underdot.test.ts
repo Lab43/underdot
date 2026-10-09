@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Commands
+// spec: q-docs/specs/configuration.md, Commands
 
 import { type ChildProcessWithoutNullStreams, execFile, spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';

@@ -8,4 +8,8 @@ export const makeReporter = (): Reporter => ({
   warned: vi.fn(),
   failed: vi.fn(),
   built: vi.fn(),
+  ran: vi.fn(),
+  reused: vi.fn(),
+  wrote: vi.fn(),
+  removed: vi.fn(),
 });

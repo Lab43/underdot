@@ -3,10 +3,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { extname } from 'node:path/posix';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import { mapUnits } from '../build/map-units.ts';
 import { reuseUnit } from '../build/reuse-unit.ts';
-import type { InputKind, UnitRecords, Version } from '../build/reuse-unit.ts';
+import type { InputKind, Observe, UnitRecords, Version } from '../build/reuse-unit.ts';
 import { attributeError } from '../shared/attribute-error.ts';
 import { importDefault } from '../shared/import-default.ts';
 
@@ -51,7 +52,13 @@ const importValue = async (file: string, sourcePath: string, version: string | u
 // The extension and reserved-name rules are properties of the path, so they
 // run before the read. The read is reused while the file's hash stands.
 // spec: docs/specs/build.md, Incremental builds
-const readDataFile = async (source: string, sourcePath: string, files: FileTable, records: UnitRecords<unknown>): Promise<DataFile> => {
+const readDataFile = async (
+  source: string,
+  sourcePath: string,
+  files: FileTable,
+  records: UnitRecords<unknown>,
+  reporter: Reporter,
+): Promise<DataFile> => {
   const extension = extname(sourcePath);
   if (!extensions.includes(extension)) {
     throw new Error(`The data file ${sourcePath} must be a .json, .js, or .ts file.`);
@@ -64,20 +71,27 @@ const readDataFile = async (source: string, sourcePath: string, files: FileTable
   }
   const file = join(source, sourcePath);
   const lookup = (_kind: InputKind, name: string): Version => files.get(name)?.hash;
-  const value = await reuseUnit(records, sourcePath, lookup, async (observe) => {
+  const run = async (observe: Observe): Promise<unknown> => {
     observe('file', sourcePath);
     if (extension === '.json') {
       return parseJson(sourcePath, await readFile(file, 'utf8'));
     }
     // A module is imported under its hash, so an edited module loads afresh.
     return importValue(file, sourcePath, files.get(sourcePath)?.hash);
-  });
+  };
+  const value = await reuseUnit(records, sourcePath, lookup, run, reporter, `Read ${sourcePath}`);
   return { sourcePath, directories: segments.slice(0, -1), name: segments.slice(-1).join(''), value };
 };
 
-export const readData = async (source: string, sourcePaths: string[], files: FileTable, records: UnitRecords<unknown>): Promise<DataVariable[]> => {
+export const readData = async (
+  source: string,
+  sourcePaths: string[],
+  files: FileTable,
+  records: UnitRecords<unknown>,
+  reporter: Reporter,
+): Promise<DataVariable[]> => {
   const dataPaths = sourcePaths.filter((sourcePath) => sourcePath.startsWith(`${dataDirectory}/`));
-  const dataFiles = await mapUnits(dataPaths, (sourcePath) => readDataFile(source, sourcePath, files, records));
+  const dataFiles = await mapUnits(dataPaths, (sourcePath) => readDataFile(source, sourcePath, files, records, reporter));
 
   const variables: DataVariable[] = [];
   // Every file and directory seen so far, keyed by its path without the

@@ -65,7 +65,7 @@ export const handleFiles = async (
       );
       return handled.map(({ outputPath, contents }) => ({ sourcePath, outputPath, contents, hash: hash('sha256', contents, 'hex') }));
     };
-    return reuseUnit(records, sourcePath, lookup, run);
+    return reuseUnit(records, sourcePath, lookup, run, reporter, `Handled ${sourcePath}`);
   });
   return outputs.flat();
 };

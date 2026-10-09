@@ -20,8 +20,12 @@ export type { Configuration, FileHandler, HandledFile, HandlerContext, HandlerOu
  * configuration before any work starts. A failure rejects with no report
  * printed, so the script decides how to show it.
  */
-export const build = async (configuration: Configuration, projectDirectory = process.cwd()): Promise<void> => {
-  await runBuild(resolveConfiguration(configuration, projectDirectory), bindReporter({ timestamps: false }));
+export const build = async (
+  configuration: Configuration,
+  { verbose = false }: { verbose?: boolean } = {},
+  projectDirectory = process.cwd(),
+): Promise<void> => {
+  await runBuild(resolveConfiguration(configuration, projectDirectory), bindReporter({ timestamps: false, verbose }));
 };
 
 /**
@@ -31,7 +35,7 @@ export const build = async (configuration: Configuration, projectDirectory = pro
  */
 export const dev = (
   configuration: Configuration,
-  options: { port?: number; https?: boolean } = {},
+  options: { port?: number; https?: boolean; verbose?: boolean } = {},
   projectDirectory = process.cwd(),
 ): Promise<Session> =>
   startSession({ load: () => Promise.resolve(resolveConfiguration(configuration, projectDirectory)), ...options });

@@ -10,7 +10,7 @@ import { locateConfiguration } from './locate-configuration.ts';
 import { parseCommand } from './parse-command.ts';
 import type { Command } from './parse-command.ts';
 
-const usage = 'Usage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]';
+const usage = 'Usage: underdot build [--config <path>] [--verbose]\n       underdot dev [--config <path>] [--port <n>] [--https] [--verbose]';
 
 // Locate, load, build, and report a failure, which includes a configuration that fails to load.
 // spec: docs/specs/build.md, Errors
@@ -28,7 +28,7 @@ const runBuildCommand = async ({ configurationPath }: Command, reporter: Reporte
 // as it stands on each reload. The listening server keeps the process alive
 // after the status is returned, until the author interrupts it.
 // spec: docs/specs/dev-server.md, Session
-const runDevCommand = async ({ configurationPath, port, https }: Extract<Command, { name: 'dev' }>, reporter: Reporter): Promise<number> => {
+const runDevCommand = async ({ configurationPath, port, https, verbose }: Extract<Command, { name: 'dev' }>, reporter: Reporter): Promise<number> => {
   try {
     const file = await locateConfiguration(configurationPath);
     let reloads = 0;
@@ -37,6 +37,7 @@ const runDevCommand = async ({ configurationPath, port, https }: Extract<Command
       configurationFile: file,
       port,
       https,
+      verbose,
     });
     return 0;
   } catch (error) {
@@ -50,14 +51,15 @@ const runDevCommand = async ({ configurationPath, port, https }: Extract<Command
  * exit status comes back for the shim to assign, so nothing here exits.
  */
 export const runCommand = async (args: string[]): Promise<number> => {
-  const reporter = bindReporter({ timestamps: false });
   let command: Command;
   try {
     command = parseCommand(args);
   } catch (error) {
-    reporter.failed(`${describeError(error)}\n${usage}`);
+    // Whether the run is verbose is unknown until the arguments parse.
+    bindReporter({ timestamps: false, verbose: false }).failed(`${describeError(error)}\n${usage}`);
     return 2;
   }
+  const reporter = bindReporter({ timestamps: false, verbose: command.verbose });
   if (command.name === 'dev') {
     return runDevCommand(command, reporter);
   }

@@ -2,6 +2,7 @@
 
 import { hash } from 'node:crypto';
 import type { Versions } from '../build/bind-build.ts';
+import type { Reporter } from '../build/bind-reporter.ts';
 import { findVersion } from '../build/find-version.ts';
 import { mapUnits } from '../build/map-units.ts';
 import type { Page, Template } from '../build/read-site.ts';
@@ -141,6 +142,7 @@ export const renderPages = async (
   versions: Versions,
   bodyRecords: UnitRecords<RenderedBody>,
   pageRecords: UnitRecords<RenderedPage>,
+  reporter: Reporter,
 ): Promise<RenderedPages> => {
   for (const { page, chain } of pageChains) {
     versions.chains.set(page.sourcePath, chain.map((template) => template.sourcePath).join('\n'));
@@ -152,7 +154,7 @@ export const renderPages = async (
   }));
   const renderedBodies = await mapUnits(mergedPages, async (merged): Promise<RenderedPageBody> => {
     const run = (observe: Observe): Promise<RenderedBody> => renderBody(makeContext, merged, observe);
-    const rendered = await reuseUnit(bodyRecords, merged.page.sourcePath, lookup, run);
+    const rendered = await reuseUnit(bodyRecords, merged.page.sourcePath, lookup, run, reporter, `Rendered the body of ${merged.page.sourcePath}`);
     return { ...merged, ...rendered };
   });
   for (const { page, hash: bodyHash } of renderedBodies) {
@@ -161,7 +163,7 @@ export const renderPages = async (
   const bodies = new Map(renderedBodies.map(({ page, body }) => [page.url, body]));
   const pages = await mapUnits(renderedBodies, (rendered) => {
     const run = (observe: Observe): Promise<RenderedPage> => renderChain(makeContext, bodies, rendered, observe);
-    return reuseUnit(pageRecords, rendered.page.sourcePath, lookup, run);
+    return reuseUnit(pageRecords, rendered.page.sourcePath, lookup, run, reporter, `Rendered ${rendered.page.sourcePath}`);
   });
   // Read from this build's results and never the records, so a page removed
   // in a session stops emitting with its render.

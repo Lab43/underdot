@@ -14,14 +14,14 @@ const defaultsFixture = fixturePath('defaults');
 
 describe('build', () => {
   test('the configuration is resolved inside the build', async () => {
-    await expect(build({ destination: '..' }, defaultsFixture)).rejects.toThrow(
+    await expect(build({ destination: '..' }, {}, defaultsFixture)).rejects.toThrow(
       new Error(`The destination ${dirname(defaultsFixture)} must be inside the project directory ${defaultsFixture}.`),
     );
   });
 
   // spec: docs/specs/build.md, Output
   test('a failing build rejects and prints nothing, leaving the report to the script', async ({ stdout, stderr }) => {
-    await expect(build({ source: 'content' }, defaultsFixture)).rejects.toThrow(new Error(`The source root ${join(defaultsFixture, 'content')} does not exist.`));
+    await expect(build({ source: 'content' }, {}, defaultsFixture)).rejects.toThrow(new Error(`The source root ${join(defaultsFixture, 'content')} does not exist.`));
     expect(stdout).toStrictEqual([]);
     expect(stderr).toStrictEqual([]);
   });
@@ -38,6 +38,13 @@ describe('build', () => {
       'index.html',
       'styles/site.css',
     ]);
+  });
+
+  // spec: docs/specs/build.md, Output
+  test('verbose lists the units that ran', async ({ workingDirectory, stdout }) => {
+    await build(defaultsConfiguration, { verbose: true });
+    expect(stdout).toContain('  Handled index.html\n');
+    await readFile(join(workingDirectory, 'build/index.html'));
   });
 });
 

@@ -134,4 +134,11 @@ describe('handleFiles', () => {
       expect(spied[1]?.handle).toHaveBeenCalledTimes(1);
     });
   });
+
+  // spec: docs/specs/build.md, Output
+  test('a handling reports its label', async () => {
+    const reporter = makeReporter();
+    await handleFiles(source, [{ sourcePath: 'notes.txt' }], [], await hashSource(), new Map(), reporter);
+    expect(reporter.ran).toHaveBeenCalledExactlyOnceWith('Handled notes.txt', []);
+  });
 });

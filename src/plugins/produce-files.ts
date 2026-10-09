@@ -147,7 +147,7 @@ export const produceFiles = async (
       );
       return handled.map((file) => ({ sourcePath, outputPath: file.outputPath, contents: file.contents, hash: hash('sha256', file.contents, 'hex') }));
     };
-    const result = await reuseUnit(records, outputPath, lookup, run);
+    const result = await reuseUnit(records, outputPath, lookup, run, reporter, `Produced ${outputPath}`);
     for (const output of result) {
       output.sourcePath = sourcePath;
     }

@@ -80,7 +80,7 @@ export const runPageHooks = async (
         return { name, pluginName, value, version: pagesVersion };
       });
     };
-    globals.push(...await reuseUnit(records, pluginName, () => pagesVersion, run));
+    globals.push(...await reuseUnit(records, pluginName, () => pagesVersion, run, reporter, `Ran the page hook of ${pluginName}`));
   }
   return globals;
 };

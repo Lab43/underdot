@@ -5,11 +5,15 @@ import { parseCommand } from './parse-command.ts';
 
 describe('parseCommand', () => {
   test('build alone names the build with no configuration path', () => {
-    expect(parseCommand(['build'])).toStrictEqual({ name: 'build', configurationPath: undefined });
+    expect(parseCommand(['build'])).toStrictEqual({ name: 'build', configurationPath: undefined, verbose: false });
+  });
+
+  test('--verbose is taken by build', () => {
+    expect(parseCommand(['build', '--verbose'])).toStrictEqual({ name: 'build', configurationPath: undefined, verbose: true });
   });
 
   test('--config is taken before or after the command, and as one argument', () => {
-    const command = { name: 'build', configurationPath: 'x.ts' };
+    const command = { name: 'build', configurationPath: 'x.ts', verbose: false };
     expect(parseCommand(['build', '--config', 'x.ts'])).toStrictEqual(command);
     expect(parseCommand(['--config', 'x.ts', 'build'])).toStrictEqual(command);
     expect(parseCommand(['build', '--config=x.ts'])).toStrictEqual(command);
@@ -17,15 +21,16 @@ describe('parseCommand', () => {
 
   describe('dev', () => {
     test('dev alone names the session with no port and no HTTPS', () => {
-      expect(parseCommand(['dev'])).toStrictEqual({ name: 'dev', configurationPath: undefined, port: undefined, https: false });
+      expect(parseCommand(['dev'])).toStrictEqual({ name: 'dev', configurationPath: undefined, port: undefined, https: false, verbose: false });
     });
 
-    test('the port and the HTTPS option are taken', () => {
-      expect(parseCommand(['dev', '--port', '4000', '--https'])).toStrictEqual({
+    test('the port, the HTTPS option, and --verbose are taken', () => {
+      expect(parseCommand(['dev', '--port', '4000', '--https', '--verbose'])).toStrictEqual({
         name: 'dev',
         configurationPath: undefined,
         port: 4000,
         https: true,
+        verbose: true,
       });
     });
 

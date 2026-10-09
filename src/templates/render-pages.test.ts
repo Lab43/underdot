@@ -22,11 +22,13 @@ const rendered = (sourcePath: string, outputPath: string, contents: string) => (
 
 const fakeRenderer = (): ReturnType<typeof vi.fn<Renderer>> => vi.fn<Renderer>((_body, { sourcePath }) => `rendered ${sourcePath}`);
 
-// Where the stub context reports its warnings, cleared before each test.
+// Where the stub context and the renders report, cleared before each test.
 const reporter = makeReporter();
 
 beforeEach(() => {
-  vi.mocked(reporter.warned).mockClear();
+  for (const method of Object.values(reporter)) {
+    vi.mocked(method).mockClear();
+  }
 });
 
 // A context of the file's fields alone, observing a variable read and a body
@@ -64,7 +66,7 @@ const freshVersions = (overrides: Partial<Versions> = {}): Versions =>
 const freshRecords = (): { bodies: UnitRecords<RenderedBody>; pages: UnitRecords<RenderedPage> } => ({ bodies: new Map(), pages: new Map() });
 
 const renderEverything = (pageChains: PageChain[], globals: Record<string, unknown> = {}, versions = freshVersions(), records = freshRecords()): Promise<RenderedPages> =>
-  renderPages(pageChains, globals, makeContext, versions, records.bodies, records.pages);
+  renderPages(pageChains, globals, makeContext, versions, records.bodies, records.pages, reporter);
 
 // The pages alone.
 const renderAll = async (...args: Parameters<typeof renderEverything>): Promise<RenderedPage[]> => (await renderEverything(...args)).pages;
@@ -190,7 +192,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'a/index.html', url: '/a/' });
     const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'b/index.html', url: '/b/' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
-    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map());
+    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map(), reporter);
     expect(maker.mock.calls.slice(0, 2).map(([sourcePath, , bodies]) => [sourcePath, bodies])).toStrictEqual([['a.tpl', undefined], ['b.tpl', undefined]]);
   });
 
@@ -200,7 +202,7 @@ describe('renderPages', () => {
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'a/index.html', url: '/a/' });
     const second = makePage({ sourcePath: 'b.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'b/index.html', url: '/b/' });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
-    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map());
+    await renderPages([{ page: first, chain: [root] }, { page: second, chain: [root] }], {}, maker, freshVersions(), new Map(), new Map(), reporter);
     const bodies = new Map([['/a/', 'rendered a.tpl'], ['/b/', 'rendered b.tpl']]);
     expect(maker.mock.calls.slice(2).map(([sourcePath, , pageBodies]) => [sourcePath, pageBodies])).toStrictEqual([['_.tpl', bodies], ['_.tpl', bodies]]);
   });
@@ -397,5 +399,16 @@ describe('renderPages', () => {
       expect(renderBlind).not.toHaveBeenCalled();
       expect(renderRoot).not.toHaveBeenCalled();
     });
+  });
+
+  // spec: docs/specs/build.md, Output
+  test("a page's body render and its chain render report their labels", async () => {
+    const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
+    const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
+    await renderAll([{ page, chain: [root] }], {});
+    expect(vi.mocked(reporter.ran).mock.calls).toStrictEqual([
+      ['Rendered the body of index.tpl', []],
+      ['Rendered index.tpl', []],
+    ]);
   });
 });

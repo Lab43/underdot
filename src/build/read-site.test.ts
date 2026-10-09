@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { renderBody } from '../../test/helpers/render-body.ts';
 import type { Helper } from '../plugins/register-plugins.ts';
 import { classifySource } from '../source-tree/classify-source.ts';
@@ -27,7 +28,7 @@ describe('readSite', () => {
   test('the templated fixture yields its pages and templates in classification order, each with its contents', async () => {
     const source = join(fixturePath('templated'), 'source');
     const sourceFiles = classifySource(await walkSource(source), renderers);
-    const site = await readSite(source, sourceFiles.pages, sourceFiles.templates, none, unhashed, new Map());
+    const site = await readSite(source, sourceFiles.pages, sourceFiles.templates, none, unhashed, new Map(), makeReporter());
 
     expect(site.pages.map((page) => page.sourcePath)).toStrictEqual(['404.tpl', 'about.tpl', 'about/team.tpl', 'blog/hello.tpl', 'blog/index.tpl', 'index.tpl', 'pages.tpl']);
     expect(site.templates.map((template) => template.sourcePath)).toStrictEqual(['_.tpl', '_page.tpl', 'blog/_.tpl', 'blog/_archive.tpl', 'blog/_post.tpl']);
@@ -57,7 +58,7 @@ describe('readSite', () => {
   test("a frontmatter error names the file ahead of the parser's message", async () => {
     const source = join(fixturePath('bad-frontmatter'), 'source');
     const { pages, templates } = classifySource(['index.tpl'], renderers);
-    await expect(readSite(source, pages, templates, none, unhashed, new Map())).rejects.toThrow(
+    await expect(readSite(source, pages, templates, none, unhashed, new Map(), makeReporter())).rejects.toThrow(
       new Error('index.tpl: The frontmatter key _title starts with an underscore, which is reserved.'),
     );
   });
@@ -67,7 +68,7 @@ describe('readSite', () => {
     const source = join(fixturePath('templated'), 'source');
     const { pages, templates } = classifySource(await walkSource(source), renderers);
     const helpers = new Map([['date', { pluginName: 'tools', helper: here }]]);
-    await expect(readSite(source, pages, templates, helpers, unhashed, new Map())).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
+    await expect(readSite(source, pages, templates, helpers, unhashed, new Map(), makeReporter())).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
   });
 
   // spec: docs/specs/build.md, Incremental builds
@@ -78,8 +79,8 @@ describe('readSite', () => {
     const files = await hashFiles(source, paths, new Map());
     const records: UnitRecords<FileContents> = new Map();
     vi.mocked(readFile).mockClear();
-    const first = await readSite(source, pages, templates, none, files, records);
-    const second = await readSite(source, pages, templates, none, files, records);
+    const first = await readSite(source, pages, templates, none, files, records, makeReporter());
+    const second = await readSite(source, pages, templates, none, files, records, makeReporter());
     expect(vi.mocked(readFile)).toHaveBeenCalledTimes(pages.length + templates.length);
     expect(second).toStrictEqual(first);
   });
@@ -90,8 +91,17 @@ describe('readSite', () => {
     const { pages, templates } = classifySource(paths, renderers);
     const files = await hashFiles(source, paths, new Map());
     const records: UnitRecords<FileContents> = new Map();
-    await readSite(source, pages, templates, none, files, records);
+    await readSite(source, pages, templates, none, files, records, makeReporter());
     const helpers = new Map([['date', { pluginName: 'tools', helper: here }]]);
-    await expect(readSite(source, pages, templates, helpers, files, records)).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
+    await expect(readSite(source, pages, templates, helpers, files, records, makeReporter())).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
+  });
+
+  // spec: docs/specs/build.md, Output
+  test('a read reports its label', async () => {
+    const source = join(fixturePath('templated'), 'source');
+    const { pages } = classifySource(await walkSource(source), renderers);
+    const reporter = makeReporter();
+    await readSite(source, pages.filter(({ sourcePath }) => sourcePath === 'index.tpl'), [], none, unhashed, new Map(), reporter);
+    expect(reporter.ran).toHaveBeenCalledExactlyOnceWith('Read index.tpl', []);
   });
 });

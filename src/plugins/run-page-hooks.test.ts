@@ -148,4 +148,11 @@ describe('runPageHooks', () => {
       expect(versionsOf(second)[0]).not.toBe(versionsOf(first)[0]);
     });
   });
+
+  // spec: docs/specs/build.md, Output
+  test('a hook reports its label', async () => {
+    const reporter = makeReporter();
+    await runPageHooks(pages, [hook('listing', () => ({}))], fresh(), reporter);
+    expect(reporter.ran).toHaveBeenCalledExactlyOnceWith('Ran the page hook of listing', []);
+  });
 });

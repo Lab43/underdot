@@ -10,7 +10,7 @@ import { runCommand } from './run-command.ts';
 
 vi.mock('../dev-server/start-session.ts', { spy: true });
 
-const usage = 'Usage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n';
+const usage = 'Usage: underdot build [--config <path>] [--verbose]\n       underdot dev [--config <path>] [--port <n>] [--https] [--verbose]\n';
 
 describe('runCommand', () => {
   describe('build', () => {
@@ -18,8 +18,17 @@ describe('runCommand', () => {
     test('builds the working directory and prints the Built line', async ({ stdout, stderr, workingDirectory }) => {
       expect(await runCommand(['build'])).toBe(0);
       expect(stdout).toHaveLength(1);
-      expect(stdout[0]).toMatch(/^✓ Built in \d+(?: ms|\.\d s)\n$/);
+      expect(stdout[0]).toMatch(/^✓ Built in \d+(?: ms|\.\d s) · \d+ ran\n$/);
       expect(stderr).toStrictEqual([]);
+      await access(join(workingDirectory, 'build/index.html'));
+    });
+
+    // spec: docs/specs/build.md, Output
+    test('--verbose lists the units that ran before the Built line', async ({ stdout, workingDirectory }) => {
+      expect(await runCommand(['build', '--verbose'])).toBe(0);
+      expect(stdout).toContain('  Handled index.html\n');
+      expect(stdout).toContain('  Wrote index.html\n');
+      expect(stdout.at(-1)).toMatch(/^✓ Built in /);
       await access(join(workingDirectory, 'build/index.html'));
     });
 
@@ -61,7 +70,7 @@ describe('runCommand', () => {
       try {
         expect(stderr).toStrictEqual([]);
         const file = join(workingDirectory, 'underdot.config.ts');
-        expect(startSession).toHaveBeenCalledWith({ load: expect.any(Function), configurationFile: file, port: 0, https: false });
+        expect(startSession).toHaveBeenCalledWith({ load: expect.any(Function), configurationFile: file, port: 0, https: false, verbose: false });
         const { load } = vi.mocked(startSession).mock.calls[0]![0];
         await writeFile(file, "export default { source: 'content' };\n");
         expect((await load()).source).toBe(join(workingDirectory, 'content'));
@@ -69,6 +78,12 @@ describe('runCommand', () => {
       } finally {
         await session.close();
       }
+    });
+
+    test('--verbose reaches the session', async ({ workingDirectory }) => {
+      vi.mocked(startSession).mockResolvedValueOnce({ url: 'http://localhost:3000/', close: () => Promise.resolve() });
+      expect(await runCommand(['dev', '--verbose'])).toBe(0);
+      expect(startSession).toHaveBeenCalledWith(expect.objectContaining({ configurationFile: join(workingDirectory, 'underdot.config.ts'), verbose: true }));
     });
 
     describe('in the no-config fixture', () => {

@@ -10,6 +10,7 @@ import type { Server as HttpsServer } from 'node:https';
 import { networkInterfaces } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { bindBuild } from '../build/bind-build.ts';
+import type { BuildCounts } from '../build/bind-build.ts';
 import { bindReporter } from '../build/bind-reporter.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { describeError } from '../shared/describe-error.ts';
@@ -28,6 +29,7 @@ export interface SessionOptions {
   configurationFile?: string;
   port?: number;
   https?: boolean;
+  verbose?: boolean;
 }
 
 /**
@@ -53,8 +55,8 @@ const eventsPath = '/_underdot/events';
  * every change until closed, printing the URLs and every build's outcome and
  * telling every connected browser how each build went.
  */
-export const startSession = async ({ load, configurationFile, port, https = false }: SessionOptions): Promise<Session> => {
-  const reporter = bindReporter({ timestamps: true });
+export const startSession = async ({ load, configurationFile, port, https = false, verbose = false }: SessionOptions): Promise<Session> => {
+  const reporter = bindReporter({ timestamps: true, verbose });
   const configuration = await load();
   let site: Site = { destination: configuration.destination, rewrites: configuration.rewrites };
   let build = bindBuild(configuration, reporter);
@@ -201,8 +203,9 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       status = { name: 'building' };
       broadcast('building');
       const started = performance.now();
+      let counts: BuildCounts;
       try {
-        await build();
+        counts = await build();
       } catch (error) {
         if (isClosed()) {
           return;
@@ -219,7 +222,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       // A standing configuration report outlasts a successful source build,
       // which ran under a configuration the author has already replaced.
       status = configurationError === undefined ? { name: 'idle' } : { name: 'failed', report: configurationError };
-      reporter.built(performance.now() - started);
+      reporter.built(performance.now() - started, counts);
       broadcast('built');
     }
   };

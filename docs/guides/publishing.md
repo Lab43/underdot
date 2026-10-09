@@ -1,6 +1,6 @@
 # Publishing
 
-How to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, and the tag and GitHub release that mark it.
+How to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, confirming it landed, and the tag and GitHub release that mark it.
 
 ## Bump the version
 
@@ -23,20 +23,34 @@ A major version that changes what a site writes also extends `q-extension/guides
 
 ## Publish
 
-Publish from an up-to-date `main`, logged in to npm as an owner of the packages (`npm whoami`):
+Publish from an up-to-date `main`, logged in to npm as `lab43`, the account that owns every package:
 
 ```sh
 git checkout main && git pull
+npm whoami
 npm publish
 npm publish --workspaces
 ```
 
+- `npm whoami` prints `lab43`. When it fails or prints another account, run `npm login` first.
 - Publish the core first, so no plugin is on the registry before the core it names as a peer.
 - `npm publish` runs each package's `prepack`, which builds it, so no separate build step comes first.
 - A version without a prerelease suffix becomes the `latest` tag.
 - A package name not yet on the registry is created by its first publish, under the account publishing it.
 
-npm asks for a one-time password when the account requires one. Pass it as `--otp <code>`. A code that expires partway through `--workspaces` fails the packages after it. Publish those one at a time with `npm publish --workspace <name> --otp <code>`, since publishing a version that is already on the registry fails.
+A publish that npm does not accept the login for fails with `E404` on the `PUT`, or with `ENEEDAUTH`. Nothing was uploaded, so log in and publish again.
+
+npm asks for a one-time password when the account requires one. Pass it as `--otp <code>`. A code that expires partway through `--workspaces` fails the packages after it. Publish those one at a time with `npm publish --workspace <name> --otp <code>`.
+
+## Confirm the release
+
+npm stages a new version for a few minutes before it lists it, so `npm view` shows the previous `latest` in the meantime, and its cache can show it for longer. Check each package against the registry itself:
+
+```sh
+npm view <name> dist-tags --prefer-online
+```
+
+Publishing a version again while npm stages it fails with `E409` and "Cannot publish over previously staged version". The first publish worked, so wait rather than publishing again. Move on to the tag only once every package's `latest` is the new version.
 
 ## Tag and release
 

@@ -89,7 +89,7 @@ The documentation is in four places:
 
 ## Publishing
 
-Every package is released at one version, from `main`. [`docs/guides/publishing.md`](https://github.com/Lab43/underdot/blob/main/docs/guides/publishing.md) walks through the version bump, the checks, the publish, and the tag.
+Every package is released at one version, from `main`. [`docs/guides/publishing.md`](https://github.com/Lab43/underdot/blob/main/docs/guides/publishing.md) walks through the version bump, the checks, the publish, confirming it landed, and the tag.
 <!-- source: docs/guides/publishing.md -->
 
 ## Working with q

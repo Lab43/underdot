@@ -71,4 +71,4 @@ How to use and operate Underdot, rather than how to write its code (source: @lab
 This project's own:
 
 - `docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support
-- `docs/guides/publishing.md` — how to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, and the tag and GitHub release that mark it
+- `docs/guides/publishing.md` — how to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, confirming it landed, and the tag and GitHub release that mark it

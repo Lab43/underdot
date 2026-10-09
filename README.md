@@ -4,12 +4,13 @@ Underdot is a static site generator written in node.js that I built primarily to
 
 ## Version 2
 
-This branch is Underdot version 2. Its documentation is in three places:
+This branch is Underdot version 2. Its documentation is in four places:
 <!-- source: CLAUDE.md, Documentation -->
 
 - `docs/specs/` states what version 2 commits to.
 - `docs/conventions/` holds the rules its code follows.
-- `docs/guides/` holds the guides: the changes a version 1 site makes to build on version 2, and how to drive Underdot by hand.
+- `docs/guides/` holds how to drive Underdot by hand.
+- `q-extension/` holds what ships to sites that use Underdot: the rules for writing a site, and the changes a version 1 site makes to build on version 2.
 
 Version 1 is published on npm as `underdot@1`, and its source is on the `master` branch.
 

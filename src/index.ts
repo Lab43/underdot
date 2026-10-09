@@ -1,6 +1,7 @@
 // spec: docs/specs/configuration.md, Programmatic use
 
-import { bindBuild } from './build/bind-build.ts';
+import { bindReporter } from './build/bind-reporter.ts';
+import { runBuild } from './build/run-build.ts';
 import { resolveConfiguration } from './configuration/resolve-configuration.ts';
 import type { Configuration } from './configuration/resolve-configuration.ts';
 import { startSession } from './dev-server/start-session.ts';
@@ -14,11 +15,13 @@ import type { HookContext, HookPage } from './plugins/run-page-hooks.ts';
 export type { Configuration, FileHandler, HandledFile, HandlerContext, HandlerOutput, Helper, HookContext, HookPage, PageHook, Plugin, Producer, ProducerContext, RenderContext, Renderer, Session };
 
 /**
- * Resolve the configuration a script passes, then build it once.
- * Resolving first fails a bad configuration before any work starts.
+ * Resolve the configuration a script passes, then build it once, printing
+ * the build's lines as the command does. Resolving first fails a bad
+ * configuration before any work starts. A failure rejects with no report
+ * printed, so the script decides how to show it.
  */
 export const build = async (configuration: Configuration, projectDirectory = process.cwd()): Promise<void> => {
-  await bindBuild(resolveConfiguration(configuration, projectDirectory))();
+  await runBuild(resolveConfiguration(configuration, projectDirectory), bindReporter({ timestamps: false }));
 };
 
 /**

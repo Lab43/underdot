@@ -1,6 +1,6 @@
 # Build
 
-What one build of a site guarantees: how the destination relates to the source, in what order the work happens, when work is skipped because nothing it depends on changed, and what a failure does. A build is the same whether a command runs it once or a dev-server session runs it after every change (see: docs/specs/dev-server.md).
+What one build of a site guarantees: how the destination relates to the source, in what order the work happens, when work is skipped because nothing it depends on changed, what a failure does, and what a build prints. A build is the same whether a command runs it once or a dev-server session runs it after every change (see: docs/specs/dev-server.md).
 
 ## Determinism
 
@@ -60,3 +60,9 @@ A build stops at the first unit that fails. Units already running finish or are 
 A plugin's warning is not a failure. The build continues, and the warning leaves the exit status alone (see: docs/specs/plugins.md, Errors).
 
 A failed build leaves whatever it had written before stopping. The guarantee that the destination holds exactly what the build produced applies to a successful build only (see: Destination). Rationale: the exit status and the report are what tell an author or a deploy script that the build is bad, and unwinding partial output buys nothing they do not already know.
+
+## Output
+
+A successful build prints `✓ Built in <duration>` on standard output. The build command prints a failed build's report on standard error, with `✗` before the report's first line. The exported build function rejects with the report and prints nothing (see: docs/specs/configuration.md, Programmatic use). Rationale: the rejection is the function's form of the command's exit status and printed report, so the script that called it decides whether and how to show the error, and printing it as well would show it twice in a script that logs what it catches. A plugin's warning prints as the plugin contract defines (see: docs/specs/plugins.md, Errors).
+
+The lines are colored when their stream is a terminal: a success in green, a failure in red, and a warning in yellow. They print plain when the stream is piped or `NO_COLOR` is set, unless `FORCE_COLOR` asks for color. Rationale: the symbols tell a success, a failure, and a warning apart where color is off, under `NO_COLOR`, in a CI log, or for a reader who does not see the colors.

@@ -7,12 +7,12 @@ import { join } from 'node:path';
 // takes a platform path.
 import { dirname, join as joinPosix } from 'node:path/posix';
 import { serialize } from 'node:v8';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import type { Observe } from '../build/reuse-unit.ts';
 import { describeError } from '../shared/describe-error.ts';
 import { isPlainPath } from '../shared/is-plain-path.ts';
 import type { Output } from './handle-files.ts';
-import { printWarning } from './print-warning.ts';
 import type { ProducerContext } from './produce-files.ts';
 import type { RegisteredHelper } from './register-plugins.ts';
 
@@ -119,6 +119,7 @@ export const bindRenderContext = (
   files: FileTable,
   helpers: ReadonlyMap<string, RegisteredHelper>,
   outputs: Output[],
+  reporter: Reporter,
 ): MakeRenderContext => {
   // The last output of a path, the only one there is once the write succeeds.
   const outputsByPath = new Map(outputs.map((output) => [output.outputPath, output]));
@@ -223,7 +224,7 @@ export const bindRenderContext = (
         emits.push({ pluginName, sourcePath, outputPath, parametersHash: hash('sha256', serialized, 'hex'), produce });
       };
       const warn = (message: string): void => {
-        printWarning(attribution.unit, pluginName, message);
+        reporter.warned(attribution.unit, pluginName, message);
       };
       boundHelpers.set(name, (...args: unknown[]): unknown => {
         try {
@@ -288,7 +289,7 @@ export const bindRenderContext = (
         throw new Error(`${sourcePath} emits ${outputPath} outside a helper, which only a helper can do.`);
       },
       warn: (message) => {
-        printWarning(attribution.unit, attribution.pluginName, message);
+        reporter.warned(attribution.unit, attribution.pluginName, message);
       },
     };
     return context;

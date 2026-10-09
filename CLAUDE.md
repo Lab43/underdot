@@ -51,7 +51,7 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 - `docs/specs/source-tree.md` — what Underdot makes of a site's source directory: which files are pages, templates, and static files, where each lands in the destination, and what URL a page gets
 - `docs/specs/templates.md` — how a page becomes a finished document: frontmatter, how a page finds its template chain, and which variables every file in the chain sees
 - `docs/specs/plugins.md` — what a plugin can do to a build and what it owes the build in return, so the build knows what depends on what
-- `docs/specs/build.md` — what one build guarantees: how the destination relates to the source, the order of work, when work is skipped, and what a failure does
+- `docs/specs/build.md` — what one build guarantees: how the destination relates to the source, the order of work, when work is skipped, what a failure does, and what a build prints
 - `docs/specs/dev-server.md` — what a development session gives an author: one command that builds, serves locally, rebuilds on change, and reloads the browser
 - `docs/specs/configuration.md` — how a site tells Underdot what to build and how it is routed: the configuration file, its settings, and the commands and programmatic entry points that consume it
 - `docs/specs/ejs.md` — what the EJS plugin commits to: how a file renders with EJS, what a template can read, how an include finds its partial, and the one option a site configures

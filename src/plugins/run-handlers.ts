@@ -1,11 +1,11 @@
 // spec: docs/specs/plugins.md, File handlers
 
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import type { Observe } from '../build/reuse-unit.ts';
 import { isPlainPath } from '../shared/is-plain-path.ts';
 import { matchGlob } from '../shared/match-glob.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
-import { printWarning } from './print-warning.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 
 /**
@@ -59,6 +59,7 @@ export const runHandlers = async (
   sourceDirectory: string,
   files: FileTable,
   observe: Observe,
+  reporter: Reporter,
 ): Promise<HandledFile[]> => {
   // A declared file is versioned from the table as a read through the render
   // context is, so one outside the source or excluded cannot be tracked.
@@ -75,7 +76,7 @@ export const runHandlers = async (
   let handledFiles = [file];
   for (const { pluginName, glob, handle } of handlers) {
     const warn = (message: string): void => {
-      printWarning(`Handling ${sourcePath}`, pluginName, message);
+      reporter.warned(`Handling ${sourcePath}`, pluginName, message);
     };
     const handled: HandledFile[] = [];
     for (const current of handledFiles) {

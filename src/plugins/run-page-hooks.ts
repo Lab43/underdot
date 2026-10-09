@@ -2,11 +2,11 @@
 
 import { hash } from 'node:crypto';
 import { serialize } from 'node:v8';
+import type { Reporter } from '../build/bind-reporter.ts';
 import { reuseUnit } from '../build/reuse-unit.ts';
 import type { Observe, UnitRecords } from '../build/reuse-unit.ts';
 import { isObject } from '../shared/is-object.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
-import { printWarning } from './print-warning.ts';
 import type { RegisteredHook } from './register-plugins.ts';
 
 /**
@@ -47,7 +47,12 @@ export interface HookGlobal {
  * hook's run is reused while the list it sees is the same.
  */
 // spec: docs/specs/build.md, Incremental builds
-export const runPageHooks = async (pages: readonly HookPage[], hooks: RegisteredHook[], records: UnitRecords<HookGlobal[]>): Promise<HookGlobal[]> => {
+export const runPageHooks = async (
+  pages: readonly HookPage[],
+  hooks: RegisteredHook[],
+  records: UnitRecords<HookGlobal[]>,
+  reporter: Reporter,
+): Promise<HookGlobal[]> => {
   const hookPages = pages.map(({ sourcePath, outputPath, url, frontmatter }): HookPage => ({ sourcePath, outputPath, url, frontmatter }));
   // The list is the whole of a hook's inputs.
   const pagesVersion = hash('sha256', serialize(hookPages), 'hex');
@@ -57,7 +62,7 @@ export const runPageHooks = async (pages: readonly HookPage[], hooks: Registered
       observe('pages', '');
       let defined: unknown;
       const warn = (message: string): void => {
-        printWarning('Running the page hook', pluginName, message);
+        reporter.warned('Running the page hook', pluginName, message);
       };
       // spec: docs/specs/plugins.md, Errors
       try {

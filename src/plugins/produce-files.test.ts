@@ -6,7 +6,9 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { test } from '../../test/helpers/test.ts';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import type { UnitRecords } from '../build/reuse-unit.ts';
 import type { EmittedFile, Producer } from './bind-render-context.ts';
@@ -48,9 +50,10 @@ interface Memory {
   files?: FileTable;
   written?: Map<string, string>;
   records?: UnitRecords<EmittedOutput[]>;
+  reporter?: Reporter;
 }
 
-const produceAll = (directory: string, emits: EmittedFile[], { handlers: registered = handlers, outputs: current = outputs, files = new Map(), written = new Map(), records = new Map() }: Memory = {}) =>
+const produceAll = (directory: string, emits: EmittedFile[], { handlers: registered = handlers, outputs: current = outputs, files = new Map(), written = new Map(), records = new Map(), reporter = makeReporter() }: Memory = {}) =>
   produceFiles(
     join(directory, 'source'),
     join(directory, 'build'),
@@ -61,6 +64,7 @@ const produceAll = (directory: string, emits: EmittedFile[], { handlers: registe
     files,
     written,
     records,
+    reporter,
   );
 
 describe('produceFiles', () => {
@@ -121,13 +125,14 @@ describe('produceFiles', () => {
     await expect(producing).rejects.toHaveProperty('cause', cause);
   });
 
-  test("a producer's warning names the output and the emitting plugin", async ({ directory, stderr }) => {
+  test("a producer's warning names the output and the emitting plugin", async ({ directory }) => {
     const produce: Producer = ({ warn }) => {
       warn('Deprecated.');
       return Promise.resolve('derived');
     };
-    await produceAll(directory, [emit({ produce })]);
-    expect(stderr).toStrictEqual(['Producing notes.derived.txt warned in images: Deprecated.\n']);
+    const reporter = makeReporter();
+    await produceAll(directory, [emit({ produce })], { reporter });
+    expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Producing notes.derived.txt', 'images', 'Deprecated.');
   });
 
   // A handler of the plugin after the emitting one that declares notes.md and
@@ -143,10 +148,11 @@ describe('produceFiles', () => {
   };
 
   // spec: docs/specs/plugins.md, Errors
-  test("a handler after the emitting plugin warns naming the output's handling and its plugin", async ({ directory, stderr }) => {
+  test("a handler after the emitting plugin warns naming the output's handling and its plugin", async ({ directory }) => {
     const files: FileTable = new Map([['notes.md', makeFileEntry('notes1')]]);
-    await produceAll(directory, [emit()], { handlers: [declaring], files });
-    expect(stderr).toStrictEqual(['Handling notes.derived.txt warned in annotate: Deprecated.\n']);
+    const reporter = makeReporter();
+    await produceAll(directory, [emit()], { handlers: [declaring], files, reporter });
+    expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Handling notes.derived.txt', 'annotate', 'Deprecated.');
   });
 
   test('a producer that returns neither text nor bytes fails naming the plugin and the path', async ({ directory }) => {
@@ -186,18 +192,19 @@ describe('produceFiles', () => {
     });
 
     // spec: docs/specs/plugins.md, Dependencies
-    test('a unit is reused while a file a handler declared stands, printing nothing, and reruns when it changes', async ({ directory, stderr }) => {
+    test('a unit is reused while a file a handler declared stands, reporting nothing, and reruns when it changes', async ({ directory }) => {
       const produce = reading('notes.text');
       const records: UnitRecords<EmittedOutput[]> = new Map();
+      const reporter = makeReporter();
       const first: FileTable = new Map([['notes.md', makeFileEntry('notes1')]]);
-      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: first, records });
-      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: first, records });
+      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: first, records, reporter });
+      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: first, records, reporter });
       expect(produce).toHaveBeenCalledOnce();
-      expect(stderr).toHaveLength(1);
+      expect(reporter.warned).toHaveBeenCalledOnce();
       const second: FileTable = new Map([['notes.md', makeFileEntry('notes2')]]);
-      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: second, records });
+      await produceAll(directory, [emit({ produce })], { handlers: [declaring], files: second, records, reporter });
       expect(produce).toHaveBeenCalledTimes(2);
-      expect(stderr).toHaveLength(2);
+      expect(reporter.warned).toHaveBeenCalledTimes(2);
     });
 
     test('a reused result is named by the file that emits the path now', async ({ directory }) => {

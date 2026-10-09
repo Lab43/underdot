@@ -19,8 +19,17 @@ describe('build', () => {
     );
   });
 
-  test('the project directory defaults to the working directory', async ({ workingDirectory }) => {
+  // spec: docs/specs/build.md, Output
+  test('a failing build rejects and prints nothing, leaving the report to the script', async ({ stdout, stderr }) => {
+    await expect(build({ source: 'content' }, defaultsFixture)).rejects.toThrow(new Error(`The source root ${join(defaultsFixture, 'content')} does not exist.`));
+    expect(stdout).toStrictEqual([]);
+    expect(stderr).toStrictEqual([]);
+  });
+
+  test('the project directory defaults to the working directory, and the build prints its Built line', async ({ workingDirectory, stdout }) => {
     await build(defaultsConfiguration);
+    expect(stdout).toHaveLength(1);
+    expect(stdout[0]).toMatch(/^✓ Built in /);
     expect(await walkSource(join(workingDirectory, 'build'))).toStrictEqual([
       '.htaccess',
       '.well-known/security.txt',
@@ -47,7 +56,8 @@ describe('dev', () => {
         expect(response.status).toBe(200);
         expect(await response.text()).toBe(injectClientScript(await readFile(join(workingDirectory, 'source/index.html'), 'utf8')));
       });
-      expect(stdout[0]).toBe(`Serving ${session.url}\n`);
+      expect(stdout[0]).toMatch(/^\d\d:\d\d:\d\d /);
+      expect(stdout[0]?.slice('00:00:00 '.length)).toBe(`Serving ${session.url}\n`);
     } finally {
       await session.close();
     }

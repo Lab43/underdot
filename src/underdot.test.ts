@@ -44,8 +44,9 @@ describe('underdot', () => {
     expect(process.exitCode).toBe(3);
   });
 
-  test('build exits 0 with nothing on stderr and builds the working directory', async ({ directory }) => {
-    const { stderr } = await runShim(['build'], directory);
+  test('build exits 0 with the Built line and nothing on stderr, and builds the working directory', async ({ directory }) => {
+    const { stdout, stderr } = await runShim(['build'], directory);
+    expect(stdout).toMatch(/^✓ Built in \d+(?: ms|\.\d s)\n$/);
     expect(stderr).toBe('');
     await access(join(directory, 'build/index.html'));
   });
@@ -64,7 +65,7 @@ describe('underdot', () => {
         reject(new Error(`The command exited with ${code} before building.`));
       });
     });
-    const url = /^Serving (\S+)$/m.exec(printed)?.[1];
+    const url = /Serving (\S+)$/m.exec(printed)?.[1];
     expect(url).toBeDefined();
     const response = await fetch(url!);
     expect(await response.text()).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
@@ -73,7 +74,7 @@ describe('underdot', () => {
   test('no arguments exits 2 with the usage on stderr', async () => {
     await expect(runShim([])).rejects.toMatchObject({
       code: 2,
-      stderr: 'No command given.\nUsage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n',
+      stderr: '✗ No command given.\nUsage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n',
     });
   });
 });

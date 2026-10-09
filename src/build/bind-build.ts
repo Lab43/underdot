@@ -17,6 +17,7 @@ import { readData } from '../templates/read-data.ts';
 import { renderPages } from '../templates/render-pages.ts';
 import type { RenderedBody, RenderedPage } from '../templates/render-pages.ts';
 import { resolveChains } from '../templates/resolve-chains.ts';
+import type { Reporter } from './bind-reporter.ts';
 import { hashFiles } from './hash-files.ts';
 import type { FileTable } from './hash-files.ts';
 import { readSite } from './read-site.ts';
@@ -45,7 +46,10 @@ export interface Versions {
  * every build it runs shares the memory of the ones before, so a unit whose
  * inputs are unchanged is reused. A function called once reuses nothing.
  */
-export const bindBuild = ({ source, destination, exclude, plugins, globals }: ResolvedConfiguration): (() => Promise<void>) => {
+export const bindBuild = (
+  { source, destination, exclude, plugins, globals }: ResolvedConfiguration,
+  reporter: Reporter,
+): (() => Promise<void>) => {
   let files: FileTable = new Map();
   const dataRecords: UnitRecords<unknown> = new Map();
   const contentsRecords: UnitRecords<FileContents> = new Map();
@@ -62,8 +66,8 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
     const { pages, templates, staticFiles } = classifySource(paths, renderers);
     const dataVariables = await readData(source, paths, files, dataRecords);
     const site = await readSite(source, pages, templates, helpers, files, contentsRecords);
-    const outputs = await handleFiles(source, staticFiles, handlers, files, outputRecords);
-    const hookGlobals = await runPageHooks(site.pages, hooks, hookRecords);
+    const outputs = await handleFiles(source, staticFiles, handlers, files, outputRecords, reporter);
+    const hookGlobals = await runPageHooks(site.pages, hooks, hookRecords, reporter);
     const definedGlobals = defineGlobals(globals, dataVariables, hookGlobals, helpers);
     const globalVersions = versionGlobals(globals, dataVariables, hookGlobals, files);
     const versions: Versions = {
@@ -76,7 +80,7 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
     };
     // Every walked file is readable, those inside private directories included.
     // spec: docs/specs/source-tree.md, Underscore prefix
-    const makeContext = bindRenderContext(source, files, helpers, outputs);
+    const makeContext = bindRenderContext(source, files, helpers, outputs, reporter);
     const { pages: renderedPages, emits } = await renderPages(
       resolveChains(site.pages, site.templates),
       definedGlobals,
@@ -95,6 +99,7 @@ export const bindBuild = ({ source, destination, exclude, plugins, globals }: Re
       files,
       written,
       producedRecords,
+      reporter,
     );
     await writeDestination(source, destination, outputs, emitted, renderedPages, written);
   };

@@ -1,4 +1,4 @@
-// spec: docs/specs/bust.md
+// spec: q-docs/specs/bust.md
 
 import { hash } from 'node:crypto';
 import { dirname, join } from 'node:path/posix';

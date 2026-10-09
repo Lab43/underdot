@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Order of work
+// spec: q-docs/specs/build.md, Order of work
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -54,7 +54,7 @@ describe('readSite', () => {
     expect(post?.frontmatter).toStrictEqual({ layout: 'post' });
   });
 
-  // spec: docs/specs/templates.md
+  // spec: q-docs/specs/templates.md
   test("a frontmatter error names the file ahead of the parser's message", async () => {
     const source = join(fixturePath('bad-frontmatter'), 'source');
     const { pages, templates } = classifySource(['index.tpl'], renderers);
@@ -63,7 +63,7 @@ describe('readSite', () => {
     );
   });
 
-  // spec: docs/specs/plugins.md, Template helpers
+  // spec: q-docs/specs/plugins.md, Template helpers
   test("a frontmatter key sharing a helper's name fails naming the file and the plugin", async () => {
     const source = join(fixturePath('templated'), 'source');
     const { pages, templates } = classifySource(await walkSource(source), renderers);
@@ -71,7 +71,7 @@ describe('readSite', () => {
     await expect(readSite(source, pages, templates, helpers, unhashed, new Map(), makeReporter())).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   test('two calls with one table read and parse each file once', async () => {
     const source = join(fixturePath('templated'), 'source');
     const paths = await walkSource(source);
@@ -96,7 +96,7 @@ describe('readSite', () => {
     await expect(readSite(source, pages, templates, helpers, files, records, makeReporter())).rejects.toThrow(new Error('Both index.tpl and the plugin tools define date.'));
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('a read reports its label', async () => {
     const source = join(fixturePath('templated'), 'source');
     const { pages } = classifySource(await walkSource(source), renderers);

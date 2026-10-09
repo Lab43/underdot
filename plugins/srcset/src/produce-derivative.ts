@@ -1,4 +1,4 @@
-// spec: docs/specs/srcset.md
+// spec: q-docs/specs/srcset.md
 
 import sharp from 'sharp';
 import type { Sharp } from 'sharp';

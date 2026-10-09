@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md, Live reload
+// spec: q-docs/specs/dev-server.md, Live reload
 
 /**
  * The script a served page carries, held as a string so the compiled

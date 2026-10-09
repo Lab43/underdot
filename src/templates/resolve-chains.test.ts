@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md, Template resolution
+// spec: q-docs/specs/templates.md, Template resolution
 
 import { describe, expect, test } from 'vitest';
 import { makePage } from '../../test/helpers/make-page.ts';

@@ -1,4 +1,4 @@
-// spec: docs/specs/svgo.md
+// spec: q-docs/specs/svgo.md
 
 import { describe, expect, test, vi } from 'vitest';
 import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';

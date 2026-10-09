@@ -1,4 +1,4 @@
-// spec: docs/specs/source-tree.md
+// spec: q-docs/specs/source-tree.md
 
 import { describe, expect, test } from 'vitest';
 import { renderBody } from '../../test/helpers/render-body.ts';
@@ -19,7 +19,7 @@ describe('classifySource', () => {
       expect(classifySource(['_private.txt', 'a/_private.txt'], tpl).staticFiles).toStrictEqual([{ sourcePath: '_private.txt' }, { sourcePath: 'a/_private.txt' }]);
     });
 
-    // spec: docs/specs/source-tree.md, Underscore prefix
+    // spec: q-docs/specs/source-tree.md, Underscore prefix
     test('a file inside an underscore-prefixed directory is static whatever its extension', () => {
       expect(classifySource(['_includes/header.tpl', '_includes/header.html', 'a/_b/c.txt', 'a/_b/c.tpl'], tpl)).toStrictEqual({
         pages: [],

@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md, Data files
+// spec: q-docs/specs/templates.md, Data files
 
 import type { RegisteredHelper } from '../plugins/register-plugins.ts';
 import type { HookGlobal } from '../plugins/run-page-hooks.ts';
@@ -22,7 +22,7 @@ export const defineGlobals = (
     defined[name] = value;
   }
   // A global a hook defines has one home, as every global does.
-  // spec: docs/specs/plugins.md, Page hooks
+  // spec: q-docs/specs/plugins.md, Page hooks
   const hookDefiners = new Map<string, string>();
   for (const { name, pluginName, value } of hookGlobals) {
     if (Object.hasOwn(globals, name)) {
@@ -40,7 +40,7 @@ export const defineGlobals = (
     defined[name] = value;
   }
   // A helper is reachable under its name, so no global may carry it.
-  // spec: docs/specs/plugins.md, Template helpers
+  // spec: q-docs/specs/plugins.md, Template helpers
   for (const [name, { pluginName }] of helpers) {
     if (Object.hasOwn(globals, name)) {
       throw new Error(`Both the globals setting and the plugin ${pluginName} define ${name}.`);

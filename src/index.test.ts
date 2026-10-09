@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Programmatic use
+// spec: q-docs/specs/configuration.md, Programmatic use
 
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -19,7 +19,7 @@ describe('build', () => {
     );
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('a failing build rejects and prints nothing, leaving the report to the script', async ({ stdout, stderr }) => {
     await expect(build({ source: 'content' }, {}, defaultsFixture)).rejects.toThrow(new Error(`The source root ${join(defaultsFixture, 'content')} does not exist.`));
     expect(stdout).toStrictEqual([]);
@@ -40,7 +40,7 @@ describe('build', () => {
     ]);
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('verbose lists the units that ran', async ({ workingDirectory, stdout }) => {
     await build(defaultsConfiguration, { verbose: true });
     expect(stdout).toContain('  Handled index.html\n');

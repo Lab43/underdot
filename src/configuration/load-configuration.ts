@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md
+// spec: q-docs/specs/configuration.md
 
 import { dirname } from 'node:path';
 import { importDefault } from '../shared/import-default.ts';

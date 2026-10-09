@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md
+// spec: q-docs/specs/plugins.md
 
 import { isObject } from '../shared/is-object.ts';
 import type { RenderContext } from './bind-render-context.ts';

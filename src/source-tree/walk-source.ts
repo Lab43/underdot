@@ -1,4 +1,4 @@
-// spec: docs/specs/source-tree.md, Dotfiles
+// spec: q-docs/specs/source-tree.md, Dotfiles
 
 import { readdir, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';

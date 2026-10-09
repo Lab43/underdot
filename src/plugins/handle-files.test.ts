@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, File handlers
+// spec: q-docs/specs/plugins.md, File handlers
 
 import { hash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
@@ -76,7 +76,7 @@ describe('handleFiles', () => {
     );
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('across two calls with one table', () => {
     test.override({ fixture: 'templated' });
 
@@ -93,7 +93,7 @@ describe('handleFiles', () => {
       expect(spied[1]?.handle).toHaveBeenCalledTimes(1);
     });
 
-    // spec: docs/specs/plugins.md, Dependencies
+    // spec: q-docs/specs/plugins.md, Dependencies
     test('a handling is reused while a file its handler declared stands, reporting nothing, and reruns and warns again when it changes', async ({ directory }) => {
       const root = join(directory, 'source');
       const first = await hashSource(root);
@@ -135,7 +135,7 @@ describe('handleFiles', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('a handling reports its label', async () => {
     const reporter = makeReporter();
     await handleFiles(source, [{ sourcePath: 'notes.txt' }], [], await hashSource(), new Map(), reporter);

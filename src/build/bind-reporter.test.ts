@@ -18,14 +18,14 @@ describe('bindReporter', () => {
     expect(stdout).toStrictEqual(['Serving http://localhost:8080/\n']);
   });
 
-  // spec: docs/specs/dev-server.md, Terminal
+  // spec: q-docs/specs/dev-server.md, Terminal
   test('reloaded names the configuration file by its base name on standard output', ({ stdout, stderr }) => {
     bindReporter({ timestamps: false, verbose: false }).reloaded('/site/underdot.config.ts');
     expect(stdout).toStrictEqual(['Reloaded underdot.config.ts\n']);
     expect(stderr).toStrictEqual([]);
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test('warned writes the unit, the plugin, then the message to standard error', ({ stdout, stderr }) => {
     bindReporter({ timestamps: false, verbose: false }).warned('Handling styles/site.scss', 'sass', 'Deprecated.');
     expect(stderr).toStrictEqual(['! Handling styles/site.scss warned in sass: Deprecated.\n']);
@@ -58,7 +58,7 @@ describe('bindReporter', () => {
     expect(stdout).toStrictEqual([`✓ Built in ${duration} · 420 ran\n`]);
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('built counts the units that ran and the units reused', ({ stdout }) => {
     bindReporter({ timestamps: false, verbose: false }).built(84, { ran: 3, reused: 417 });
     expect(stdout).toStrictEqual(['✓ Built in 84 ms · 3 ran, 417 reused\n']);
@@ -73,7 +73,7 @@ describe('bindReporter', () => {
     expect(stderr).toStrictEqual([]);
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   describe('with verbose', () => {
     test('a unit that ran with no changed input prints its label', ({ stdout }) => {
       bindReporter({ timestamps: false, verbose: true }).ran('Handled styles/site.css', []);
@@ -116,7 +116,7 @@ describe('bindReporter', () => {
     });
   });
 
-  // spec: docs/specs/dev-server.md, Terminal
+  // spec: q-docs/specs/dev-server.md, Terminal
   test('with timestamps, the first line of a report starts with the local time and later lines do not', ({ stderr }) => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 8, 9, 5, 3));

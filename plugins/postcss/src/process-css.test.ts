@@ -1,4 +1,4 @@
-// spec: docs/specs/postcss.md
+// spec: q-docs/specs/postcss.md
 
 import { realpath, symlink } from 'node:fs/promises';
 import { join } from 'node:path';

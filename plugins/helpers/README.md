@@ -1,7 +1,7 @@
 # underdot-helpers
 
 Gives [Underdot](https://github.com/Lab43/underdot#readme) templates three helpers: `activeLink`, `formatDate`, and `fileExists`.
-<!-- source: docs/specs/helpers.md -->
+<!-- source: q-docs/specs/helpers.md -->
 
 ## Install
 
@@ -20,7 +20,7 @@ export default {
 ```
 
 ## activeLink
-<!-- source: docs/specs/helpers.md, activeLink -->
+<!-- source: q-docs/specs/helpers.md, activeLink -->
 
 `activeLink(href, title, attributes, wrapper)` returns a link marked when it points at the current page. `attributes` and `wrapper` are optional.
 
@@ -34,7 +34,7 @@ export default {
 ```
 
 ## formatDate
-<!-- source: docs/specs/helpers.md, formatDate -->
+<!-- source: q-docs/specs/helpers.md, formatDate -->
 
 `formatDate(date, format)` prints a date with [date-fns](https://date-fns.org/docs/format) format tokens, in UTC, so a date prints the same on every machine. The date is a `Date`, a string, or a number of milliseconds.
 
@@ -45,13 +45,13 @@ export default {
 A string date with a time and no offset reads as the machine's local time, so write a string date with its offset or as a date alone.
 
 ## fileExists
-<!-- source: docs/specs/helpers.md, fileExists -->
+<!-- source: q-docs/specs/helpers.md, fileExists -->
 
 `fileExists(reference)` is true when a static file's output is at the reference, a private one included. A relative reference resolves against the file being rendered, and one starting with a slash from the source root. It answers for the output, so a stylesheet compiled from `site.scss` is found as `site.css`.
 
 ## Options
-<!-- source: docs/specs/helpers.md, The plugin -->
+<!-- source: q-docs/specs/helpers.md, The plugin -->
 
 The plugin takes no options.
 
-[`docs/specs/helpers.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/helpers.md) holds every rule the plugin commits to, the errors each helper raises included.
+[`q-docs/specs/helpers.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/helpers.md) holds every rule the plugin commits to, the errors each helper raises included.

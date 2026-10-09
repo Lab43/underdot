@@ -1,4 +1,4 @@
-// spec: docs/specs/ejs.md
+// spec: q-docs/specs/ejs.md
 
 import type { RenderContext } from 'underdot';
 import { describe, expect, test, vi } from 'vitest';
@@ -96,7 +96,7 @@ describe('renderEjs', () => {
       expect(variables).toStrictEqual({ title: 'Home' });
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test("a variable read and a locals read reach the context's variables object, never a copy of it", () => {
       const traps = { get: vi.fn((target: Record<string, unknown>, key: PropertyKey): unknown => Reflect.get(target, key)), ownKeys: vi.fn((target: Record<string, unknown>) => Reflect.ownKeys(target)) };
       const variables = new Proxy<Record<string, unknown>>({ title: 'Home', year: 2000 }, traps);
@@ -144,7 +144,7 @@ describe('renderEjs', () => {
       expect(render("<%- include('/_includes/footer', { year: 2024 }) %>", { variables })).toBe('footer 2024 Site © 2024');
     });
 
-    // spec: docs/specs/plugins.md, Template helpers
+    // spec: q-docs/specs/plugins.md, Template helpers
     test("a partial renders as the file being rendered, entered with the include's data alone", () => {
       const context = makeContext('blog/post.ejs', { year: 2000, name: 'Site' }, (reference) => files[reference]);
       const enterFile = vi.spyOn(context, 'enterFile');

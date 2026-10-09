@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, File handlers
+// spec: q-docs/specs/plugins.md, File handlers
 
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, vi } from 'vitest';
@@ -133,14 +133,14 @@ describe('runHandlers', () => {
       });
     });
 
-    // spec: docs/specs/plugins.md, Reading and writing
+    // spec: q-docs/specs/plugins.md, Reading and writing
     test('a declared file is observed as a file input', async () => {
       const observe = vi.fn<Observe>();
       await run('styles/site.scss', file('styles/site.scss', ''), [declaring('styles/_vars.scss', '_sass/_mixins.scss')], observe);
       expect(observe.mock.calls).toStrictEqual([['file', 'styles/_vars.scss'], ['file', '_sass/_mixins.scss']]);
     });
 
-    // spec: docs/specs/plugins.md, Reading and writing
+    // spec: q-docs/specs/plugins.md, Reading and writing
     test.each(['../outside.scss', '/etc/vars.scss', 'styles//_vars.scss', 'styles/./_vars.scss', ''])(
       'declaring %j fails as the handling, naming the path, and observes nothing',
       async (declaredPath) => {
@@ -152,7 +152,7 @@ describe('runHandlers', () => {
       },
     );
 
-    // spec: docs/specs/plugins.md, Reading and writing
+    // spec: q-docs/specs/plugins.md, Reading and writing
     test('declaring a file the build does not see fails as the handling, naming the path, and observes nothing', async () => {
       const observe = vi.fn<Observe>();
       await expect(run('styles/site.scss', file('styles/site.scss', ''), [declaring('styles/_missing.scss')], observe)).rejects.toThrow(
@@ -161,7 +161,7 @@ describe('runHandlers', () => {
       expect(observe).not.toHaveBeenCalled();
     });
 
-    // spec: docs/specs/plugins.md, Errors
+    // spec: q-docs/specs/plugins.md, Errors
     test("a handler's warning names the source file's handling and the plugin", async () => {
       const warning = handler('**/*.text', (_file, { warn }) => {
         warn('Deprecated.');
@@ -173,7 +173,7 @@ describe('runHandlers', () => {
     });
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test("a handler's throw is reported as the source file's handling failing in the plugin, with the throw as cause", async () => {
     const cause = new Error('boom');
     const handling = run('notes.txt', file('notes.txt', 'x'), [handler('**/*.txt', () => { throw cause; })]);

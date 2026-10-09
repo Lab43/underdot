@@ -1,4 +1,4 @@
-// spec: docs/specs/sass.md
+// spec: q-docs/specs/sass.md
 
 import { describe, expect, test } from 'vitest';
 import { sass } from './index.ts';

@@ -1,7 +1,7 @@
 # underdot-svgo
 
 Optimizes every SVG in an [Underdot](https://github.com/Lab43/underdot#readme) site with [svgo](https://svgo.dev), and gives templates a helper that inlines an optimized SVG into a page.
-<!-- source: docs/specs/svgo.md -->
+<!-- source: q-docs/specs/svgo.md -->
 
 ## Install
 
@@ -20,12 +20,12 @@ export default {
 ```
 
 ## Optimizing
-<!-- source: docs/specs/svgo.md, The handler -->
+<!-- source: q-docs/specs/svgo.md, The handler -->
 
 Every `.svg` file under the source root, a private one included, is optimized and left at its own path, so every link to it keeps working.
 
 ## The helper
-<!-- source: docs/specs/svgo.md, The helper -->
+<!-- source: q-docs/specs/svgo.md, The helper -->
 
 `inlineSvg(reference)` returns the optimized SVG at the reference as text. A relative reference resolves against the file being rendered, and one starting with a slash from the source root. Keep inlined icons under an underscore directory, so the files themselves are never written:
 
@@ -36,7 +36,7 @@ Every `.svg` file under the source root, a private one included, is optimized an
 A reference no file is at is an error.
 
 ## Options
-<!-- source: docs/specs/svgo.md, Options -->
+<!-- source: q-docs/specs/svgo.md, Options -->
 
 - `plugins`: svgo's plugin list, which replaces the default rather than extending it. The default keeps inline `<style>` as a stylesheet and prefixes every id and class with the file's name:
 
@@ -44,4 +44,4 @@ A reference no file is at is an error.
   [{ name: 'preset-default', params: { overrides: { inlineStyles: false } } }, 'prefixIds']
   ```
 
-[`docs/specs/svgo.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/svgo.md) holds every rule the plugin commits to.
+[`q-docs/specs/svgo.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/svgo.md) holds every rule the plugin commits to.

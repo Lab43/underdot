@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import type { Versions } from './bind-build.ts';
 import type { InputKind, Version } from './reuse-unit.ts';

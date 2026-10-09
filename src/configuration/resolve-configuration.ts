@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md
+// spec: q-docs/specs/configuration.md
 
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { Plugin } from '../plugins/register-plugins.ts';
@@ -50,7 +50,7 @@ const isInside = (child: string, parent: string): boolean => {
 };
 
 // Validate the source and destination locations.
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 const checkPlacement = (projectDirectory: string, source: string, destination: string): void => {
   if (!isInside(destination, projectDirectory)) {
     throw new Error(`The destination ${destination} must be inside the project directory ${projectDirectory}.`);
@@ -101,7 +101,7 @@ const checkSettings: SettingsCheck = (configuration) => {
   }
   // A request path starts with a slash, so a glob without one matches
   // nothing and a path without one names nothing under the destination.
-  // spec: docs/specs/configuration.md, Rewrites
+  // spec: q-docs/specs/configuration.md, Rewrites
   if (configuration.rewrites !== undefined) {
     if (!isObject(configuration.rewrites)) {
       throw new Error('The rewrites setting must be an object.');

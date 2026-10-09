@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md, Serving
+// spec: q-docs/specs/dev-server.md, Serving
 
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';

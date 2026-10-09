@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Output
+// spec: q-docs/specs/build.md, Output
 
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { bindBuild } from './bind-build.ts';

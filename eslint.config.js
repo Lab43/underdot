@@ -1,4 +1,4 @@
-// exception: docs/conventions/toolchain.md, TypeScript
+// exception: q-docs/conventions/toolchain.md, TypeScript
 // ESLint loads a TypeScript config file only behind an unstable flag.
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

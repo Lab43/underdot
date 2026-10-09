@@ -1,4 +1,4 @@
-// spec: docs/specs/srcset.md
+// spec: q-docs/specs/srcset.md
 
 import { imageSize } from 'image-size';
 import sharp from 'sharp';

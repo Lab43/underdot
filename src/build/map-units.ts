@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Determinism
+// spec: q-docs/specs/build.md, Determinism
 
 import { runUnits } from './run-units.ts';
 

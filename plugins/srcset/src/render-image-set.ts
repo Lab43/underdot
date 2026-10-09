@@ -1,4 +1,4 @@
-// spec: docs/specs/srcset.md
+// spec: q-docs/specs/srcset.md
 
 import { dirname, join } from 'node:path/posix';
 import { imageSize } from 'image-size';

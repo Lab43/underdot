@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 
 import { removeExcludedFiles } from '../configuration/remove-excluded-files.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
@@ -102,7 +102,7 @@ export const bindBuild = (
       bodies: new Map(),
     };
     // Every walked file is readable, those inside private directories included.
-    // spec: docs/specs/source-tree.md, Underscore prefix
+    // spec: q-docs/specs/source-tree.md, Underscore prefix
     const makeContext = bindRenderContext(source, files, helpers, outputs, countingReporter);
     const { pages: renderedPages, emits } = await renderPages(
       resolveChains(site.pages, site.templates),

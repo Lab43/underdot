@@ -1,4 +1,4 @@
-// spec: docs/specs/markdown.md
+// spec: q-docs/specs/markdown.md
 
 import type { RenderContext } from 'underdot';
 import { parseMarkdown } from './parse-markdown.ts';

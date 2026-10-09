@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md, Serving
+// spec: q-docs/specs/dev-server.md, Serving
 
 import { readFile, stat } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -41,7 +41,7 @@ export const serveRequest = async ({ destination, rewrites }: Site, request: Inc
   // A file is read whole and typed by its extension, with the charset
   // mime-types adds to every text type. HTML is decoded as text so the
   // script can be inserted, as UTF-8 because that is what the build writes.
-  // spec: docs/specs/dev-server.md, Live reload
+  // spec: q-docs/specs/dev-server.md, Live reload
   const readAnswer = async (status: number, file: string): Promise<Answer> => {
     const type = contentType(extname(file));
     if (type !== false && type.startsWith('text/html')) {
@@ -73,7 +73,7 @@ export const serveRequest = async ({ destination, rewrites }: Site, request: Inc
       return notFound();
     }
     // The first listed glob that matches wins.
-    // spec: docs/specs/configuration.md, Rewrites
+    // spec: q-docs/specs/configuration.md, Rewrites
     const rewrite = Object.entries(rewrites).find(([glob]) => matchGlob(path, glob));
     if (rewrite !== undefined) {
       path = rewrite[1];

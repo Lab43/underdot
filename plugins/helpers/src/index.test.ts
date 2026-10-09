@@ -1,4 +1,4 @@
-// spec: docs/specs/helpers.md
+// spec: q-docs/specs/helpers.md
 
 import { describe, expect, test } from 'vitest';
 import { makeRenderContext } from '../../../test/helpers/make-render-context.ts';

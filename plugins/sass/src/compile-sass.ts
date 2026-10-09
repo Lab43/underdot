@@ -1,4 +1,4 @@
-// spec: docs/specs/sass.md
+// spec: q-docs/specs/sass.md
 
 import { join, relative, sep } from 'node:path';
 import { basename } from 'node:path/posix';

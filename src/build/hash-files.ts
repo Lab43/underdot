@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import { hash } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';

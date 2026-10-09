@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md
+// spec: q-docs/specs/plugins.md
 
 import { describe, expect, test } from 'vitest';
 import { renderBody as render } from '../../test/helpers/render-body.ts';
@@ -162,7 +162,7 @@ describe('registerPlugins', () => {
     });
   });
 
-  // spec: docs/specs/plugins.md, Page hooks
+  // spec: q-docs/specs/plugins.md, Page hooks
   describe('page hooks', () => {
     test("two plugins' hooks are listed under their names in plugin order", () => {
       const plugins: Plugin[] = [

@@ -1,7 +1,7 @@
 # underdot-postcss
 
 Runs every CSS file in an [Underdot](https://github.com/Lab43/underdot#readme) site through the [PostCSS](https://postcss.org) plugins the site lists.
-<!-- source: docs/specs/postcss.md -->
+<!-- source: q-docs/specs/postcss.md -->
 
 ## Install
 
@@ -21,9 +21,9 @@ export default {
 ```
 
 ## Processing
-<!-- source: docs/specs/postcss.md, The handler -->
-<!-- source: docs/specs/postcss.md, Dependencies -->
-<!-- source: docs/specs/postcss.md, Errors and warnings -->
+<!-- source: q-docs/specs/postcss.md, The handler -->
+<!-- source: q-docs/specs/postcss.md, Dependencies -->
+<!-- source: q-docs/specs/postcss.md, Errors and warnings -->
 
 - Every `.css` file, a private one included, is processed and left at its own path, with no source map.
 - Plugins run in the order the configuration lists them, so `sass()` listed first has its compiled CSS processed too.
@@ -35,8 +35,8 @@ export default {
 No `postcss.config.js` is read. The plugins are listed in the Underdot configuration.
 
 ## Options
-<!-- source: docs/specs/postcss.md, Options -->
+<!-- source: q-docs/specs/postcss.md, Options -->
 
 - `plugins`: the PostCSS plugins every CSS file runs through, in order. Required, with at least one plugin.
 
-[`docs/specs/postcss.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/postcss.md) holds every rule the plugin commits to.
+[`q-docs/specs/postcss.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/postcss.md) holds every rule the plugin commits to.

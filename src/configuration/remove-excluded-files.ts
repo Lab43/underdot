@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Excluded files
+// spec: q-docs/specs/configuration.md, Excluded files
 
 import { matchGlob } from '../shared/match-glob.ts';
 

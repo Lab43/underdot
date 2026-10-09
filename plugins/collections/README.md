@@ -1,7 +1,7 @@
 # underdot-collections
 
 Lists the pages below a directory as a global every [Underdot](https://github.com/Lab43/underdot#readme) template can read, and gives templates a helper that reads a page's rendered body.
-<!-- source: docs/specs/collections.md -->
+<!-- source: q-docs/specs/collections.md -->
 
 ## Install
 
@@ -20,7 +20,7 @@ export default {
 ```
 
 ## Collections
-<!-- source: docs/specs/collections.md, Collections -->
+<!-- source: q-docs/specs/collections.md, Collections -->
 
 Each collection defines a global, named by its key, listing every page below its directory at any depth. The directory's own page is left out.
 
@@ -35,7 +35,7 @@ Each collection defines a global, named by its key, listing every page below its
 ```
 
 ## pageBody
-<!-- source: docs/specs/collections.md, pageBody -->
+<!-- source: q-docs/specs/collections.md, pageBody -->
 
 `pageBody(url)` returns the rendered body of the page at the URL, before any template wrapped it. A template calls it, and a page body calling it is an error.
 
@@ -44,8 +44,8 @@ Each collection defines a global, named by its key, listing every page below its
 ```
 
 ## Options
-<!-- source: docs/specs/collections.md, Options -->
+<!-- source: q-docs/specs/collections.md, Options -->
 
 The factory takes one object. Each key is a collection's name, and each value a directory under the source root, written without a leading or trailing slash. Called with no object, it defines no collection and registers `pageBody` alone.
 
-[`docs/specs/collections.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/collections.md) holds every rule the plugin commits to.
+[`q-docs/specs/collections.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/collections.md) holds every rule the plugin commits to.

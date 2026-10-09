@@ -1,7 +1,7 @@
 # underdot-srcset
 
 Gives [Underdot](https://github.com/Lab43/underdot#readme) templates a helper that renders an image with a `srcset`, and has the build produce the resized copies it names.
-<!-- source: docs/specs/srcset.md -->
+<!-- source: q-docs/specs/srcset.md -->
 
 ## Install
 
@@ -27,8 +27,8 @@ export default {
 ```
 
 ## The helper
-<!-- source: docs/specs/srcset.md, The helper -->
-<!-- source: docs/specs/srcset.md, Derivatives -->
+<!-- source: q-docs/specs/srcset.md, The helper -->
+<!-- source: q-docs/specs/srcset.md, Derivatives -->
 
 `imageSet(reference, sizing, attributes)` returns one `<img>` carrying `src`, `srcset`, and `sizes`, then the given attributes:
 
@@ -45,11 +45,11 @@ export default {
 The image is a JPEG, PNG, WebP, GIF, or AVIF. Resized copies are made with [sharp](https://sharp.pixelplumbing.com), stripped of their metadata, and made again only when the original or the sizing changes.
 
 ## Options
-<!-- source: docs/specs/srcset.md, Options -->
+<!-- source: q-docs/specs/srcset.md, Options -->
 
 - `presets`: sizings by name. A sizing is `{ sizes, widths, webp }`:
   - `sizes`: the element's `sizes` attribute.
   - `widths`: the widths to offer, a non-empty list of positive integers.
   - `webp`: whether the resized copies are converted to WebP. Defaults to `true`. With `false`, they keep the original's format.
 
-[`docs/specs/srcset.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/srcset.md) holds every rule the plugin commits to.
+[`q-docs/specs/srcset.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/srcset.md) holds every rule the plugin commits to.

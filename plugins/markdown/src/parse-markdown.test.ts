@@ -1,4 +1,4 @@
-// spec: docs/specs/markdown.md
+// spec: q-docs/specs/markdown.md
 
 import { describe, expect, test } from 'vitest';
 import { parseMarkdown } from './parse-markdown.ts';

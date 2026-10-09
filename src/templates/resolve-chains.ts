@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md, Template resolution
+// spec: q-docs/specs/templates.md, Template resolution
 
 import { dirname, join } from 'node:path/posix';
 import type { Page, Template } from '../build/read-site.ts';

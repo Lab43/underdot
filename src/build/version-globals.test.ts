@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import { describe, expect, test } from 'vitest';
 import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';

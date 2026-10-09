@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, Errors
+// spec: q-docs/specs/plugins.md, Errors
 
 import { describe, expect, test } from 'vitest';
 import { attributePluginError } from './attribute-plugin-error.ts';

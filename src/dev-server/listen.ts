@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md, Serving
+// spec: q-docs/specs/dev-server.md, Serving
 
 import type { Server } from 'node:net';
 import { hasErrorCode } from '../shared/has-error-code.ts';

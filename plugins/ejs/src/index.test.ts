@@ -1,4 +1,4 @@
-// spec: docs/specs/ejs.md
+// spec: q-docs/specs/ejs.md
 
 import type { RenderContext } from 'underdot';
 import { describe, expect, test } from 'vitest';

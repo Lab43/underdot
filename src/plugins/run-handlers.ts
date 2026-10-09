@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, File handlers
+// spec: q-docs/specs/plugins.md, File handlers
 
 import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
@@ -63,7 +63,7 @@ export const runHandlers = async (
 ): Promise<HandledFile[]> => {
   // A declared file is versioned from the table as a read through the render
   // context is, so one outside the source or excluded cannot be tracked.
-  // spec: docs/specs/plugins.md, Reading and writing
+  // spec: q-docs/specs/plugins.md, Reading and writing
   const declareFile = (declaredPath: string): void => {
     if (!isPlainPath(declaredPath)) {
       throw new Error(`The handler declares ${JSON.stringify(declaredPath)}, which is not a plain path under the source root.`);
@@ -85,7 +85,7 @@ export const runHandlers = async (
         continue;
       }
       let outputs: HandlerOutput[];
-      // spec: docs/specs/plugins.md, Errors
+      // spec: q-docs/specs/plugins.md, Errors
       try {
         outputs = await handle(current, { sourceDirectory, declareFile, warn });
       } catch (error) {

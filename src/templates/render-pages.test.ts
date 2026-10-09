@@ -1,4 +1,4 @@
-// spec: docs/specs/templates.md
+// spec: q-docs/specs/templates.md
 
 import { hash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
@@ -186,7 +186,7 @@ describe('renderPages', () => {
     expect(calls).toStrictEqual(['a.tpl', 'b.tpl', '_.tpl', '_.tpl']);
   });
 
-  // spec: docs/specs/plugins.md, Render context
+  // spec: q-docs/specs/plugins.md, Render context
   test('every body renders with no bodies to read', async () => {
     const maker = vi.fn<MakeRenderContext>(makeContext);
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'a/index.html', url: '/a/' });
@@ -196,7 +196,7 @@ describe('renderPages', () => {
     expect(maker.mock.calls.slice(0, 2).map(([sourcePath, , bodies]) => [sourcePath, bodies])).toStrictEqual([['a.tpl', undefined], ['b.tpl', undefined]]);
   });
 
-  // spec: docs/specs/plugins.md, Render context
+  // spec: q-docs/specs/plugins.md, Render context
   test("every template renders with every page's body under its URL", async () => {
     const maker = vi.fn<MakeRenderContext>(makeContext);
     const first = makePage({ sourcePath: 'a.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() }, outputPath: 'a/index.html', url: '/a/' });
@@ -207,7 +207,7 @@ describe('renderPages', () => {
     expect(maker.mock.calls.slice(2).map(([sourcePath, , pageBodies]) => [sourcePath, pageBodies])).toStrictEqual([['_.tpl', bodies], ['_.tpl', bodies]]);
   });
 
-  // spec: docs/specs/plugins.md, Emitted files
+  // spec: q-docs/specs/plugins.md, Emitted files
   describe('emits', () => {
     const produce = (): Promise<string> => Promise.resolve('derived');
     // A renderer that emits one file named after the file rendering.
@@ -228,7 +228,7 @@ describe('renderPages', () => {
       expect(pages[0]?.emits).toStrictEqual([emitted('_.tpl')]);
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test("a reused body's and chain's emits come back on the second call without a render", async () => {
       const renderer = emitting();
       const page = makePage({ sourcePath: 'index.tpl', renderer });
@@ -242,7 +242,7 @@ describe('renderPages', () => {
       expect(emits).toStrictEqual([emitted('index.tpl'), emitted('_.tpl')]);
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test('a page left out of the second call contributes no emits, though its records stand', async () => {
       const renderer = emitting();
       const first = makePage({ sourcePath: 'a.tpl', renderer, outputPath: 'a/index.html', url: '/a/' });
@@ -256,7 +256,7 @@ describe('renderPages', () => {
     });
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   describe('a warning while rendering', () => {
     const warning = (pluginName: string): RegisteredRenderer => ({
       pluginName,
@@ -276,7 +276,7 @@ describe('renderPages', () => {
       ]);
     });
 
-    // spec: docs/specs/build.md, Incremental builds
+    // spec: q-docs/specs/build.md, Incremental builds
     test('a reused render warns nothing', async () => {
       const page = makePage({ sourcePath: 'index.tpl', renderer: warning('markdown') });
       const root = makeTemplate({ sourcePath: '_.tpl', renderer: warning('ejs') });
@@ -288,7 +288,7 @@ describe('renderPages', () => {
     });
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   describe('a throw while rendering', () => {
     const throwing = (error: unknown): RegisteredRenderer => ({ pluginName: 'fixture', render: () => { throw error; } });
 
@@ -314,7 +314,7 @@ describe('renderPages', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('across two calls with one set of records', () => {
     test('unchanged versions render nothing the second time, and the pages come back the same', async () => {
       const render = fakeRenderer();
@@ -401,7 +401,7 @@ describe('renderPages', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test("a page's body render and its chain render report their labels", async () => {
     const page = makePage({ sourcePath: 'index.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });
     const root = makeTemplate({ sourcePath: '_.tpl', renderer: { pluginName: 'fixture', render: fakeRenderer() } });

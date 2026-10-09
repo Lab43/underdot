@@ -1,4 +1,4 @@
-// spec: docs/specs/source-tree.md
+// spec: q-docs/specs/source-tree.md
 
 import { basename, dirname, extname } from 'node:path/posix';
 import type { RegisteredRenderer } from '../plugins/register-plugins.ts';

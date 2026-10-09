@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md
+// spec: q-docs/specs/build.md
 
 import { setImmediate } from 'node:timers/promises';
 import { describe, expect, test } from 'vitest';

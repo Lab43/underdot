@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Commands
+// spec: q-docs/specs/configuration.md, Commands
 
 import { bindReporter } from '../build/bind-reporter.ts';
 import type { Reporter } from '../build/bind-reporter.ts';
@@ -13,7 +13,7 @@ import type { Command } from './parse-command.ts';
 const usage = 'Usage: underdot build [--config <path>] [--verbose]\n       underdot dev [--config <path>] [--port <n>] [--https] [--verbose]';
 
 // Locate, load, build, and report a failure, which includes a configuration that fails to load.
-// spec: docs/specs/build.md, Errors
+// spec: q-docs/specs/build.md, Errors
 const runBuildCommand = async ({ configurationPath }: Command, reporter: Reporter): Promise<number> => {
   try {
     await runBuild(await loadConfiguration(await locateConfiguration(configurationPath)), reporter);
@@ -27,7 +27,7 @@ const runBuildCommand = async ({ configurationPath }: Command, reporter: Reporte
 // Locate the file once, then start a session whose loader imports the file
 // as it stands on each reload. The listening server keeps the process alive
 // after the status is returned, until the author interrupts it.
-// spec: docs/specs/dev-server.md, Session
+// spec: q-docs/specs/dev-server.md, Session
 const runDevCommand = async ({ configurationPath, port, https, verbose }: Extract<Command, { name: 'dev' }>, reporter: Reporter): Promise<number> => {
   try {
     const file = await locateConfiguration(configurationPath);

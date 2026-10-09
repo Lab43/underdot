@@ -1,4 +1,4 @@
-// spec: docs/specs/srcset.md
+// spec: q-docs/specs/srcset.md
 
 /**
  * How an image's set is offered: the `sizes` attribute, the widths to

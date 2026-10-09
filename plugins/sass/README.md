@@ -1,7 +1,7 @@
 # underdot-sass
 
 Compiles every SCSS stylesheet in an [Underdot](https://github.com/Lab43/underdot#readme) site to CSS with [Sass](https://sass-lang.com).
-<!-- source: docs/specs/sass.md -->
+<!-- source: q-docs/specs/sass.md -->
 
 ## Install
 
@@ -19,9 +19,9 @@ export default {
 ```
 
 ## Compiling
-<!-- source: docs/specs/sass.md, The handler -->
-<!-- source: docs/specs/sass.md, Imports -->
-<!-- source: docs/specs/sass.md, Errors and warnings -->
+<!-- source: q-docs/specs/sass.md, The handler -->
+<!-- source: q-docs/specs/sass.md, Imports -->
+<!-- source: q-docs/specs/sass.md, Errors and warnings -->
 
 - Every `.scss` file compiles to a `.css` file at the same path, in Sass's expanded style with no source map.
 - A file whose name starts with an underscore is a partial, and compiles to nothing.
@@ -33,8 +33,8 @@ export default {
 To minify or prefix the compiled CSS, list [`underdot-postcss`](https://github.com/Lab43/underdot/tree/main/plugins/postcss#readme) after this plugin.
 
 ## Options
-<!-- source: docs/specs/sass.md, Options -->
+<!-- source: q-docs/specs/sass.md, Options -->
 
 The plugin takes no options.
 
-[`docs/specs/sass.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/sass.md) holds every rule the plugin commits to.
+[`q-docs/specs/sass.md`](https://github.com/Lab43/underdot/blob/main/q-docs/specs/sass.md) holds every rule the plugin commits to.

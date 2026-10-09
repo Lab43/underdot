@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, Emitted files
+// spec: q-docs/specs/plugins.md, Emitted files
 
 import { hash } from 'node:crypto';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
@@ -117,7 +117,7 @@ describe('produceFiles', () => {
     await expect(produceAll(fixturePath('defaults'), emits)).rejects.toThrow(new Error(message));
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test("a producer's throw is attributed to the output and the emitting plugin, with the throw as cause", async ({ directory }) => {
     const cause = new Error('unsupported image format');
     const producing = produceAll(directory, [emit({ produce: () => Promise.reject(cause) })]);
@@ -147,7 +147,7 @@ describe('produceFiles', () => {
     },
   };
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test("a handler after the emitting plugin warns naming the output's handling and its plugin", async ({ directory }) => {
     const files: FileTable = new Map([['notes.md', makeFileEntry('notes1')]]);
     const reporter = makeReporter();
@@ -161,7 +161,7 @@ describe('produceFiles', () => {
     await expect(produceAll(directory, [emit({ produce })])).rejects.toThrow(new Error('The producer images gave for notes.derived.txt must return text or bytes.'));
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('across two calls with one set of records', () => {
     test('a unit is reused while its parameters and the output it read stand', async ({ directory }) => {
       const produce = reading('notes.text');
@@ -191,7 +191,7 @@ describe('produceFiles', () => {
       expect(produce).toHaveBeenCalledTimes(2);
     });
 
-    // spec: docs/specs/plugins.md, Dependencies
+    // spec: q-docs/specs/plugins.md, Dependencies
     test('a unit is reused while a file a handler declared stands, reporting nothing, and reruns when it changes', async ({ directory }) => {
       const produce = reading('notes.text');
       const records: UnitRecords<EmittedOutput[]> = new Map();
@@ -271,7 +271,7 @@ describe('produceFiles', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('a producer reports its label', async ({ directory }) => {
     const reporter = makeReporter();
     await produceAll(directory, [emit()], { reporter });

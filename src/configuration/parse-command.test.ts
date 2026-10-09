@@ -1,4 +1,4 @@
-// spec: docs/specs/configuration.md, Commands
+// spec: q-docs/specs/configuration.md, Commands
 
 import { describe, expect, test } from 'vitest';
 import { parseCommand } from './parse-command.ts';

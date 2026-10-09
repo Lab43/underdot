@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Determinism
+// spec: q-docs/specs/build.md, Determinism
 
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, test } from 'vitest';

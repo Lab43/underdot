@@ -1,4 +1,4 @@
-// spec: docs/specs/markdown.md
+// spec: q-docs/specs/markdown.md
 
 import type { Plugin } from 'underdot';
 import { renderMarkdownText } from './render-markdown-text.ts';

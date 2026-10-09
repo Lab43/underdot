@@ -1,4 +1,4 @@
-// spec: docs/specs/bust.md
+// spec: q-docs/specs/bust.md
 
 import type { Plugin } from 'underdot';
 import { bustReference } from './bust-reference.ts';

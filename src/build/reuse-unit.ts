@@ -1,4 +1,4 @@
-// spec: docs/specs/build.md, Incremental builds
+// spec: q-docs/specs/build.md, Incremental builds
 
 import type { Reporter } from './bind-reporter.ts';
 
@@ -81,7 +81,7 @@ export const reuseUnit = async <R>(
     changes.push({ kind, name, status });
   }
   if (record !== undefined && changes.length === 0) {
-    // spec: docs/specs/build.md, Output
+    // spec: q-docs/specs/build.md, Output
     reporter.reused(unit);
     return record.result;
   }
@@ -90,7 +90,7 @@ export const reuseUnit = async <R>(
     inputs.set(`${kind}:${name}`, { kind, name, version: lookup(kind, name) });
   });
   records.set(key, { inputs, result });
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   reporter.ran(unit, changes);
   return result;
 };

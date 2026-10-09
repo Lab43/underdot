@@ -1,4 +1,4 @@
-// spec: docs/specs/dev-server.md
+// spec: q-docs/specs/dev-server.md
 
 import { watch } from 'node:fs';
 import type { FSWatcher, WatchListener } from 'node:fs';
@@ -76,7 +76,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
 
   // The pair is read beside the configuration, so a session started with
   // --config reads the project's own.
-  // spec: docs/specs/dev-server.md, Serving
+  // spec: q-docs/specs/dev-server.md, Serving
   const readPair = async (name: string): Promise<Buffer> => {
     try {
       return await readFile(join(configuration.projectDirectory, name));
@@ -93,7 +93,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
 
   // One event to a stream: its name, one data line per line of the data,
   // and a blank line.
-  // spec: docs/specs/dev-server.md, Build status
+  // spec: q-docs/specs/dev-server.md, Build status
   const send = (stream: ServerResponse, name: string, data = ''): void => {
     const lines = data.split('\n').map((line) => `data: ${line}\n`).join('');
     stream.write(`event: ${name}\n${lines}\n`);
@@ -107,7 +107,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
 
   // The event stream is answered before anything else, so a site's catch-all
   // rewrite cannot swallow it, and a connecting client is told the status.
-  // spec: docs/specs/dev-server.md, Live reload
+  // spec: q-docs/specs/dev-server.md, Live reload
   const handle = (request: IncomingMessage, response: ServerResponse): void => {
     if (request.url !== eventsPath) {
       void serveRequest(site, request, response);
@@ -128,7 +128,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   };
 
   // A watcher's own error is printed, and the watcher keeps watching.
-  // spec: docs/specs/dev-server.md, Watching
+  // spec: q-docs/specs/dev-server.md, Watching
   const startWatcher = (path: string, options: { recursive?: boolean }, listener: WatchListener<string>): FSWatcher => {
     const watcher = watch(path, options, listener);
     watcher.on('error', (error) => {
@@ -151,7 +151,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   // Replace the site, the build, and the source watcher from a fresh load,
   // or keep the previous ones and report the failure, which stands until a
   // reload succeeds.
-  // spec: docs/specs/dev-server.md, Session
+  // spec: q-docs/specs/dev-server.md, Session
   const reload = async (): Promise<boolean> => {
     let next: ResolvedConfiguration;
     let watcher: FSWatcher;
@@ -188,7 +188,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   // One build at a time, and one more after it when a change arrived while
   // it ran, however many arrived. A build that settles after the session
   // closed sets, prints, and broadcasts nothing.
-  // spec: docs/specs/dev-server.md, Watching
+  // spec: q-docs/specs/dev-server.md, Watching
   const runBuilds = async (): Promise<void> => {
     while (pending && !isClosed()) {
       pending = false;
@@ -254,7 +254,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   // inode a watch on the file would hold. The destination's writes arrive on
   // the same watcher, so only an event naming the file reloads. A failure
   // here leaves nothing open.
-  // spec: docs/specs/dev-server.md, Watching
+  // spec: q-docs/specs/dev-server.md, Watching
   try {
     if (configurationFile !== undefined) {
       configurationWatcher = startWatcher(dirname(configurationFile), {}, (_event, filename) => {

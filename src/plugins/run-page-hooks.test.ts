@@ -1,4 +1,4 @@
-// spec: docs/specs/plugins.md, Page hooks
+// spec: q-docs/specs/plugins.md, Page hooks
 
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, vi } from 'vitest';
@@ -86,7 +86,7 @@ describe('runPageHooks', () => {
     );
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test("a hook's throw is reported as the page hook failing in the plugin, with the throw as cause", async () => {
     const cause = new Error('boom');
     const running = runPageHooks(pages, [hook('listing', () => { throw cause; })], fresh(), makeReporter());
@@ -94,7 +94,7 @@ describe('runPageHooks', () => {
     await expect(running).rejects.toHaveProperty('cause', cause);
   });
 
-  // spec: docs/specs/plugins.md, Errors
+  // spec: q-docs/specs/plugins.md, Errors
   test("a hook's warning names the page hook and the plugin", async () => {
     const listing: PageHook = (_pages, { warn }) => {
       warn('Deprecated.');
@@ -105,7 +105,7 @@ describe('runPageHooks', () => {
     expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Running the page hook', 'listing', 'Deprecated.');
   });
 
-  // spec: docs/specs/build.md, Incremental builds
+  // spec: q-docs/specs/build.md, Incremental builds
   describe('across two calls with one set of records', () => {
     test('a reused hook warns nothing', async () => {
       const listing: PageHook = (_pages, { warn }) => {
@@ -149,7 +149,7 @@ describe('runPageHooks', () => {
     });
   });
 
-  // spec: docs/specs/build.md, Output
+  // spec: q-docs/specs/build.md, Output
   test('a hook reports its label', async () => {
     const reporter = makeReporter();
     await runPageHooks(pages, [hook('listing', () => ({}))], fresh(), reporter);

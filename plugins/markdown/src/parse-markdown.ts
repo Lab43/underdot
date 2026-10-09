@@ -1,4 +1,4 @@
-// spec: docs/specs/markdown.md
+// spec: q-docs/specs/markdown.md
 
 import { Marked } from 'marked';
 

@@ -2,16 +2,16 @@
 
 import { hash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
-import { describe, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, vi } from 'vitest';
 import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
 import { makePage } from '../../test/helpers/make-page.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { makeTemplate } from '../../test/helpers/make-template.ts';
 import { test } from '../../test/helpers/test.ts';
 import type { Versions } from '../build/bind-build.ts';
 import type { UnitRecords } from '../build/reuse-unit.ts';
 import { PluginError } from '../plugins/bind-render-context.ts';
 import type { MakeRenderContext } from '../plugins/bind-render-context.ts';
-import { printWarning } from '../plugins/print-warning.ts';
 import type { RegisteredRenderer, Renderer } from '../plugins/register-plugins.ts';
 import { renderPages } from './render-pages.ts';
 import type { RenderedBody, RenderedPage, RenderedPages } from './render-pages.ts';
@@ -22,8 +22,15 @@ const rendered = (sourcePath: string, outputPath: string, contents: string) => (
 
 const fakeRenderer = (): ReturnType<typeof vi.fn<Renderer>> => vi.fn<Renderer>((_body, { sourcePath }) => `rendered ${sourcePath}`);
 
+// Where the stub context reports its warnings, cleared before each test.
+const reporter = makeReporter();
+
+beforeEach(() => {
+  vi.mocked(reporter.warned).mockClear();
+});
+
 // A context of the file's fields alone, observing a variable read and a body
-// read, pushing an emit as the file's own, and printing a warning under its
+// read, pushing an emit as the file's own, and reporting a warning under its
 // attribution, with the other operations doing nothing.
 const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, emits, attribution) => ({
   sourcePath,
@@ -46,7 +53,7 @@ const makeContext: MakeRenderContext = (sourcePath, variables, bodies, observe, 
     emits.push({ pluginName: 'fixture', sourcePath, outputPath, parametersHash: '', produce });
   },
   warn: (message) => {
-    printWarning(attribution.unit, attribution.pluginName, message);
+    reporter.warned(attribution.unit, attribution.pluginName, message);
   },
 });
 
@@ -257,22 +264,25 @@ describe('renderPages', () => {
       },
     });
 
-    test("a warning names the file rendering and its renderer's plugin, in the page and in its template", async ({ stderr }) => {
+    test("a warning names the file rendering and its renderer's plugin, in the page and in its template", async () => {
       const page = makePage({ sourcePath: 'index.tpl', renderer: warning('markdown') });
       const root = makeTemplate({ sourcePath: '_.tpl', renderer: warning('ejs') });
       await renderAll([{ page, chain: [root] }], {});
-      expect(stderr).toStrictEqual(['Rendering index.tpl warned in markdown: Deprecated.\n', 'Rendering _.tpl warned in ejs: Deprecated.\n']);
+      expect(vi.mocked(reporter.warned).mock.calls).toStrictEqual([
+        ['Rendering index.tpl', 'markdown', 'Deprecated.'],
+        ['Rendering _.tpl', 'ejs', 'Deprecated.'],
+      ]);
     });
 
     // spec: docs/specs/build.md, Incremental builds
-    test('a reused render prints nothing', async ({ stderr }) => {
+    test('a reused render warns nothing', async () => {
       const page = makePage({ sourcePath: 'index.tpl', renderer: warning('markdown') });
       const root = makeTemplate({ sourcePath: '_.tpl', renderer: warning('ejs') });
       const versions = freshVersions({ files: hashed('index.tpl', '_.tpl') });
       const records = freshRecords();
       await renderAll([{ page, chain: [root] }], {}, versions, records);
       await renderAll([{ page, chain: [root] }], {}, versions, records);
-      expect(stderr).toHaveLength(2);
+      expect(reporter.warned).toHaveBeenCalledTimes(2);
     });
   });
 

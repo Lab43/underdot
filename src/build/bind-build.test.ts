@@ -19,6 +19,7 @@ import templatedConfiguration from '../../test/fixtures/templated/underdot.confi
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { listWriteTargets } from '../../test/helpers/list-write-targets.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { renderBody } from '../../test/helpers/render-body.ts';
 import { test } from '../../test/helpers/test.ts';
 import { resolveConfiguration } from '../configuration/resolve-configuration.ts';
@@ -130,7 +131,7 @@ const unique = (items: string[]): string[] => [...new Set(items)].sort();
 // plugins into `fresh`, the full build each rebuild is held to.
 const bindCatalogue = (configuration: Configuration, directory: string) => {
   const wrapped = wrapPlugins(configuration.plugins ?? []);
-  const build = bindBuild(resolveConfiguration({ ...configuration, plugins: wrapped.plugins }, directory));
+  const build = bindBuild(resolveConfiguration({ ...configuration, plugins: wrapped.plugins }, directory), makeReporter());
   const source = join(directory, 'source');
   const destination = join(directory, 'build');
   const fresh = join(directory, 'fresh');
@@ -152,7 +153,7 @@ const bindCatalogue = (configuration: Configuration, directory: string) => {
       produced: wrapped.produced.toSorted(),
       written: listWriteTargets().filter((target) => target.startsWith(`${destination}/`)).map((target) => target.slice(destination.length + 1)).sort(),
     };
-    await bindBuild(resolveConfiguration({ ...configuration, destination: 'fresh' }, directory))();
+    await bindBuild(resolveConfiguration({ ...configuration, destination: 'fresh' }, directory), makeReporter())();
     const paths = await list(destination);
     expect(paths).toStrictEqual(await list(fresh));
     for (const path of paths) {
@@ -179,7 +180,7 @@ const ran = (fields: Partial<Ran> = {}): Ran => ({ handled: [], hooks: 0, bodies
 describe('bindBuild', () => {
   test('the defaults fixture builds its static files, each byte-equal to its source', async ({ directory }) => {
     const destination = join(directory, 'build');
-    await bindBuild(resolveConfiguration(defaultsConfiguration, directory))();
+    await bindBuild(resolveConfiguration(defaultsConfiguration, directory), makeReporter())();
     expect(await list(destination)).toStrictEqual(defaultsFiles);
     expect(await contents(destination, defaultsFiles)).toStrictEqual(await contents(join(directory, 'source'), defaultsFiles));
     await assertAbsent(join(destination, 'litter'));
@@ -188,9 +189,9 @@ describe('bindBuild', () => {
   test('building twice produces the same destination', async ({ directory }) => {
     const destination = join(directory, 'build');
     const configuration = resolveConfiguration(defaultsConfiguration, directory);
-    await bindBuild(configuration)();
+    await bindBuild(configuration, makeReporter())();
     const first = await contents(destination, defaultsFiles);
-    await bindBuild(configuration)();
+    await bindBuild(configuration, makeReporter())();
     expect(await list(destination)).toStrictEqual(defaultsFiles);
     expect(await contents(destination, defaultsFiles)).toStrictEqual(first);
   });
@@ -199,7 +200,7 @@ describe('bindBuild', () => {
     test.override({ fixture: 'excluding' });
 
     test('builds only what its patterns keep', async ({ directory }) => {
-      await bindBuild(resolveConfiguration(excludingConfiguration, directory))();
+      await bindBuild(resolveConfiguration(excludingConfiguration, directory), makeReporter())();
       expect(await list(join(directory, 'build'))).toStrictEqual(['.DS_Store', 'index.html']);
     });
   });
@@ -211,7 +212,7 @@ describe('bindBuild', () => {
     test('builds every page through its chain beside its static files, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('templated', 'expected');
-      await bindBuild(resolveConfiguration(templatedConfiguration, directory))();
+      await bindBuild(resolveConfiguration(templatedConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
 
@@ -317,7 +318,7 @@ describe('bindBuild', () => {
     test('builds every page through EJS, its includes and data among them, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('ejs', 'expected');
-      await bindBuild(resolveConfiguration(ejsConfiguration, directory))();
+      await bindBuild(resolveConfiguration(ejsConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
 
@@ -343,7 +344,7 @@ describe('bindBuild', () => {
     test('busts each link with the hash of the handled output, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('bust', 'expected');
-      await bindBuild(resolveConfiguration(bustConfiguration, directory))();
+      await bindBuild(resolveConfiguration(bustConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
   });
@@ -355,7 +356,7 @@ describe('bindBuild', () => {
     test('marks each link, formats the date, and guards each include on the served output, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('helpers', 'expected');
-      await bindBuild(resolveConfiguration(helpersConfiguration, directory))();
+      await bindBuild(resolveConfiguration(helpersConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
   });
@@ -367,7 +368,7 @@ describe('bindBuild', () => {
     test('optimizes every SVG and inlines a private one, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('svgo', 'expected');
-      await bindBuild(resolveConfiguration(svgoConfiguration, directory))();
+      await bindBuild(resolveConfiguration(svgoConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
   });
@@ -379,14 +380,14 @@ describe('bindBuild', () => {
     test('compiles each stylesheet through its imports and writes no partial, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('sass', 'expected');
-      await bindBuild(resolveConfiguration(sassConfiguration, directory))();
+      await bindBuild(resolveConfiguration(sassConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
 
     // spec: docs/specs/sass.md, Imports
     test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
       await writeFile(join(directory, 'source/styles/site.scss'), "@use '../../outside';\n");
-      await expect(bindBuild(resolveConfiguration(sassConfiguration, directory))()).rejects.toThrow(
+      await expect(bindBuild(resolveConfiguration(sassConfiguration, directory), makeReporter())()).rejects.toThrow(
         new Error('Handling styles/site.scss failed in sass: The handler declares "../outside.scss", which is not a plain path under the source root.'),
       );
     });
@@ -399,14 +400,14 @@ describe('bindBuild', () => {
     test('runs every CSS file through its plugins after Sass, inlining each import, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('postcss', 'expected');
-      await bindBuild(resolveConfiguration(postcssConfiguration, directory))();
+      await bindBuild(resolveConfiguration(postcssConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
 
     // spec: docs/specs/postcss.md, Dependencies
     test('an import from outside the source root fails the build naming the stylesheet and the path', async ({ directory }) => {
       await writeFile(join(directory, 'source/styles/print.css'), '@import "../../outside.css";\n');
-      await expect(bindBuild(resolveConfiguration(postcssConfiguration, directory))()).rejects.toThrow(
+      await expect(bindBuild(resolveConfiguration(postcssConfiguration, directory), makeReporter())()).rejects.toThrow(
         new Error('Handling styles/print.css failed in postcss: The handler declares "../outside.css", which is not a plain path under the source root.'),
       );
     });
@@ -419,7 +420,7 @@ describe('bindBuild', () => {
     test('offers each image at the widths it can fill and writes derivatives beside the originals, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('srcset', 'expected');
-      await bindBuild(resolveConfiguration(srcsetConfiguration, directory))();
+      await bindBuild(resolveConfiguration(srcsetConfiguration, directory), makeReporter())();
       // The matcher reads text, so an image is held to its expected bytes.
       await expectDestination(destination, expected, (path) => path.endsWith('.html'));
     });
@@ -446,7 +447,7 @@ describe('bindBuild', () => {
     test('renders a Markdown page inside an EJS template and a frontmatter value through the helper, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('markdown', 'expected');
-      await bindBuild(resolveConfiguration(markdownConfiguration, directory))();
+      await bindBuild(resolveConfiguration(markdownConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
   });
@@ -458,7 +459,7 @@ describe('bindBuild', () => {
     test('lists the posts in source-path order and embeds each body sorted by date, file for file as expected', async ({ directory }) => {
       const destination = join(directory, 'build');
       const expected = fixturePath('collections', 'expected');
-      await bindBuild(resolveConfiguration(collectionsConfiguration, directory))();
+      await bindBuild(resolveConfiguration(collectionsConfiguration, directory), makeReporter())();
       await expectDestination(destination, expected);
     });
 
@@ -474,7 +475,7 @@ describe('bindBuild', () => {
   test('a frontmatter error names the page and fails before any write', async () => {
     const directory = fixturePath('bad-frontmatter');
     const plugins = [{ name: 'fixture', renderers: { tpl: renderBody } }];
-    await expect(bindBuild(resolveConfiguration({ plugins }, directory))()).rejects.toThrow(
+    await expect(bindBuild(resolveConfiguration({ plugins }, directory), makeReporter())()).rejects.toThrow(
       new Error('index.tpl: The frontmatter key _title starts with an underscore, which is reserved.'),
     );
     await assertAbsent(join(directory, 'build'));
@@ -500,7 +501,7 @@ describe('bindBuild', () => {
       },
       { name: 'tools', helpers: { boom: () => { throw new Error('boom'); } } },
     ];
-    await expect(bindBuild(resolveConfiguration({ plugins }, directory))()).rejects.toThrow(new Error('Rendering _.tpl failed in tools: boom'));
+    await expect(bindBuild(resolveConfiguration({ plugins }, directory), makeReporter())()).rejects.toThrow(new Error('Rendering _.tpl failed in tools: boom'));
     await assertAbsent(join(directory, 'build'));
   });
 
@@ -511,29 +512,30 @@ describe('bindBuild', () => {
       { name: 'fixture', renderers: { tpl: renderBody } },
       { name: 'listing', pageHook: () => { throw new Error('boom'); } },
     ];
-    await expect(bindBuild(resolveConfiguration({ plugins }, directory))()).rejects.toThrow(new Error('Running the page hook failed in listing: boom'));
+    await expect(bindBuild(resolveConfiguration({ plugins }, directory), makeReporter())()).rejects.toThrow(new Error('Running the page hook failed in listing: boom'));
     await assertAbsent(join(directory, 'build'));
   });
 
   // spec: docs/specs/build.md, Errors
-  test('a warning prints and the build completes', async ({ directory, stderr }) => {
+  test('a warning is reported and the build completes', async ({ directory }) => {
     const plugins: Plugin[] = [{ name: 'listing', pageHook: (_pages, { warn }) => {
       warn('Deprecated.');
       return {};
     } }];
-    await bindBuild(resolveConfiguration({ plugins }, directory))();
-    expect(stderr).toStrictEqual(['Running the page hook warned in listing: Deprecated.\n']);
+    const reporter = makeReporter();
+    await bindBuild(resolveConfiguration({ plugins }, directory), reporter)();
+    expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Running the page hook', 'listing', 'Deprecated.');
     expect(await list(join(directory, 'build'))).toStrictEqual(defaultsFiles);
   });
 
   test('two plugins with one name fail before any write', async () => {
     const configuration = resolveConfiguration({ plugins: [{ name: 'dup' }, { name: 'dup' }] }, defaultsFixture);
-    await expect(bindBuild(configuration)()).rejects.toThrow(new Error('Two plugins are named dup.'));
+    await expect(bindBuild(configuration, makeReporter())()).rejects.toThrow(new Error('Two plugins are named dup.'));
     await assertAbsent(join(defaultsFixture, 'build'));
   });
 
   test("the walk's error reaches the caller", async () => {
-    await expect(bindBuild(resolveConfiguration({ source: 'content' }, defaultsFixture))()).rejects.toThrow(
+    await expect(bindBuild(resolveConfiguration({ source: 'content' }, defaultsFixture), makeReporter())()).rejects.toThrow(
       new Error(`The source root ${join(defaultsFixture, 'content')} does not exist.`),
     );
   });

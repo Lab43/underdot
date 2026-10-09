@@ -6,7 +6,9 @@ import { serialize } from 'node:v8';
 import { describe, expect, vi } from 'vitest';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { test } from '../../test/helpers/test.ts';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import type { Observe } from '../build/reuse-unit.ts';
 import { bindRenderContext, PluginError } from './bind-render-context.ts';
@@ -45,8 +47,8 @@ const call = (variables: Record<string, unknown>, name: string, ...args: unknown
 };
 
 // The context of a template, which may read bodies, and of a page, which may not.
-const makeContext = (sourcePath: string) => bindRenderContext(source, files, helpers, outputs)(sourcePath, variables, bodies, vi.fn(), [], attribution);
-const makePageContext = (sourcePath: string) => bindRenderContext(source, files, helpers, outputs)(sourcePath, variables, undefined, vi.fn(), [], attribution);
+const makeContext = (sourcePath: string) => bindRenderContext(source, files, helpers, outputs, makeReporter())(sourcePath, variables, bodies, vi.fn(), [], attribution);
+const makePageContext = (sourcePath: string) => bindRenderContext(source, files, helpers, outputs, makeReporter())(sourcePath, variables, undefined, vi.fn(), [], attribution);
 
 describe('bindRenderContext', () => {
   test('the context carries the file and its variables', () => {
@@ -57,7 +59,7 @@ describe('bindRenderContext', () => {
   describe('helpers', () => {
     test('a helper sits among the variables under its name and receives the context ahead of the arguments', () => {
       const helper = vi.fn<Helper>(() => 'shouted');
-      const context = bindRenderContext(source, files, new Map([['shout', { pluginName: 'tools', helper }]]), outputs)('index.tpl', variables, bodies, vi.fn(), [], attribution);
+      const context = bindRenderContext(source, files, new Map([['shout', { pluginName: 'tools', helper }]]), outputs, makeReporter())('index.tpl', variables, bodies, vi.fn(), [], attribution);
       expect(context.variables).toStrictEqual({ title: 'Home', shout: expect.any(Function) });
       expect(call(context.variables, 'shout', 'hi', 2)).toBe('shouted');
       expect(helper).toHaveBeenCalledExactlyOnceWith({ ...context, emit: expect.any(Function), warn: expect.any(Function) }, 'hi', 2);
@@ -69,7 +71,7 @@ describe('bindRenderContext', () => {
     });
 
     test("a helper's name wins over a variable handed in under it", () => {
-      const context = bindRenderContext(source, files, helpers, outputs)('index.tpl', { here: 'shadow' }, bodies, vi.fn(), [], attribution);
+      const context = bindRenderContext(source, files, helpers, outputs, makeReporter())('index.tpl', { here: 'shadow' }, bodies, vi.fn(), [], attribution);
       expect(call(context.variables, 'here')).toBe('index.tpl');
     });
   });
@@ -84,7 +86,7 @@ describe('bindRenderContext', () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- what a template passes, unchecked
         context.emit(outputPath as string, parameters, producer as Producer);
       };
-      return bindRenderContext(source, files, new Map([['derive', { pluginName: 'images', helper: derive }]]), outputs)(sourcePath, variables, bodies, vi.fn(), emits, attribution);
+      return bindRenderContext(source, files, new Map([['derive', { pluginName: 'images', helper: derive }]]), outputs, makeReporter())(sourcePath, variables, bodies, vi.fn(), emits, attribution);
     };
 
     test("a helper's emit pushes the file with the helper's plugin, the file rendering, the path, the parameters' hash, and the producer", () => {
@@ -155,7 +157,7 @@ describe('bindRenderContext', () => {
   // spec: docs/specs/plugins.md, Errors
   describe("a helper's throw", () => {
     const bind = (helper: Helper, pluginName = 'tools') =>
-      bindRenderContext(source, files, new Map([['fail', { pluginName, helper }]]), outputs)('index.tpl', variables, bodies, vi.fn(), [], attribution);
+      bindRenderContext(source, files, new Map([['fail', { pluginName, helper }]]), outputs, makeReporter())('index.tpl', variables, bodies, vi.fn(), [], attribution);
 
     test("an Error comes out as a PluginError carrying the helper's plugin, the message, and the Error as cause", () => {
       const cause = new Error('boom');
@@ -181,28 +183,34 @@ describe('bindRenderContext', () => {
   // spec: docs/specs/plugins.md, Errors
   describe('warn', () => {
     // A context whose `caution` helper, of the plugin `tools`, warns what it is called with.
-    const bind = () => {
+    const bind = (reporter: Reporter) => {
       const caution: Helper = (context, message) => {
         context.warn(String(message));
       };
-      return bindRenderContext(source, files, new Map([['caution', { pluginName: 'tools', helper: caution }]]), outputs)('index.tpl', variables, bodies, vi.fn(), [], attribution);
+      return bindRenderContext(source, files, new Map([['caution', { pluginName: 'tools', helper: caution }]]), outputs, reporter)('index.tpl', variables, bodies, vi.fn(), [], attribution);
     };
 
-    test("the context's warning names the attribution's unit and plugin", ({ stderr }) => {
-      bind().warn('Deprecated.');
-      expect(stderr).toStrictEqual(['Rendering index.tpl warned in ejs: Deprecated.\n']);
+    test("the context's warning names the attribution's unit and plugin", () => {
+      const reporter = makeReporter();
+      bind(reporter).warn('Deprecated.');
+      expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Rendering index.tpl', 'ejs', 'Deprecated.');
     });
 
-    test("a helper's warning names the attribution's unit and the helper's plugin", ({ stderr }) => {
-      call(bind().variables, 'caution', 'Deprecated.');
-      expect(stderr).toStrictEqual(['Rendering index.tpl warned in tools: Deprecated.\n']);
+    test("a helper's warning names the attribution's unit and the helper's plugin", () => {
+      const reporter = makeReporter();
+      call(bind(reporter).variables, 'caution', 'Deprecated.');
+      expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Rendering index.tpl', 'tools', 'Deprecated.');
     });
 
-    test("a partial's context warns under the attribution of the file that entered it", ({ stderr }) => {
-      const entered = bind().enterFile('_partial.txt', {});
+    test("a partial's context warns under the attribution of the file that entered it", () => {
+      const reporter = makeReporter();
+      const entered = bind(reporter).enterFile('_partial.txt', {});
       entered.warn('From the renderer.');
       call(entered.variables, 'caution', 'From the helper.');
-      expect(stderr).toStrictEqual(['Rendering index.tpl warned in ejs: From the renderer.\n', 'Rendering index.tpl warned in tools: From the helper.\n']);
+      expect(vi.mocked(reporter.warned).mock.calls).toStrictEqual([
+        ['Rendering index.tpl', 'ejs', 'From the renderer.'],
+        ['Rendering index.tpl', 'tools', 'From the helper.'],
+      ]);
     });
   });
 
@@ -248,7 +256,7 @@ describe('bindRenderContext', () => {
     });
 
     test("data wins over the file's variable of the same name, and the rest read through", () => {
-      const entered = bindRenderContext(source, files, helpers, outputs)('_.tpl', { title: 'Home', year: 2000 }, bodies, vi.fn(), [], attribution).enterFile('_partial.txt', { year: 2024 });
+      const entered = bindRenderContext(source, files, helpers, outputs, makeReporter())('_.tpl', { title: 'Home', year: 2000 }, bodies, vi.fn(), [], attribution).enterFile('_partial.txt', { year: 2024 });
       expect(entered.variables.year).toBe(2024);
       expect(entered.variables.title).toBe('Home');
       expect('title' in entered.variables).toBe(true);
@@ -258,7 +266,7 @@ describe('bindRenderContext', () => {
 
     test("an assignment on the entered variables lands on the data, never on the file's variables", () => {
       const handed: Record<string, unknown> = { title: 'Home', name: 'Site' };
-      const entered = bindRenderContext(source, files, helpers, outputs)('_.tpl', handed, bodies, vi.fn(), [], attribution).enterFile('_partial.txt', { year: 2024 });
+      const entered = bindRenderContext(source, files, helpers, outputs, makeReporter())('_.tpl', handed, bodies, vi.fn(), [], attribution).enterFile('_partial.txt', { year: 2024 });
       entered.variables.added = 1;
       entered.variables.name = 'Other';
       expect({ ...entered.variables }).toStrictEqual({ year: 2024, added: 1, name: 'Other', title: 'Home', here: expect.any(Function) });
@@ -267,7 +275,7 @@ describe('bindRenderContext', () => {
 
     test("entering a partial enumerates nothing of the file's variables", () => {
       const observe = vi.fn<Observe>();
-      bindRenderContext(source, files, helpers, outputs)('_.tpl', variables, bodies, observe, [], attribution).enterFile('_partial.txt', { year: 2024 });
+      bindRenderContext(source, files, helpers, outputs, makeReporter())('_.tpl', variables, bodies, observe, [], attribution).enterFile('_partial.txt', { year: 2024 });
       expect(observe.mock.calls.map(([kind]) => kind)).not.toContain('globals');
     });
 
@@ -332,7 +340,7 @@ describe('bindRenderContext', () => {
   // spec: docs/specs/build.md, Incremental builds
   describe('observing', () => {
     const bind = (sourcePath: string, observe: Observe, handed: Record<string, unknown> = { title: 'Home' }) =>
-      bindRenderContext(source, files, helpers, outputs)(sourcePath, handed, bodies, observe, [], attribution);
+      bindRenderContext(source, files, helpers, outputs, makeReporter())(sourcePath, handed, bodies, observe, [], attribution);
 
     test('each read operation observes its input, an absent file and an absent output included', () => {
       const observe = vi.fn<Observe>();
@@ -347,7 +355,7 @@ describe('bindRenderContext', () => {
 
     test('a body read a page may not make observes nothing', () => {
       const observe = vi.fn<Observe>();
-      const context = bindRenderContext(source, files, helpers, outputs)('index.tpl', variables, undefined, observe, [], attribution);
+      const context = bindRenderContext(source, files, helpers, outputs, makeReporter())('index.tpl', variables, undefined, observe, [], attribution);
       expect(() => context.readBody('/')).toThrow(/while its own body renders/);
       expect(observe).not.toHaveBeenCalled();
     });

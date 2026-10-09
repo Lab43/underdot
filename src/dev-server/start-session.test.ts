@@ -40,6 +40,9 @@ interface Event {
 // a busy CI runner, and shorter than the test's own five-second timeout.
 const waitFor = <T>(callback: () => T | Promise<T>): Promise<T> => vi.waitFor(callback, { timeout: 3_000 });
 
+// The captured writes without the time each report starts with.
+const untimed = (writes: string[]): string[] => writes.map((write) => write.replace(/^\d\d:\d\d:\d\d /, ''));
+
 // Replace the configuration in one step, as an editor's save does, so the
 // watcher never loads it half written.
 const replaceConfiguration = async (file: string, text: string): Promise<void> => {
@@ -171,7 +174,7 @@ describe('startSession', () => {
     expect(url).toMatch(/^http:\/\/localhost:\d+\/$/);
     expect(await whenServed(url)).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
     await waitFor(() => {
-      expect(stdout.at(-1)).toMatch(/^Built in \d+ ms\n$/);
+      expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in \d+(?: ms|\.\d s)\n$/);
     });
     const { port } = new URL(url);
     const address = Object.values(networkInterfaces())
@@ -179,14 +182,21 @@ describe('startSession', () => {
       .find((each) => each.family === 'IPv4' && !each.internal);
     const network = address === undefined ? [] : [`Network http://${address.address}:${port}/\n`];
     // A late watcher event can start a second build, which prints a second line.
-    expect(stdout.filter((line) => !line.startsWith('Built'))).toStrictEqual([`Serving ${url}\n`, ...network]);
+    expect(untimed(stdout).filter((line) => !line.startsWith('✓ Built'))).toStrictEqual([`Serving ${url}\n`, ...network]);
+  });
+
+  // spec: docs/specs/dev-server.md, Terminal
+  test('starts each report with the local time', async ({ start, stdout }) => {
+    const { url } = await start();
+    await whenServed(url);
+    expect(stdout[0]).toMatch(/^\d\d:\d\d:\d\d Serving /);
   });
 
   test('prints no network line when no interface is reachable', async ({ start, stdout }) => {
     vi.mocked(networkInterfaces).mockReturnValue({ none: undefined });
     const { url } = await start();
     await whenServed(url);
-    expect(stdout.filter((line) => line.startsWith('Network'))).toStrictEqual([]);
+    expect(untimed(stdout).filter((line) => line.startsWith('Network'))).toStrictEqual([]);
   });
 
   // spec: docs/specs/dev-server.md, Session
@@ -195,10 +205,10 @@ describe('startSession', () => {
     await writeFile(join(directory, 'source/_data/bad.txt'), 'bad');
     const { url } = await start();
     await waitFor(() => {
-      expect(stderr).toContain(`${badDataReport}\n`);
+      expect(untimed(stderr)).toContain(`✗ ${badDataReport}\n`);
     });
     // One write can start more than one build, and each prints the report.
-    expect(new Set(stderr)).toStrictEqual(new Set([`${badDataReport}\n`]));
+    expect(new Set(untimed(stderr))).toStrictEqual(new Set([`✗ ${badDataReport}\n`]));
     expect((await fetch(url)).status).toBe(404);
     const events = await subscribe(url);
     await whenLast(events, 'failed');
@@ -216,13 +226,13 @@ describe('startSession', () => {
   test('a busy explicit port fails the start', async ({ directory, start, stdout }) => {
     const { url } = await start();
     await expect(startSession({ load: loader(directory), port: Number(new URL(url).port) })).rejects.toMatchObject({ code: 'EADDRINUSE' });
-    expect(stdout.filter((line) => line.startsWith('Serving'))).toHaveLength(1);
+    expect(untimed(stdout).filter((line) => line.startsWith('Serving'))).toHaveLength(1);
   });
 
   test('close without a build in flight returns', async ({ directory, stdout }) => {
     const session = await startSession({ load: loader(directory), port: 0 });
     await waitFor(() => {
-      expect(stdout.at(-1)).toMatch(/^Built in/);
+      expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in/);
     });
     await expect(session.close()).resolves.toBeUndefined();
   });
@@ -279,7 +289,7 @@ describe('startSession', () => {
       await mkdir(join(directory, 'source/_data'));
       await writeFile(join(directory, 'source/_data/bad.txt'), 'bad');
       expect(await whenLast(events, 'failed')).toStrictEqual({ name: 'failed', data: badDataReport });
-      expect(stderr).toContain(`${badDataReport}\n`);
+      expect(untimed(stderr)).toContain(`✗ ${badDataReport}\n`);
       expect((await fetch(url)).status).toBe(200);
       // A second event from the same save may have a build running on
       // connect, which sends building first.
@@ -309,6 +319,21 @@ describe('startSession', () => {
       expect(vi.mocked(bindBuild).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
 
+    // spec: docs/specs/dev-server.md, Terminal
+    test('a reload prints the configuration file before the build it starts', async ({ directory, start, stdout }) => {
+      const file = join(directory, 'underdot.config.ts');
+      const { url } = await start({ load: reloader(directory), configurationFile: file });
+      await whenServed(url);
+      await waitFor(() => {
+        expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in/);
+      });
+      const before = stdout.length;
+      await replaceConfiguration(file, "export default { rewrites: { '/cart': '/about/' } };\n");
+      await waitFor(() => {
+        expect(untimed(stdout.slice(before)).slice(0, 2)).toStrictEqual(['Reloaded underdot.config.ts\n', expect.stringMatching(/^✓ Built in/)]);
+      });
+    });
+
     test('a configuration that fails to load is reported, stands through source builds, and clears when it loads', async ({ directory, start, stderr }) => {
       const file = join(directory, 'underdot.config.ts');
       const { url } = await start({ load: reloader(directory), configurationFile: file });
@@ -317,7 +342,7 @@ describe('startSession', () => {
       await replaceConfiguration(file, 'export default {\n');
       const failure = await whenLast(events, 'failed');
       expect(failure.data).not.toBe('');
-      expect(stderr).toContain(`${failure.data}\n`);
+      expect(untimed(stderr)).toContain(`✗ ${failure.data}\n`);
       expect(await (await fetch(`${url}cart`)).text()).toContain('Store');
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
       await whenLast(events, 'built');
@@ -342,7 +367,7 @@ describe('startSession', () => {
       const load = vi.fn(reloader(directory));
       const session = await startSession({ load, configurationFile: file, port: 0 });
       await waitFor(() => {
-        expect(stdout.at(-1)).toMatch(/^Built in/);
+        expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in/);
       });
       // Every load from here is held, since a late watcher event can start
       // one before the save does, and only what follows the save is counted.
@@ -358,21 +383,21 @@ describe('startSession', () => {
       });
       const events = await subscribe(session.url);
       const watches = vi.mocked(watch).mock.calls.length;
-      const built = stdout.filter((line) => line.startsWith('Built')).length;
+      const built = untimed(stdout).filter((line) => line.startsWith('✓ Built')).length;
       const closing = session.close();
       settle(await loader(directory)());
       await closing;
       expect(vi.mocked(watch).mock.calls).toHaveLength(watches);
       expect(vi.mocked(bindBuild).mock.calls).toHaveLength(binds);
       expect(names(events)).toStrictEqual([]);
-      expect(stdout.filter((line) => line.startsWith('Built'))).toHaveLength(built);
+      expect(untimed(stdout).filter((line) => line.startsWith('✓ Built'))).toHaveLength(built);
     });
 
     test('a session closed while the new source root is checked closes the watcher it then starts', async ({ directory, stdout }) => {
       const file = join(directory, 'underdot.config.ts');
       const session = await startSession({ load: reloader(directory), configurationFile: file, port: 0 });
       await waitFor(() => {
-        expect(stdout.at(-1)).toMatch(/^Built in/);
+        expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in/);
       });
       // Only the source root's stat is held. A build a late watcher event
       // starts stats every source file through the same function.
@@ -407,7 +432,7 @@ describe('startSession', () => {
       const load = vi.fn(reloader(directory));
       const session = await startSession({ load, configurationFile: file, port: 0 });
       await waitFor(() => {
-        expect(stdout.at(-1)).toMatch(/^Built in/);
+        expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in/);
       });
       // Every load from here is held, as in the test above.
       let fail: (error: Error) => void = () => undefined;
@@ -427,7 +452,7 @@ describe('startSession', () => {
       expect(names(events)).toStrictEqual([]);
     });
 
-    test('a configuration naming a missing source root is reported and the site keeps serving', async ({ directory, start }) => {
+    test('a configuration naming a missing source root is reported and the site keeps serving', async ({ directory, start, stderr }) => {
       const file = join(directory, 'underdot.config.ts');
       const { url } = await start({ load: reloader(directory), configurationFile: file });
       await whenServed(url);
@@ -435,6 +460,7 @@ describe('startSession', () => {
       await replaceConfiguration(file, "export default { source: 'missing' };\n");
       const failure = await whenLast(events, 'failed');
       expect(failure.data).toMatch(/ENOENT/);
+      expect(untimed(stderr)).toContain(`✗ ${failure.data}\n`);
       expect((await fetch(url)).status).toBe(200);
     });
   });
@@ -447,7 +473,7 @@ describe('startSession', () => {
       await whenServed(url);
       fake.emit('error', new Error('The watcher broke.'));
       await waitFor(() => {
-        expect(stderr).toContain('The watcher broke.\n');
+        expect(untimed(stderr)).toContain('✗ The watcher broke.\n');
       });
       expect((await fetch(url)).status).toBe(200);
     });
@@ -461,7 +487,7 @@ describe('startSession', () => {
       fake.emit('change', 'rename', null);
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
       await waitFor(() => {
-        expect(stdout.filter((line) => line.startsWith('Built')).length).toBeGreaterThanOrEqual(2);
+        expect(untimed(stdout).filter((line) => line.startsWith('✓ Built')).length).toBeGreaterThanOrEqual(2);
       });
       expect(load).toHaveBeenCalledTimes(1);
     });
@@ -475,7 +501,7 @@ describe('startSession', () => {
       fake.emit('change', 'rename', 'build');
       await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
       await waitFor(() => {
-        expect(stdout.filter((line) => line.startsWith('Built')).length).toBeGreaterThanOrEqual(2);
+        expect(untimed(stdout).filter((line) => line.startsWith('✓ Built')).length).toBeGreaterThanOrEqual(2);
       });
       expect(load).toHaveBeenCalledTimes(1);
     });
@@ -511,7 +537,7 @@ describe('startSession', () => {
       release();
       await closing;
       fake.emit('change', 'rename', 'a.html');
-      expect(stdout.filter((line) => line.startsWith('Built'))).toStrictEqual([]);
+      expect(untimed(stdout).filter((line) => line.startsWith('✓ Built'))).toStrictEqual([]);
       expect(names(events)).not.toContain('built');
       expect(build).toHaveBeenCalledTimes(1);
     });
@@ -523,7 +549,7 @@ describe('startSession', () => {
       fail(new Error('Late failure.'));
       await closing;
       expect(stderr).toStrictEqual([]);
-      expect(stdout.filter((line) => line.startsWith('Built'))).toStrictEqual([]);
+      expect(untimed(stdout).filter((line) => line.startsWith('✓ Built'))).toStrictEqual([]);
     });
   });
 
@@ -553,7 +579,7 @@ describe('startSession', () => {
         return got;
       });
       expect(body).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
-      expect(stdout[0]).toBe(`Serving ${url}\n`);
+      expect(untimed(stdout)[0]).toBe(`Serving ${url}\n`);
     });
 
     test('a missing key names the key', async ({ directory }) => {

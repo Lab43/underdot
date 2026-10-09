@@ -1,6 +1,8 @@
 // spec: docs/specs/configuration.md, Commands
 
-import { bindBuild } from '../build/bind-build.ts';
+import { bindReporter } from '../build/bind-reporter.ts';
+import type { Reporter } from '../build/bind-reporter.ts';
+import { runBuild } from '../build/run-build.ts';
 import { startSession } from '../dev-server/start-session.ts';
 import { describeError } from '../shared/describe-error.ts';
 import { loadConfiguration } from './load-configuration.ts';
@@ -12,12 +14,12 @@ const usage = 'Usage: underdot build [--config <path>]\n       underdot dev [--c
 
 // Locate, load, build, and report a failure, which includes a configuration that fails to load.
 // spec: docs/specs/build.md, Errors
-const runBuildCommand = async ({ configurationPath }: Command): Promise<number> => {
+const runBuildCommand = async ({ configurationPath }: Command, reporter: Reporter): Promise<number> => {
   try {
-    await bindBuild(await loadConfiguration(await locateConfiguration(configurationPath)))();
+    await runBuild(await loadConfiguration(await locateConfiguration(configurationPath)), reporter);
     return 0;
   } catch (error) {
-    process.stderr.write(`${describeError(error)}\n`);
+    reporter.failed(describeError(error));
     return 1;
   }
 };
@@ -26,7 +28,7 @@ const runBuildCommand = async ({ configurationPath }: Command): Promise<number> 
 // as it stands on each reload. The listening server keeps the process alive
 // after the status is returned, until the author interrupts it.
 // spec: docs/specs/dev-server.md, Session
-const runDevCommand = async ({ configurationPath, port, https }: Extract<Command, { name: 'dev' }>): Promise<number> => {
+const runDevCommand = async ({ configurationPath, port, https }: Extract<Command, { name: 'dev' }>, reporter: Reporter): Promise<number> => {
   try {
     const file = await locateConfiguration(configurationPath);
     let reloads = 0;
@@ -38,7 +40,7 @@ const runDevCommand = async ({ configurationPath, port, https }: Extract<Command
     });
     return 0;
   } catch (error) {
-    process.stderr.write(`${describeError(error)}\n`);
+    reporter.failed(describeError(error));
     return 1;
   }
 };
@@ -48,15 +50,16 @@ const runDevCommand = async ({ configurationPath, port, https }: Extract<Command
  * exit status comes back for the shim to assign, so nothing here exits.
  */
 export const runCommand = async (args: string[]): Promise<number> => {
+  const reporter = bindReporter({ timestamps: false });
   let command: Command;
   try {
     command = parseCommand(args);
   } catch (error) {
-    process.stderr.write(`${describeError(error)}\n${usage}\n`);
+    reporter.failed(`${describeError(error)}\n${usage}`);
     return 2;
   }
   if (command.name === 'dev') {
-    return runDevCommand(command);
+    return runDevCommand(command, reporter);
   }
-  return runBuildCommand(command);
+  return runBuildCommand(command, reporter);
 };

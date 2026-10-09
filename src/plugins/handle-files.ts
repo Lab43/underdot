@@ -3,6 +3,7 @@
 import { hash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import { mapUnits } from '../build/map-units.ts';
 import { reuseUnit } from '../build/reuse-unit.ts';
@@ -37,6 +38,7 @@ export const handleFiles = async (
   handlers: RegisteredHandler[],
   files: FileTable,
   records: UnitRecords<Output[]>,
+  reporter: Reporter,
 ): Promise<Output[]> => {
   const lookup = (_kind: InputKind, name: string): Version => files.get(name)?.hash;
   const outputs = await mapUnits(staticFiles, ({ sourcePath }) => {
@@ -59,6 +61,7 @@ export const handleFiles = async (
         source,
         files,
         observe,
+        reporter,
       );
       return handled.map(({ outputPath, contents }) => ({ sourcePath, outputPath, contents, hash: hash('sha256', contents, 'hex') }));
     };

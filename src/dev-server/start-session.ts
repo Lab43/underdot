@@ -10,6 +10,7 @@ import type { Server as HttpsServer } from 'node:https';
 import { networkInterfaces } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { bindBuild } from '../build/bind-build.ts';
+import { bindReporter } from '../build/bind-reporter.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { describeError } from '../shared/describe-error.ts';
 import { hasErrorCode } from '../shared/has-error-code.ts';
@@ -53,16 +54,18 @@ const eventsPath = '/_underdot/events';
  * telling every connected browser how each build went.
  */
 export const startSession = async ({ load, configurationFile, port, https = false }: SessionOptions): Promise<Session> => {
+  const reporter = bindReporter({ timestamps: true });
   const configuration = await load();
   let site: Site = { destination: configuration.destination, rewrites: configuration.rewrites };
-  let build = bindBuild(configuration);
+  let build = bindBuild(configuration, reporter);
   let sourceWatcher: FSWatcher;
   let configurationWatcher: FSWatcher | undefined;
   const streams = new Set<ServerResponse>();
   let status: Status = { name: 'idle' };
   let configurationError: string | undefined;
   let pending = false;
-  let reloadPending = false;
+  // The configuration file its watcher saw change, reloaded before the next build.
+  let changedConfigurationFile: string | undefined;
   let running: Promise<void> | undefined;
   let closed = false;
   // Read through a call, because close runs while a load or a build is
@@ -127,7 +130,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   const startWatcher = (path: string, options: { recursive?: boolean }, listener: WatchListener<string>): FSWatcher => {
     const watcher = watch(path, options, listener);
     watcher.on('error', (error) => {
-      process.stderr.write(`${describeError(error)}\n`);
+      reporter.failed(describeError(error));
     });
     return watcher;
   };
@@ -162,7 +165,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       }
       configurationError = describeError(error);
       status = { name: 'failed', report: configurationError };
-      process.stderr.write(`${configurationError}\n`);
+      reporter.failed(configurationError);
       broadcast('failed', configurationError);
       return false;
     }
@@ -175,7 +178,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
     sourceWatcher.close();
     sourceWatcher = watcher;
     site = { destination: next.destination, rewrites: next.rewrites };
-    build = bindBuild(next);
+    build = bindBuild(next, reporter);
     configurationError = undefined;
     return true;
   };
@@ -187,11 +190,13 @@ export const startSession = async ({ load, configurationFile, port, https = fals
   const runBuilds = async (): Promise<void> => {
     while (pending && !isClosed()) {
       pending = false;
-      if (reloadPending) {
-        reloadPending = false;
+      const reloadedFile = changedConfigurationFile;
+      if (reloadedFile !== undefined) {
+        changedConfigurationFile = undefined;
         if (!(await reload())) {
           continue;
         }
+        reporter.reloaded(reloadedFile);
       }
       status = { name: 'building' };
       broadcast('building');
@@ -204,7 +209,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
         }
         const report = describeError(error);
         status = { name: 'failed', report };
-        process.stderr.write(`${report}\n`);
+        reporter.failed(report);
         broadcast('failed', report);
         continue;
       }
@@ -214,7 +219,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
       // A standing configuration report outlasts a successful source build,
       // which ran under a configuration the author has already replaced.
       status = configurationError === undefined ? { name: 'idle' } : { name: 'failed', report: configurationError };
-      process.stdout.write(`Built in ${String(Math.round(performance.now() - started))} ms\n`);
+      reporter.built(performance.now() - started);
       broadcast('built');
     }
   };
@@ -251,7 +256,7 @@ export const startSession = async ({ load, configurationFile, port, https = fals
     if (configurationFile !== undefined) {
       configurationWatcher = startWatcher(dirname(configurationFile), {}, (_event, filename) => {
         if (filename === basename(configurationFile)) {
-          reloadPending = true;
+          changedConfigurationFile = configurationFile;
           scheduleBuild();
         }
       });
@@ -263,14 +268,12 @@ export const startSession = async ({ load, configurationFile, port, https = fals
     throw error;
   }
 
-  process.stdout.write(`Serving ${url}\n`);
   // The first address a device on the same network can reach.
   const networkAddress = Object.values(networkInterfaces())
     .flatMap((addresses) => addresses ?? [])
     .find((address) => address.family === 'IPv4' && !address.internal);
-  if (networkAddress !== undefined) {
-    process.stdout.write(`Network ${scheme}://${networkAddress.address}:${String(boundPort)}/\n`);
-  }
+  const networkUrl = networkAddress === undefined ? undefined : `${scheme}://${networkAddress.address}:${String(boundPort)}/`;
+  reporter.serving(url, networkUrl);
   scheduleBuild();
 
   // The build in flight is awaited so its last write lands before a caller

@@ -3,7 +3,9 @@
 import { setTimeout } from 'node:timers/promises';
 import { describe, expect, vi } from 'vitest';
 import { makeFileEntry } from '../../test/helpers/make-file-entry.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { test } from '../../test/helpers/test.ts';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import type { Observe } from '../build/reuse-unit.ts';
 import type { FileHandler, RegisteredHandler } from './register-plugins.ts';
@@ -15,9 +17,10 @@ const file = (outputPath: string, text: string): HandledFile => ({ outputPath, c
 // The walked files a handler may declare.
 const files: FileTable = new Map(['styles/_vars.scss', '_sass/_mixins.scss'].map((sourcePath) => [sourcePath, makeFileEntry(sourcePath)]));
 
-// Run the handlers over a file under one source root, observing into `observe`.
-const run = (sourcePath: string, current: HandledFile, handlers: RegisteredHandler[], observe: Observe = vi.fn()) =>
-  runHandlers(sourcePath, current, handlers, '/site/source', files, observe);
+// Run the handlers over a file under one source root, observing into `observe`
+// and reporting to `reporter`.
+const run = (sourcePath: string, current: HandledFile, handlers: RegisteredHandler[], observe: Observe = vi.fn(), reporter: Reporter = makeReporter()) =>
+  runHandlers(sourcePath, current, handlers, '/site/source', files, observe, reporter);
 
 const handler = (glob: string, handle: FileHandler, pluginName = 'fixture'): RegisteredHandler => ({ pluginName, glob, handle });
 
@@ -159,13 +162,14 @@ describe('runHandlers', () => {
     });
 
     // spec: docs/specs/plugins.md, Errors
-    test("a handler's warning names the source file's handling and the plugin", async ({ stderr }) => {
+    test("a handler's warning names the source file's handling and the plugin", async () => {
       const warning = handler('**/*.text', (_file, { warn }) => {
         warn('Deprecated.');
         return [];
       }, 'annotate');
-      await run('notes.txt', file('notes.txt', 'notes'), [handler('**/*.txt', rename), warning]);
-      expect(stderr).toStrictEqual(['Handling notes.txt warned in annotate: Deprecated.\n']);
+      const reporter = makeReporter();
+      await run('notes.txt', file('notes.txt', 'notes'), [handler('**/*.txt', rename), warning], vi.fn(), reporter);
+      expect(reporter.warned).toHaveBeenCalledExactlyOnceWith('Handling notes.txt', 'annotate', 'Deprecated.');
     });
   });
 

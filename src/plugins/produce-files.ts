@@ -5,6 +5,7 @@ import { hash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { Reporter } from '../build/bind-reporter.ts';
 import type { FileTable } from '../build/hash-files.ts';
 import { mapUnits } from '../build/map-units.ts';
 import { reuseUnit } from '../build/reuse-unit.ts';
@@ -13,7 +14,6 @@ import { compareStrings } from '../shared/compare-strings.ts';
 import { attributePluginError } from './attribute-plugin-error.ts';
 import type { EmittedFile } from './bind-render-context.ts';
 import type { Output } from './handle-files.ts';
-import { printWarning } from './print-warning.ts';
 import type { RegisteredHandler } from './register-plugins.ts';
 import { runHandlers } from './run-handlers.ts';
 
@@ -58,6 +58,7 @@ export const produceFiles = async (
   files: FileTable,
   written: ReadonlyMap<string, string>,
   records: UnitRecords<EmittedOutput[]>,
+  reporter: Reporter,
 ): Promise<EmittedOutput[]> => {
   const outputsByPath = new Map(outputs.map((output) => [output.outputPath, output]));
   // Sorted, so a collision names its two sources the same way whichever
@@ -120,7 +121,7 @@ export const produceFiles = async (
         return output.contents ?? readFileSync(join(source, output.sourcePath));
       };
       const warn = (message: string): void => {
-        printWarning(`Producing ${outputPath}`, pluginName, message);
+        reporter.warned(`Producing ${outputPath}`, pluginName, message);
       };
       let contents: unknown;
       // spec: docs/specs/plugins.md, Errors
@@ -142,6 +143,7 @@ export const produceFiles = async (
         source,
         files,
         observe,
+        reporter,
       );
       return handled.map((file) => ({ sourcePath, outputPath: file.outputPath, contents: file.contents, hash: hash('sha256', file.contents, 'hex') }));
     };

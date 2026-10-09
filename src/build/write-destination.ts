@@ -6,6 +6,7 @@ import type { Output } from '../plugins/handle-files.ts';
 import type { EmittedOutput } from '../plugins/produce-files.ts';
 import { compareStrings } from '../shared/compare-strings.ts';
 import type { RenderedPage } from '../templates/render-pages.ts';
+import type { Reporter } from './bind-reporter.ts';
 import { runUnits } from './run-units.ts';
 import type { Unit } from './run-units.ts';
 
@@ -52,7 +53,8 @@ const collectDirectories = (planned: PlannedFile[]): Set<string> => {
 
 // Clean a directory top-down: descend a planned directory, keep a regular
 // file at a planned path, noting it as present, and remove everything else,
-// forgetting what was written at or under it.
+// forgetting what was written at or under it and reporting a directory with
+// a trailing slash.
 const clean = async (
   directory: string,
   prefix: string,
@@ -60,12 +62,13 @@ const clean = async (
   directories: Set<string>,
   present: Set<string>,
   written: Map<string, string>,
+  reporter: Reporter,
 ): Promise<void> => {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = prefix + entry.name;
     const absolute = join(directory, entry.name);
     if (entry.isDirectory() && directories.has(path)) {
-      await clean(absolute, `${path}/`, files, directories, present, written);
+      await clean(absolute, `${path}/`, files, directories, present, written, reporter);
     } else if (entry.isFile() && files.has(path)) {
       present.add(path);
     } else {
@@ -75,6 +78,7 @@ const clean = async (
           written.delete(writtenPath);
         }
       }
+      reporter.removed(entry.isDirectory() ? `${path}/` : path);
     }
   }
 };
@@ -94,6 +98,7 @@ export const writeDestination = async (
   emitted: EmittedOutput[],
   pages: RenderedPage[],
   written: Map<string, string>,
+  reporter: Reporter,
 ): Promise<void> => {
   // An output path with a segment starting with an underscore is never written.
   const isPublic = ({ outputPath }: { outputPath: string }): boolean => !outputPath.split('/').some((segment) => segment.startsWith('_'));
@@ -102,7 +107,7 @@ export const writeDestination = async (
   const planned = planFiles([...publicOutputs, ...publicEmitted, ...pages]);
   await mkdir(destination, { recursive: true });
   const present = new Set<string>();
-  await clean(destination, '', new Set(planned.map((file) => file.outputPath)), collectDirectories(planned), present, written);
+  await clean(destination, '', new Set(planned.map((file) => file.outputPath)), collectDirectories(planned), present, written, reporter);
   // The entry is deleted before the write and set after it, so a write that
   // fails leaves no entry claiming the file is whole.
   const place = ({ outputPath, hash }: PlannedFile, write: (target: string) => Promise<void>): Unit => async () => {
@@ -114,6 +119,7 @@ export const writeDestination = async (
     await mkdir(dirname(target), { recursive: true });
     await write(target);
     written.set(outputPath, hash);
+    reporter.wrote(outputPath);
   };
   await runUnits([
     ...publicOutputs.map((output) => place(output, (target) => {

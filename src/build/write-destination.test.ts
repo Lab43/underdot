@@ -6,6 +6,7 @@ import { describe, expect, vi } from 'vitest';
 import { assertAbsent } from '../../test/helpers/assert-absent.ts';
 import { fixturePath } from '../../test/helpers/fixture-path.ts';
 import { listWriteTargets } from '../../test/helpers/list-write-targets.ts';
+import { makeReporter } from '../../test/helpers/make-reporter.ts';
 import { test } from '../../test/helpers/test.ts';
 import type { Output } from '../plugins/handle-files.ts';
 import type { EmittedOutput } from '../plugins/produce-files.ts';
@@ -34,7 +35,7 @@ const writes = (): string[] => {
 describe('writeDestination', () => {
   test('a destination that does not exist is created holding the copies', async ({ directory }) => {
     const destination = join(directory, 'build');
-    await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map());
+    await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map(), makeReporter());
     expect(await walkSource(destination)).toStrictEqual(planned);
     expect(await readFile(join(destination, 'about/index.html'), 'utf8')).toBe('about/index.html\n');
   });
@@ -46,7 +47,7 @@ describe('writeDestination', () => {
     await writeFile(join(destination, 'old', 'page.html'), 'a file in a stale directory');
     await writeFile(join(destination, 'about'), 'a file where a directory is needed');
     await mkdir(join(destination, 'index.html'));
-    await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map());
+    await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map(), makeReporter());
     expect(await walkSource(destination)).toStrictEqual(planned);
     await assertAbsent(join(destination, 'stale.txt'));
     await assertAbsent(join(destination, 'old'));
@@ -56,13 +57,13 @@ describe('writeDestination', () => {
     const destination = join(directory, 'build');
     await mkdir(destination);
     await writeFile(join(destination, 'index.html'), 'the previous build');
-    await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map());
+    await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map(), makeReporter());
     expect(await readFile(join(destination, 'index.html'), 'utf8')).toBe('index.html\n');
   });
 
   test('an output with contents is written at its output path', async ({ directory }) => {
     const destination = join(directory, 'build');
-    await writeDestination(join(directory, 'source'), destination, [handled('styles/site.scss', 'styles/site.css', 'body {}')], [], [], new Map());
+    await writeDestination(join(directory, 'source'), destination, [handled('styles/site.scss', 'styles/site.css', 'body {}')], [], [], new Map(), makeReporter());
     expect(await walkSource(destination)).toStrictEqual(['styles/site.css']);
     expect(await readFile(join(destination, 'styles/site.css'), 'utf8')).toBe('body {}');
   });
@@ -71,7 +72,7 @@ describe('writeDestination', () => {
     const destination = join(directory, 'build');
     await mkdir(join(destination, 'about'), { recursive: true });
     await writeFile(join(destination, 'about/index.html'), 'the previous build');
-    await writeDestination(join(directory, 'source'), destination, [copy('index.html')], [], [page('about.tpl', 'about/index.html', 'the rendered page')], new Map());
+    await writeDestination(join(directory, 'source'), destination, [copy('index.html')], [], [page('about.tpl', 'about/index.html', 'the rendered page')], new Map(), makeReporter());
     expect(await walkSource(destination)).toStrictEqual(planned);
     expect(await readFile(join(destination, 'about/index.html'), 'utf8')).toBe('the rendered page');
   });
@@ -80,7 +81,7 @@ describe('writeDestination', () => {
   test('an output whose path has an underscore-prefixed segment is not written', async ({ directory }) => {
     const destination = join(directory, 'build');
     const outputs = [copy('index.html'), copy('_private.txt'), copy('_includes/header.html'), handled('notes.txt', 'about/_notes.txt', 'renamed into the prefix')];
-    await writeDestination(join(directory, 'source'), destination, outputs, [], [], new Map());
+    await writeDestination(join(directory, 'source'), destination, outputs, [], [], new Map(), makeReporter());
     expect(await walkSource(destination)).toStrictEqual(['index.html']);
   });
 
@@ -88,7 +89,7 @@ describe('writeDestination', () => {
     const destination = join(directory, 'build');
     await mkdir(destination);
     await writeFile(join(destination, 'stale.txt'), 'a stale file');
-    await writeDestination(join(directory, 'source'), destination, [], [], [], new Map());
+    await writeDestination(join(directory, 'source'), destination, [], [], [], new Map(), makeReporter());
     expect(await walkSource(destination)).toStrictEqual([]);
   });
 
@@ -100,10 +101,10 @@ describe('writeDestination', () => {
       const outputs = [copy('index.html'), handled('styles/site.scss', 'styles/site.css', 'body {}')];
       const pages = [page('about.tpl', 'about/index.html', 'the rendered page')];
       writes();
-      await writeDestination(join(directory, 'source'), destination, outputs, [], pages, written);
+      await writeDestination(join(directory, 'source'), destination, outputs, [], pages, written, makeReporter());
       expect(writes()).toStrictEqual([join(destination, 'about/index.html'), join(destination, 'index.html'), join(destination, 'styles/site.css')]);
       expect(written).toStrictEqual(new Map([['index.html', 'index.html'], ['styles/site.css', 'body {}'], ['about/index.html', 'the rendered page']]));
-      await writeDestination(join(directory, 'source'), destination, outputs, [], pages, written);
+      await writeDestination(join(directory, 'source'), destination, outputs, [], pages, written, makeReporter());
       expect(writes()).toStrictEqual([]);
       expect(await walkSource(destination)).toStrictEqual(['about/index.html', 'index.html', 'styles/site.css']);
     });
@@ -111,9 +112,9 @@ describe('writeDestination', () => {
     test('a file whose hash changed is written, a copy and a page alike', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
-      await writeDestination(join(directory, 'source'), destination, copies, [], [page('team.tpl', 'team/index.html', 'the team page')], written);
+      await writeDestination(join(directory, 'source'), destination, copies, [], [page('team.tpl', 'team/index.html', 'the team page')], written, makeReporter());
       writes();
-      await writeDestination(join(directory, 'source'), destination, [copy('about/index.html', 'edited'), copy('index.html')], [], [page('team.tpl', 'team/index.html', 'the team page, edited')], written);
+      await writeDestination(join(directory, 'source'), destination, [copy('about/index.html', 'edited'), copy('index.html')], [], [page('team.tpl', 'team/index.html', 'the team page, edited')], written, makeReporter());
       expect(writes()).toStrictEqual([join(destination, 'about/index.html'), join(destination, 'team/index.html')]);
       expect(written.get('about/index.html')).toBe('edited');
       expect(await readFile(join(destination, 'team/index.html'), 'utf8')).toBe('the team page, edited');
@@ -122,10 +123,10 @@ describe('writeDestination', () => {
     test('a planned file removed from the destination is written again though the table has it', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
-      await writeDestination(join(directory, 'source'), destination, copies, [], [], written);
+      await writeDestination(join(directory, 'source'), destination, copies, [], [], written, makeReporter());
       await rm(join(destination, 'about'), { recursive: true });
       writes();
-      await writeDestination(join(directory, 'source'), destination, copies, [], [], written);
+      await writeDestination(join(directory, 'source'), destination, copies, [], [], written, makeReporter());
       expect(writes()).toStrictEqual([join(destination, 'about/index.html')]);
       expect(await walkSource(destination)).toStrictEqual(planned);
     });
@@ -133,16 +134,48 @@ describe('writeDestination', () => {
     test('a path the clean pass removes leaves the table, with everything under it', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
-      await writeDestination(join(directory, 'source'), destination, copies, [], [page('team.tpl', 'about/team/index.html', 'the team page')], written);
-      await writeDestination(join(directory, 'source'), destination, [copy('index.html')], [], [], written);
+      await writeDestination(join(directory, 'source'), destination, copies, [], [page('team.tpl', 'about/team/index.html', 'the team page')], written, makeReporter());
+      await writeDestination(join(directory, 'source'), destination, [copy('index.html')], [], [], written, makeReporter());
       expect(written).toStrictEqual(new Map([['index.html', 'index.html']]));
     });
 
     test('a private output never enters the table', async ({ directory }) => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
-      await writeDestination(join(directory, 'source'), destination, [copy('index.html'), copy('_private.txt')], [], [], written);
+      await writeDestination(join(directory, 'source'), destination, [copy('index.html'), copy('_private.txt')], [], [], written, makeReporter());
       expect(written).toStrictEqual(new Map([['index.html', 'index.html']]));
+    });
+  });
+
+  // spec: docs/specs/build.md, Output
+  describe('the report', () => {
+    // The first argument of every call, sorted, since the writes run concurrently.
+    const reported = (method: (outputPath: string) => void): string[] => vi.mocked(method).mock.calls.map(([outputPath]) => outputPath).sort();
+
+    test('each write reports its output path', async ({ directory }) => {
+      const reporter = makeReporter();
+      await writeDestination(join(directory, 'source'), join(directory, 'build'), copies, [], [], new Map(), reporter);
+      expect(reported(reporter.wrote)).toStrictEqual(planned);
+    });
+
+    test('a file left in place reports nothing', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      const written = new Map<string, string>();
+      await writeDestination(join(directory, 'source'), destination, copies, [], [], written, makeReporter());
+      const reporter = makeReporter();
+      await writeDestination(join(directory, 'source'), destination, copies, [], [], written, reporter);
+      expect(reporter.wrote).not.toHaveBeenCalled();
+      expect(reporter.removed).not.toHaveBeenCalled();
+    });
+
+    test('each removal reports its path, a directory with a trailing slash', async ({ directory }) => {
+      const destination = join(directory, 'build');
+      await mkdir(join(destination, 'old'), { recursive: true });
+      await writeFile(join(destination, 'stale.txt'), 'a stale file');
+      await writeFile(join(destination, 'old', 'page.html'), 'a file in a stale directory');
+      const reporter = makeReporter();
+      await writeDestination(join(directory, 'source'), destination, copies, [], [], new Map(), reporter);
+      expect(reported(reporter.removed)).toStrictEqual(['old/', 'stale.txt']);
     });
   });
 
@@ -151,7 +184,7 @@ describe('writeDestination', () => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
       const emitted = produced('about.tpl', 'images/photo-300.webp', 'the derivative');
-      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written);
+      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written, makeReporter());
       expect(await readFile(join(destination, 'images/photo-300.webp'), 'utf8')).toBe('the derivative');
       expect(emitted.contents).toBeUndefined();
       expect(written).toStrictEqual(new Map([['images/photo-300.webp', 'the derivative']]));
@@ -162,9 +195,9 @@ describe('writeDestination', () => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
       const emitted = produced('about.tpl', 'images/photo-300.webp', 'the derivative');
-      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written);
+      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written, makeReporter());
       writes();
-      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written);
+      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written, makeReporter());
       expect(writes()).toStrictEqual([]);
       expect(await readFile(join(destination, 'images/photo-300.webp'), 'utf8')).toBe('the derivative');
     });
@@ -174,9 +207,9 @@ describe('writeDestination', () => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
       const emitted = produced('about.tpl', 'images/photo-300.webp', 'the derivative');
-      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written);
+      await writeDestination(join(directory, 'source'), destination, [], [emitted], [], written, makeReporter());
       await rm(join(destination, 'images/photo-300.webp'));
-      await expect(writeDestination(join(directory, 'source'), destination, [], [emitted], [], written)).rejects.toThrow(
+      await expect(writeDestination(join(directory, 'source'), destination, [], [emitted], [], written, makeReporter())).rejects.toThrow(
         new Error('images/photo-300.webp was produced in an earlier build and is missing from the destination, so it cannot be written again.'),
       );
     });
@@ -186,7 +219,7 @@ describe('writeDestination', () => {
       const destination = join(directory, 'build');
       const written = new Map<string, string>();
       const emitted = produced('about.tpl', '_images/photo-300.webp', 'the derivative');
-      await writeDestination(join(directory, 'source'), destination, [copy('index.html')], [emitted], [], written);
+      await writeDestination(join(directory, 'source'), destination, [copy('index.html')], [emitted], [], written, makeReporter());
       expect(await walkSource(destination)).toStrictEqual(['index.html']);
       expect(emitted.contents).toStrictEqual(Buffer.from('the derivative'));
       expect(written).toStrictEqual(new Map([['index.html', 'index.html']]));
@@ -249,7 +282,7 @@ describe('writeDestination', () => {
         message: 'Both about.md and about.tpl would be written to about/index.html.',
       },
     ])('$case fail naming both', async ({ outputs, emitted, pages, message }) => {
-      await expect(writeDestination(source, destination, outputs, emitted, pages, new Map())).rejects.toThrow(new Error(message));
+      await expect(writeDestination(source, destination, outputs, emitted, pages, new Map(), makeReporter())).rejects.toThrow(new Error(message));
       await assertAbsent(destination);
     });
   });

@@ -3,13 +3,14 @@
 import { parseArgs } from 'node:util';
 
 export type Command =
-  | { name: 'build'; configurationPath: string | undefined }
-  | { name: 'dev'; configurationPath: string | undefined; port: number | undefined; https: boolean };
+  | { name: 'build'; configurationPath: string | undefined; verbose: boolean }
+  | { name: 'dev'; configurationPath: string | undefined; port: number | undefined; https: boolean; verbose: boolean };
 
 const options = {
   config: { type: 'string' },
   port: { type: 'string' },
   https: { type: 'boolean' },
+  verbose: { type: 'boolean' },
 } as const;
 
 /**
@@ -36,7 +37,7 @@ export const parseCommand = (args: string[]): Command => {
     if (values.https !== undefined) {
       throw new Error('The --https option belongs to dev.');
     }
-    return { name, configurationPath: values.config };
+    return { name, configurationPath: values.config, verbose: values.verbose ?? false };
   }
   let port: number | undefined;
   if (values.port !== undefined) {
@@ -45,5 +46,5 @@ export const parseCommand = (args: string[]): Command => {
     }
     port = Number(values.port);
   }
-  return { name, configurationPath: values.config, port, https: values.https ?? false };
+  return { name, configurationPath: values.config, port, https: values.https ?? false, verbose: values.verbose ?? false };
 };

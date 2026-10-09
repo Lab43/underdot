@@ -46,7 +46,7 @@ describe('underdot', () => {
 
   test('build exits 0 with the Built line and nothing on stderr, and builds the working directory', async ({ directory }) => {
     const { stdout, stderr } = await runShim(['build'], directory);
-    expect(stdout).toMatch(/^✓ Built in \d+(?: ms|\.\d s)\n$/);
+    expect(stdout).toMatch(/^✓ Built in \d+(?: ms|\.\d s) · \d+ ran\n$/);
     expect(stderr).toBe('');
     await access(join(directory, 'build/index.html'));
   });
@@ -74,7 +74,7 @@ describe('underdot', () => {
   test('no arguments exits 2 with the usage on stderr', async () => {
     await expect(runShim([])).rejects.toMatchObject({
       code: 2,
-      stderr: '✗ No command given.\nUsage: underdot build [--config <path>]\n       underdot dev [--config <path>] [--port <n>] [--https]\n',
+      stderr: '✗ No command given.\nUsage: underdot build [--config <path>] [--verbose]\n       underdot dev [--config <path>] [--port <n>] [--https] [--verbose]\n',
     });
   });
 });

@@ -10,10 +10,11 @@ import { resolveConfiguration } from '../configuration/resolve-configuration.ts'
 import { runBuild } from './run-build.ts';
 
 describe('runBuild', () => {
-  test('a build reports its duration once', async ({ directory }) => {
+  test('a build reports its duration and its counts once', async ({ directory }) => {
     const reporter = makeReporter();
     await runBuild(resolveConfiguration(defaultsConfiguration, directory), reporter);
-    expect(reporter.built).toHaveBeenCalledExactlyOnceWith(expect.any(Number));
+    // The defaults fixture's eight static files, each handled for the first time.
+    expect(reporter.built).toHaveBeenCalledExactlyOnceWith(expect.any(Number), { ran: 8, reused: 0 });
   });
 
   test('a failing build rejects and reports nothing', async () => {

@@ -270,4 +270,11 @@ describe('produceFiles', () => {
       expect(produce).toHaveBeenCalledTimes(2);
     });
   });
+
+  // spec: docs/specs/build.md, Output
+  test('a producer reports its label', async ({ directory }) => {
+    const reporter = makeReporter();
+    await produceAll(directory, [emit()], { reporter });
+    expect(reporter.ran).toHaveBeenCalledExactlyOnceWith('Produced notes.derived.txt', []);
+  });
 });

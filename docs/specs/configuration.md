@@ -39,7 +39,7 @@ Underdot installs one command, `underdot`, with two subcommands:
 - `underdot build` builds the site and exits with a non-zero status when the build fails (see: docs/specs/build.md, Errors).
 - `underdot dev` runs a dev-server session (see: docs/specs/dev-server.md). It accepts a port and an HTTPS option. Rationale: how a session is served on this machine is a fact about the session, not about the site, so it stays out of the configuration. Two sessions of one site in two worktrees share a configuration and cannot share a port, and a site that must be served over HTTPS says so in its `dev` script.
 
-Both accept a path to a configuration file in place of the default.
+Both accept a path to a configuration file in place of the default, and a verbose option that lists what each build ran and wrote (see: docs/specs/build.md, Output). Rationale: how much to print is a fact about this run, as the port is, so it stays out of the configuration.
 
 ## Programmatic use
 

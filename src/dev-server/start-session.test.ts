@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { test as base } from '../../test/helpers/test.ts';
 import { bindBuild } from '../build/bind-build.ts';
+import type { BuildCounts } from '../build/bind-build.ts';
 import { loadConfiguration } from '../configuration/load-configuration.ts';
 import type { ResolvedConfiguration } from '../configuration/resolve-configuration.ts';
 import { injectClientScript } from './inject-client-script.ts';
@@ -128,8 +129,10 @@ const whenLast = (events: Event[], name: string): Promise<Event> =>
 const holdBuild = (): { build: ReturnType<typeof vi.fn>; release: () => void; fail: (error: Error) => void } => {
   let release = (): void => undefined;
   let fail = (_error: Error): void => undefined;
-  const held = new Promise<void>((resolve, reject) => {
-    release = resolve;
+  const held = new Promise<BuildCounts>((resolve, reject) => {
+    release = () => {
+      resolve({ ran: 0, reused: 0 });
+    };
     fail = reject;
   });
   const build = vi.fn(() => held);
@@ -174,7 +177,7 @@ describe('startSession', () => {
     expect(url).toMatch(/^http:\/\/localhost:\d+\/$/);
     expect(await whenServed(url)).toBe(injectClientScript(await readFile(join(directory, 'source/index.html'), 'utf8')));
     await waitFor(() => {
-      expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in \d+(?: ms|\.\d s)\n$/);
+      expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in \d+(?: ms|\.\d s) · \d+ ran(?:, \d+ reused)?\n$/);
     });
     const { port } = new URL(url);
     const address = Object.values(networkInterfaces())
@@ -282,6 +285,27 @@ describe('startSession', () => {
       expect(new Set(names(events))).toStrictEqual(new Set(['building', 'built']));
     });
 
+    // spec: docs/specs/build.md, Output
+    test('with verbose, an edit prints the units that reran for it before the next Built line', async ({ directory, start, stdout }) => {
+      const { url } = await start({ verbose: true });
+      await whenServed(url);
+      await waitFor(() => {
+        expect(untimed(stdout).at(-1)).toMatch(/^✓ Built in/);
+      });
+      const before = stdout.length;
+      await writeFile(join(directory, 'source/index.html'), '<body><h1>Edited</h1></body>\n');
+      // A late event from the first build can print a Built line before the edit's.
+      await waitFor(() => {
+        const lines = untimed(stdout.slice(before));
+        const handled = lines.indexOf('  Handled index.html · index.html changed\n');
+        expect(lines.slice(handled, handled + 3)).toStrictEqual([
+          '  Handled index.html · index.html changed\n',
+          '  Wrote index.html\n',
+          expect.stringMatching(/^✓ Built in .* · 1 ran, \d+ reused\n$/),
+        ]);
+      });
+    });
+
     test('a failing build reports to the browsers and to a browser connecting later, until the fix builds', async ({ directory, start, stderr }) => {
       const { url } = await start();
       await whenServed(url);
@@ -329,8 +353,11 @@ describe('startSession', () => {
       });
       const before = stdout.length;
       await replaceConfiguration(file, "export default { rewrites: { '/cart': '/about/' } };\n");
+      // A late event from the first build can print a Built line before the reload's.
       await waitFor(() => {
-        expect(untimed(stdout.slice(before)).slice(0, 2)).toStrictEqual(['Reloaded underdot.config.ts\n', expect.stringMatching(/^✓ Built in/)]);
+        const lines = untimed(stdout.slice(before));
+        const reloaded = lines.indexOf('Reloaded underdot.config.ts\n');
+        expect(lines.slice(reloaded, reloaded + 2)).toStrictEqual(['Reloaded underdot.config.ts\n', expect.stringMatching(/^✓ Built in/)]);
       });
     });
 

@@ -42,14 +42,23 @@ export interface Versions {
 }
 
 /**
- * Bind a resolved configuration. The function returned runs one build, and
- * every build it runs shares the memory of the ones before, so a unit whose
- * inputs are unchanged is reused. A function called once reuses nothing.
+ * How many units one build ran and how many it reused.
+ */
+export interface BuildCounts {
+  ran: number;
+  reused: number;
+}
+
+/**
+ * Bind a resolved configuration. The function returned runs one build and
+ * resolves to its counts, and every build it runs shares the memory of the
+ * ones before, so a unit whose inputs are unchanged is reused. A function
+ * called once reuses nothing.
  */
 export const bindBuild = (
   { source, destination, exclude, plugins, globals }: ResolvedConfiguration,
   reporter: Reporter,
-): (() => Promise<void>) => {
+): (() => Promise<BuildCounts>) => {
   let files: FileTable = new Map();
   const dataRecords: UnitRecords<unknown> = new Map();
   const contentsRecords: UnitRecords<FileContents> = new Map();
@@ -60,14 +69,28 @@ export const bindBuild = (
   const producedRecords: UnitRecords<EmittedOutput[]> = new Map();
   const written = new Map<string, string>();
   return async () => {
+    // Counted by this run, so a failed build before it or a report between
+    // builds cannot skew the counts.
+    const counts: BuildCounts = { ran: 0, reused: 0 };
+    const countingReporter: Reporter = {
+      ...reporter,
+      ran: (unit, changes) => {
+        counts.ran += 1;
+        reporter.ran(unit, changes);
+      },
+      reused: (unit) => {
+        counts.reused += 1;
+        reporter.reused(unit);
+      },
+    };
     const { pluginNames, renderers, helpers, handlers, hooks } = registerPlugins(plugins);
     const paths = removeExcludedFiles(await walkSource(source), exclude);
     files = await hashFiles(source, paths, files);
     const { pages, templates, staticFiles } = classifySource(paths, renderers);
-    const dataVariables = await readData(source, paths, files, dataRecords);
-    const site = await readSite(source, pages, templates, helpers, files, contentsRecords);
-    const outputs = await handleFiles(source, staticFiles, handlers, files, outputRecords, reporter);
-    const hookGlobals = await runPageHooks(site.pages, hooks, hookRecords, reporter);
+    const dataVariables = await readData(source, paths, files, dataRecords, countingReporter);
+    const site = await readSite(source, pages, templates, helpers, files, contentsRecords, countingReporter);
+    const outputs = await handleFiles(source, staticFiles, handlers, files, outputRecords, countingReporter);
+    const hookGlobals = await runPageHooks(site.pages, hooks, hookRecords, countingReporter);
     const definedGlobals = defineGlobals(globals, dataVariables, hookGlobals, helpers);
     const globalVersions = versionGlobals(globals, dataVariables, hookGlobals, files);
     const versions: Versions = {
@@ -80,7 +103,7 @@ export const bindBuild = (
     };
     // Every walked file is readable, those inside private directories included.
     // spec: docs/specs/source-tree.md, Underscore prefix
-    const makeContext = bindRenderContext(source, files, helpers, outputs, reporter);
+    const makeContext = bindRenderContext(source, files, helpers, outputs, countingReporter);
     const { pages: renderedPages, emits } = await renderPages(
       resolveChains(site.pages, site.templates),
       definedGlobals,
@@ -88,6 +111,7 @@ export const bindBuild = (
       versions,
       bodyRecords,
       pageRecords,
+      countingReporter,
     );
     const emitted = await produceFiles(
       source,
@@ -99,8 +123,9 @@ export const bindBuild = (
       files,
       written,
       producedRecords,
-      reporter,
+      countingReporter,
     );
-    await writeDestination(source, destination, outputs, emitted, renderedPages, written);
+    await writeDestination(source, destination, outputs, emitted, renderedPages, written, countingReporter);
+    return counts;
   };
 };

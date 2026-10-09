@@ -216,6 +216,26 @@ describe('bindBuild', () => {
       await expectDestination(destination, expected);
     });
 
+    // spec: docs/specs/build.md, Output
+    test('a rebuild reports the units an edit reran, each naming the edited file, and counts every unit once', async ({ directory }) => {
+      const reporter = makeReporter();
+      const build = bindBuild(resolveConfiguration(templatedConfiguration, directory), reporter);
+      const first = await build();
+      expect(first.reused).toBe(0);
+      vi.mocked(reporter.ran).mockClear();
+      await writeFile(join(directory, 'source/index.tpl'), homePage('Home', 'The home page, edited.'));
+      const second = await build();
+      const edited = expect.arrayContaining([{ kind: 'file', name: 'index.tpl', status: 'changed' }]);
+      const calls = vi.mocked(reporter.ran).mock.calls.toSorted(([a], [b]) => a.localeCompare(b));
+      expect(calls).toStrictEqual([
+        ['Read index.tpl', edited],
+        ['Rendered index.tpl', edited],
+        ['Rendered the body of index.tpl', edited],
+      ]);
+      expect(reporter.reused).toHaveBeenCalledWith('Ran the page hook of listing');
+      expect(second).toStrictEqual({ ran: 3, reused: first.ran - 3 });
+    });
+
     // spec: docs/specs/build.md, Incremental builds
     // spec: docs/specs/build.md, Determinism
     test('a bound build run again reruns only the units whose inputs changed, and its destination equals a fresh build after every change', async ({ directory }) => {

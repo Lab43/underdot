@@ -2,50 +2,95 @@
 
 Underdot is a static site generator written in node.js that I built primarily to make marketing sites. The static site generators I had tried at the time were geared towards blogs, with a strong separation between template/layout code and content. That makes a lot of sense if your website has tons of pages that should all pretty much look the same. But when you're building a small site with many unique pages, each with different designs, that model breaks down. I wanted a system that I could throw a bunch of templates, assets, and content at and have it use some simple inheritance logic and a robust plugin system to spit out my site with minimal need for scaffolding or configuration.
 
-## Version 2
+## Getting started
 
-This branch is Underdot version 2. Its documentation is in four places:
+Underdot runs on Node 22.18 or a later 22 release, or on Node 23.5 or later.
+<!-- source: package.json -->
+
+Install Underdot and a renderer for your pages:
+
+```sh
+npm install underdot underdot-ejs
+```
+
+Write `underdot.config.ts` in the project directory:
+
+```ts
+import type { Configuration } from 'underdot';
+import { ejs } from 'underdot-ejs';
+
+export default {
+  plugins: [ejs()],
+} satisfies Configuration;
+```
+
+Write the site under `source/`. Every page renders inside the nearest template named `_`, which prints the page through `_content`:
+
+```
+source/
+  _.ejs          <html><body><%- _content %></body></html>
+  index.ejs      <h1>Home</h1>
+  about.ejs      <h1>About</h1>
+  styles.css
+```
+
+Then build or develop the site:
+
+- `npx underdot build` builds `source/` into `build/`, and exits non-zero when the build fails.
+- `npx underdot dev` builds, serves the site, rebuilds on every change, and reloads the browser. It serves on port 3000, or the next free port when 3000 is busy.
+
+Both take `--config <path>` and `--verbose`. `underdot dev` also takes `--port <n>` and `--https`.
+<!-- source: docs/specs/configuration.md, Commands -->
+<!-- source: docs/specs/dev-server.md, Serving -->
+
+This tree builds `index.html`, `about/index.html`, and `styles.css`:
+
+- A file a plugin renders is a page, written as `index.html` in a directory named after it, so `about.ejs` is served at `/about/`.
+- A rendered file whose name starts with an underscore is a template, and a page picks a template other than `_` with a `template` key in its frontmatter.
+- Every other file is copied as it is.
+- A file or directory whose name starts with an underscore is never written, so partials, data, and icons live in directories such as `_includes/`.
+
+[`docs/specs/source-tree.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/source-tree.md) and [`docs/specs/templates.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/templates.md) give the full rules.
+<!-- source: docs/specs/source-tree.md -->
+<!-- source: docs/specs/templates.md, Template resolution -->
+
+## Plugins
+
+Each plugin is its own package:
+
+- [`underdot-ejs`](https://github.com/Lab43/underdot/tree/main/plugins/ejs#readme) renders `.ejs` pages and templates.
+- [`underdot-md`](https://github.com/Lab43/underdot/tree/main/plugins/markdown#readme) renders `.md` pages, and a string of Markdown from a template.
+- [`underdot-helpers`](https://github.com/Lab43/underdot/tree/main/plugins/helpers#readme) gives templates `activeLink`, `formatDate`, and `fileExists`.
+- [`underdot-collections`](https://github.com/Lab43/underdot/tree/main/plugins/collections#readme) lists the pages below a directory, and reads a page's body into a template.
+- [`underdot-bust`](https://github.com/Lab43/underdot/tree/main/plugins/bust#readme) adds a content hash to a link to a static file.
+- [`underdot-srcset`](https://github.com/Lab43/underdot/tree/main/plugins/srcset#readme) renders an image with a `srcset`, and produces its resized copies.
+- [`underdot-svgo`](https://github.com/Lab43/underdot/tree/main/plugins/svgo#readme) optimizes every SVG, and inlines one into a page.
+- [`underdot-sass`](https://github.com/Lab43/underdot/tree/main/plugins/sass#readme) compiles SCSS to CSS.
+- [`underdot-postcss`](https://github.com/Lab43/underdot/tree/main/plugins/postcss#readme) runs every CSS file through PostCSS plugins.
+<!-- source: docs/specs/ -->
+
+Plugins run in the order the configuration lists them, so `sass()` listed before `postcss()` has its compiled CSS processed by PostCSS. A plugin of your own is a function returning an object of the exported `Plugin` type, as [`docs/specs/plugins.md`](https://github.com/Lab43/underdot/blob/main/docs/specs/plugins.md) describes.
+<!-- source: docs/specs/plugins.md, Plugin identity and order -->
+
+## Upgrading from version 1
+
+[`q-extension/guides/migrating-from-v1.md`](https://github.com/Lab43/underdot/blob/main/q-extension/guides/migrating-from-v1.md) lists every change a version 1 site makes to build on version 2. Version 1 is published on npm as `underdot@1`, and its source is on the `v1` branch.
+<!-- source: underdot guides/migrating-from-v1.md -->
+
+## Documentation
+
+The documentation is in four places:
 <!-- source: CLAUDE.md, Documentation -->
 
-- `docs/specs/` states what version 2 commits to.
+- `docs/specs/` states what Underdot commits to.
 - `docs/conventions/` holds the rules its code follows.
-- `docs/guides/` holds how to drive Underdot by hand.
+- `docs/guides/` holds how to drive Underdot by hand and how to publish it.
 - `q-extension/` holds what ships to sites that use Underdot: the rules for writing a site, and the changes a version 1 site makes to build on version 2.
 
-Version 1 is published on npm as `underdot@1`, and its source is on the `master` branch.
+## Publishing
 
-### Rebuild checklist
-
-The rewrite proceeds through these steps, in this order. Each step is one or more plans created with `/q:create-plan` from the specs. A step is divided into plans when its decisions are best made one plan at a time. Each plan is then grounded in the code the one before shipped. A divided step lists its plans beneath it. A step is ticked when its last plan ships, and a listed plan when it ships.
-
-1. [x] **Scaffolding.** The core package at the repository root with plugin packages as npm workspaces, TypeScript per the toolchain convention, the Node floor, Vitest, a linter, GitHub Actions, and the q extension payload.
-2. [x] **Configuration and the static build.** Three plans:
-   1. [x] **Configuration.** The exported configuration type, loading the configuration file with the both-present and path-override rules, unknown-setting errors, source and destination defaults, the placement rules, and the default exclude pattern.
-   2. [x] **The static build.** Walking the source, excluded files, classifying every file as static with the underscore and dotfile rules, output paths, unique output paths, a destination that does not depend on traversal order, writing and cleaning the destination, exported as a function taking a configuration.
-   3. [x] **The `underdot build` command.** The bin entry, argument parsing, the configuration path option, exit status, and how a failure is printed.
-3. [x] **Pages and templates.** Three plans:
-   1. [x] **Plugins and pages.** The exported plugin type with a name and renderers, the `plugins` setting, duplicate plugin names and duplicate extensions as errors, classifying pages and templates by the registered extensions, frontmatter with its reserved keys, page output paths and URLs, and output uniqueness across pages and static files, proven with a fixture renderer.
-   2. [x] **Templates.** Template resolution and its errors, rendering the chain, variables merged from frontmatter, the built-in variables, and writing rendered pages.
-   3. [x] **Globals and data files.** The `globals` setting, the `_data` directory, the first layer of the variable merge, and the collision errors.
-4. [x] **EJS and the render context.** Two plans:
-   1. [x] **The render context.** The file being rendered and its directory, reading a file under the source root with relative paths resolved against that file and absolute paths against the source root, and reading another page's rendered body by URL with the page-body error naming both pages, proven with the fixture renderer. Reading handled output arrives with step 5, and emitting files with step 9.
-   2. [x] **The EJS plugin.** The first workspace package, the renderer, the unset-variable rule, includes resolved through the render context, the configured views directories, its spec written inside the plan, and its site-facing conventions.
-5. [x] **File handlers and helpers.** Four plans:
-   1. [x] **The mechanisms.** File handlers and template helpers, proven with fixture plugins.
-   2. [x] **The cache-busting plugin.** The first consumer of handlers' output and helpers.
-   3. [x] **The template helpers plugin.** The helpers a site calls from its templates: date formatting, an active-link check, and a file-existence check through the render context.
-   4. [x] **The SVGO plugin.** A file handler optimizing SVGs, and a helper inlining the handled output.
-6. [x] **Page hooks and error attribution.** Two plans:
-   1. [x] **Page hooks and error attribution.** The `pageHook` registration, one per plugin, seeing every page and returning the globals it defines, and a plugin's failure reported naming the plugin, the unit, and the file, proven with fixture plugins.
-   2. [x] **The collections plugin.** A page hook defining a collection of pages, and a helper reading a page's rendered body.
-7. [x] **Incremental rebuilds.** A session that reruns only the units whose inputs changed, proven equal to a full build.
-8. [x] **Dev server.** Watching, serving, live reload, build status, and the `underdot dev` command.
-9. [x] **Srcset plugin.** The emit mechanism, and responsive images as emitted derivatives with producers, its first consumer.
-10. [x] **Markdown plugin.** A renderer for `.md` pages, and a helper rendering a string of Markdown from a template.
-11. [x] **Sass plugin.** A file handler compiling SCSS to CSS, the handler context that declares the files Sass imports, and the warnings every plugin context now carries.
-12. [x] **PostCSS plugin.** A file handler over CSS, chained after Sass by plugin order.
-
-Each plugin's spec is written inside the plan that builds it. The `underdot` package ships a q extension for sites that use it, carrying conventions for authoring a site. Each step writes the site-facing conventions it decides into that payload as it ships.
+Every package is released at one version, from `main`. [`docs/guides/publishing.md`](https://github.com/Lab43/underdot/blob/main/docs/guides/publishing.md) walks through the version bump, the checks, the publish, and the tag.
+<!-- source: docs/guides/publishing.md -->
 
 ## Working with q
 

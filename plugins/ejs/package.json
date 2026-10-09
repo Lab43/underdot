@@ -1,6 +1,6 @@
 {
   "name": "underdot-ejs",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "EJS templates for Underdot",
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
@@ -30,7 +30,7 @@
     "ejs": "^6.0.1"
   },
   "peerDependencies": {
-    "underdot": "^2.0.0-alpha.0"
+    "underdot": "^2.0.0"
   },
   "//": "src/ejs-options.d.ts patches @types/ejs with the two EJS 6 options. Delete it once a newer @types/ejs declares them.",
   "devDependencies": {

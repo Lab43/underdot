@@ -1,7 +1,3 @@
-## Rewrite
-
-We are rewriting Underdot v2 from the ground up. Build v2 from the specs alone. Never read the `master` branch, the v1 package, or the source of a site built on Underdot as a reference for how anything should work, because v2 exists to shed v1's decisions and a session that reads v1 carries them over without noticing. Where the specs are silent, decide from their rationale and the conventions, or ask the user. Write test fixtures from scratch in this repo, from the specs, never from an existing site. The README's Version 2 section carries the rebuild checklist. Tick a step there when its last plan ships, and a listed plan when it ships (source: README.md, Rebuild checklist).
-
 ## Documentation
 
 This project follows q, an agentic coding workflow. Its documentation is indexed below, a subsection per kind of doc (source: @lab43/q conventions/documentation.md, Taxonomy). Doc changes — the README and this briefing itself included — go through `/q:update-docs`.
@@ -75,3 +71,4 @@ How to use and operate Underdot, rather than how to write its code (source: @lab
 This project's own:
 
 - `docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support
+- `docs/guides/publishing.md` — how to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, and the tag and GitHub release that mark it

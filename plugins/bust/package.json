@@ -1,6 +1,6 @@
 {
   "name": "underdot-bust",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "Cache busting for Underdot",
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
@@ -27,7 +27,7 @@
     "prepack": "tsc -b tsconfig.build.json"
   },
   "peerDependencies": {
-    "underdot": "^2.0.0-alpha.0"
+    "underdot": "^2.0.0"
   },
   "devDependencies": {
     "underdot": "file:../.."

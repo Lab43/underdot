@@ -68,5 +68,10 @@ What Underdot commits to, stated as behavior the code must honor (source: @lab43
 
 How to use and operate Underdot, rather than how to write its code (source: @lab43/q conventions/documentation.md, Taxonomy).
 
-- `docs/guides/migrating-from-v1.md` — what to change in a site built on Underdot v1 so it builds on v2, each entry pointing at the spec section that decided it
+`underdot` — Rules for writing a site built on Underdot: its configuration, source tree, templates, and plugins.
+
+- `underdot guides/migrating-from-v1.md` — what to change in a site built on Underdot v1 so it builds on v2
+
+This project's own:
+
 - `docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support

@@ -22,7 +22,9 @@ export const compileSass = async (file: HandledFile, context: HandlerContext): P
     loadPaths: [context.sourceDirectory],
     logger: {
       warn: (message, { stack }) => {
-        if (stack === undefined) {
+        // Sass hands the summary of the deprecations it omitted the stack
+        // "null", Dart's null as a string.
+        if (stack === undefined || stack === 'null') {
           context.warn(message);
           return;
         }

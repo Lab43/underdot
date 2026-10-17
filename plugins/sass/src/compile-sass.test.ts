@@ -80,6 +80,11 @@ describe('compileSass', () => {
       ]);
     });
 
+    test('the summary of the deprecations Sass omits reaches the build as the message alone', async ({ workingDirectory }) => {
+      const warnings = await compileWarning(workingDirectory, 'a {\n  width: (1px/2);\n}\n'.repeat(7));
+      expect(warnings.at(-1)).toBe('2 repetitive deprecation warnings omitted.\nRun in verbose mode to see all warnings.');
+    });
+
     test('@debug reaches the build with its location below it', async ({ workingDirectory }) => {
       await expect(compileWarning(workingDirectory, 'a {\n  @debug "here";\n}\n')).resolves.toStrictEqual(['here\nsource/styles/site.scss 2:3']);
     });

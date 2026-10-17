@@ -1,6 +1,6 @@
 # PostCSS
 
-What the PostCSS plugin commits to: the file handler that runs every CSS file through the PostCSS plugins a site lists, how the files those plugins read become inputs, how PostCSS's warnings reach the author, and the one option the plugin takes. The plugin is a handler under the plugin contract (see: q-docs/specs/plugins.md, File handlers), and this spec holds what it adds to that contract.
+What the PostCSS plugin commits to: running every CSS file through the PostCSS plugins a site lists. The plugin is a handler under the plugin contract (see: q-docs/specs/plugins.md, File handlers), and this spec holds what it adds to that contract.
 
 ## The handler
 

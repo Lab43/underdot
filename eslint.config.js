@@ -1,5 +1,6 @@
 // exception: q-docs/conventions/toolchain.md, TypeScript
-// ESLint loads a TypeScript config file only behind an unstable flag.
+// ESLint loads a TypeScript config file only through the `jiti` dependency,
+// or natively behind an unstable flag.
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';

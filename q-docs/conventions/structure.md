@@ -1,6 +1,6 @@
 # Structure
 
-Rules for how the source is divided into modules: what a module holds, what it is named, and where it lives.
+Rules for how the source is divided into modules.
 
 ## Names
 

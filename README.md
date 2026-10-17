@@ -55,7 +55,7 @@ Both take `--config <path>` and `--verbose`. `underdot dev` also takes `--port <
 
 Underdot sorts every file in `source/` by its name:
 
-- A file a plugin renders, such as an `.ejs` file, is a page. It is written as `index.html` in a directory named after it, so `about.ejs` becomes `about/index.html` and is served at `/about/`. A page named `index` stays where it is.
+- A file a plugin renders, such as an `.ejs` file, is a page. It is written as `index.html` in a directory named after it, so `about.ejs` becomes `about/index.html` and is served at `/about/`. A page named `index` stays where it is, and a `404` page at the top is written as `404.html`.
 - A rendered file whose name starts with an underscore, such as `_.ejs`, is a template.
 - Every other file is a static file. It is copied as it is, unless a plugin handles it.
 - A file or directory whose name starts with an underscore is never written. Partials, data, and icons live in directories such as `_includes/`.
@@ -184,7 +184,7 @@ Each plugin is its own package:
 - [`underdot-helpers`](https://github.com/Lab43/underdot/tree/main/plugins/helpers#readme) gives templates `activeLink`, `formatDate`, and `fileExists`.
 - [`underdot-collections`](https://github.com/Lab43/underdot/tree/main/plugins/collections#readme) lists the pages below a directory, and reads a page's body into a template.
 - [`underdot-bust`](https://github.com/Lab43/underdot/tree/main/plugins/bust#readme) adds a content hash to a link to a static file.
-- [`underdot-srcset`](https://github.com/Lab43/underdot/tree/main/plugins/srcset#readme) renders an image with a `srcset`, and produces its resized copies.
+- [`underdot-srcset`](https://github.com/Lab43/underdot/tree/main/plugins/srcset#readme) renders an image with a `srcset`, and produces its derivatives.
 - [`underdot-svgo`](https://github.com/Lab43/underdot/tree/main/plugins/svgo#readme) optimizes every SVG, and inlines one into a page.
 - [`underdot-sass`](https://github.com/Lab43/underdot/tree/main/plugins/sass#readme) compiles SCSS to CSS.
 - [`underdot-postcss`](https://github.com/Lab43/underdot/tree/main/plugins/postcss#readme) runs every CSS file through PostCSS plugins.

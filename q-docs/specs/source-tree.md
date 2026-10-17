@@ -1,10 +1,10 @@
 # Source tree
 
-What Underdot makes of a site's source directory: which files are pages, templates, and static files, where each lands in the destination, and what URL a page gets. Template inheritance and the plugin contract build on the classification here (see: q-docs/specs/templates.md) (see: q-docs/specs/plugins.md).
+What Underdot makes of a site's source root: which files are pages, templates, and static files, where each lands in the destination, and what URL a page gets. Template inheritance and the plugin contract build on the classification here (see: q-docs/specs/templates.md) (see: q-docs/specs/plugins.md).
 
 ## Classification
 
-Every file under the source directory is exactly one of three things:
+Every file under the source root is exactly one of three things:
 
 - A **page**: a file whose extension has a registered renderer and whose name does not start with an underscore.
 - A **template**: a file whose extension has a registered renderer and whose name starts with an underscore.
@@ -16,10 +16,10 @@ Classification is by path alone. A file's contents never change what it is. Rend
 
 A file or directory whose name starts with an underscore is private to the build:
 
-- It is never written to the destination.
+- It is never written to the destination. What decides is the output path a file leaves the file handlers with: an output path with an underscore-prefixed segment is never written. A handler that renames a private file to a public path has it written, and one that renames a public file under the prefix keeps it out. Rationale: the destination holds what the handlers leave, so the path they leave is the one the site chose to ship.
 - A file inside an underscore-prefixed directory is a static file, whatever its extension. The extension that would make it a page or a template elsewhere makes nothing of it there.
 - An underscore-prefixed static file, and every file inside an underscore-prefixed directory, still passes through file handlers (see: q-docs/specs/plugins.md, File handlers). Rationale: a site keeps SVGs and Sass partials under the prefix, a directory of them as often as a file, so a plugin can inline or import them without the raw file reaching the output.
-- Renderers and plugins may read any file under the source directory, underscore-prefixed or not, including files inside underscore-prefixed directories. Rationale: template includes live in `_includes`.
+- Renderers and plugins may read any file under the source root, underscore-prefixed or not, including files inside underscore-prefixed directories. Rationale: template includes live in `_includes`.
 
 ## Dotfiles
 
@@ -38,7 +38,7 @@ Every page has a `url`: its output path relative to the destination, with a lead
 
 ## Output paths are unique
 
-Two sources that would write the same destination path are a build error that names both sources. This covers two pages with one URL, such as `about.ejs` beside `about/index.ejs` or `about.ejs` beside `about.md`, and a static file colliding with a file handler's renamed output. One source that would write a path twice, as a handler's split can, is the same error naming that source once. Rationale: silently keeping one of them makes the output depend on traversal order.
+Two sources that would write the same output path are a build error that names both sources. This covers two pages with one URL, such as `about.ejs` beside `about/index.ejs` or `about.ejs` beside `about.md`, and a static file colliding with a file handler's renamed output. One source that would write a path twice, as a handler's split can, is the same error naming that source once. Rationale: silently keeping one of them makes the output depend on traversal order.
 
 ## A page and a directory may share a name
 

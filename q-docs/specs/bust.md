@@ -1,6 +1,6 @@
 # Bust
 
-What the bust plugin commits to: the one helper it registers, how a reference to a static file resolves, the link the helper returns, and the options the plugin takes. The plugin is a helper under the plugin contract (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what the helper adds to that contract.
+What the bust plugin commits to: the helper that links to a static file so the link changes when the file does. The plugin is a helper under the plugin contract (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what the helper adds to that contract.
 
 ## The helper
 
@@ -8,7 +8,7 @@ The plugin is named `bust` and registers one helper, `bust`. A page or template 
 
 ## References
 
-A reference resolves as a read through the render context does: a relative one against the directory of the file being rendered, and one starting with a slash from the source root (see: q-docs/specs/templates.md, Relative paths). The link returned is always the output's absolute URL, the resolved output path with a leading slash, never the reference as written. Rationale: a browser resolves a relative link against the page's URL and not against the template that wrote it, so a relative reference returned as written would name one place to the build and another to the browser.
+A reference resolves as a read through the render context does (see: q-docs/specs/templates.md, Relative paths). The link returned is always the output's absolute URL, the resolved output path with a leading slash, never the reference as written. Rationale: a browser resolves a relative link against the page's URL and not against the template that wrote it, so a relative reference returned as written would name one place to the build and another to the browser.
 
 Three references are errors:
 

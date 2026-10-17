@@ -1,6 +1,6 @@
 # Collections
 
-What the collections plugin commits to: the page hook that defines a global per collection, the list of the pages below a directory, and the one helper that reads a page's rendered body into a template. The plugin is a page hook and a helper under the plugin contract (see: q-docs/specs/plugins.md, Page hooks) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
+What the collections plugin commits to: the lists of pages it gives templates. The plugin is a page hook and a helper under the plugin contract (see: q-docs/specs/plugins.md, Page hooks) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
 
 ## The plugin
 

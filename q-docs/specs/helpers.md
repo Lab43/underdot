@@ -1,6 +1,6 @@
 # Helpers
 
-What the helpers plugin commits to: the three helpers it registers, what each takes and returns, and the errors each raises. The plugin is a set of helpers under the plugin contract (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each helper adds to that contract.
+What the helpers plugin commits to: the general-purpose helpers it gives templates. The plugin is a set of helpers under the plugin contract (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each helper adds to that contract.
 
 ## The plugin
 
@@ -26,12 +26,12 @@ These calls are errors:
 
 A page or template calls `formatDate(date, format)`. It returns the date printed with date-fns's format tokens, in UTC. The date is a `Date`, as an unquoted YAML date is (see: q-docs/specs/templates.md, Frontmatter), a string, as a date in a JSON data file is (see: q-docs/specs/templates.md, Data files), or a number of milliseconds. Rationale: the destination must not depend on the machine (see: q-docs/specs/build.md, Determinism), and a date-only value read in the machine's zone prints the day before on every machine west of Greenwich. Format tokens rather than a style, because `MMMM d, yyyy` is what a template author writes and what a v1 template holds, and the output is a function of the value and the tokens alone.
 
-A string parses as the runtime parses it. A date alone, or a date and time with an offset, is the same instant on every machine. A time with no offset is the machine's local time, which the helper cannot tell from a zoned one, so a site writes a string date with its offset or as a date alone.
+A string parses as the runtime parses it. A date alone, or a date and time with an offset, is the same instant on every machine. A time with no offset is the machine's local time, which the helper cannot tell from a zoned one (see: underdot conventions/templates.md, Format dates in a fixed zone).
 
 The helper takes no third argument, and a call with one is an error. Rationale: v1 passed options through to date-fns, and a site that still passes them learns it at the first build rather than having them ignored. A date that is not a `Date`, a string, or a number, and a format that is not a string, are errors. Rationale: date-fns prints `null` and `true` as 1970 in silence, and a post whose date key was misspelled is a failure the build stops for rather than a page printing 1970. What date-fns itself throws passes through as it is: a string it cannot parse, an invalid `Date`, and a wrong token such as `YYYY`, whose message already says what to write instead.
 
 ## fileExists
 
-A page or template calls `fileExists(reference)`. It is true when a static file's output is at the reference, a private output included, and false otherwise, a page's path included. The reference resolves as a read through the render context does (see: q-docs/specs/templates.md, Relative paths): a relative one against the directory of the file being rendered, and one starting with a slash from the source root. Rationale: the served output is what a template asks about before it links to or inlines a file, so a stylesheet a handler compiled from `site.scss` is found by the name it is served under and not by its name in source. A private output reads as present because inlining a file from `_icons/` is the ordinary case for the question, and a link to one is the bust helper's error (see: q-docs/specs/bust.md, References).
+A page or template calls `fileExists(reference)`. It is true when a static file's output is at the reference, a private output included, and false otherwise, a page's path included. The reference resolves as a read through the render context does (see: q-docs/specs/templates.md, Relative paths). Rationale: the served output is what a template asks about before it links to or inlines a file, so a stylesheet a handler compiled from `site.scss` is found by the name it is served under and not by its name in source. A private output reads as present because inlining a file from `_icons/` is the ordinary case for the question, and a link to one is the bust helper's error (see: q-docs/specs/bust.md, References).
 
 A reference that is not a string is an error. A reference that resolves above the source root fails by the context's rule (see: q-docs/specs/plugins.md, Render context).

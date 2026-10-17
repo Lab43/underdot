@@ -16,7 +16,7 @@ A frontmatter key becomes a variable of the same name (see: Variables), except t
 
 ## Reserved keys
 
-One frontmatter key is a directive rather than a variable. `template` names the file's parent template (see: Template resolution). Its value is a string, and any other value is a build error naming the file. A directive is read from the file's own frontmatter only, never from the merged variables, so a page's `template` cannot redirect its template's parent.
+One frontmatter key is not a variable. `template` names the file's parent template (see: Template resolution). Its value is a string, and any other value is a build error naming the file. The key is read from the file's own frontmatter only, never from the merged variables, so a page's `template` cannot redirect its template's parent.
 
 Frontmatter keys starting with an underscore are reserved for the built-in variables (see: Built-in variables). A frontmatter key starting with an underscore is a build error naming the file. Rationale: reserving the class rather than a list lets a built-in be added later without breaking any site, and a silently shadowed built-in makes a link or an active-state check wrong on one page only, which is the hardest kind of bug to find.
 
@@ -79,7 +79,7 @@ Three variables exist regardless of frontmatter. Their names start with an under
 
 - `_url`: the page's URL (see: q-docs/specs/source-tree.md, URLs). It is the same in every file of the page's chain.
 - `_content`: the rendered output of the file directly below in the chain. It exists only in templates, because a page has nothing below it.
-- `_chain`: the frontmatter variables of each file below in the chain, nearest first, each without its `template` directive and with no merging. Rendering the root of a page that selected `_post` under `_wide`, `_chain[0]` is `_wide`'s frontmatter, `_chain[1]` is `_post`'s, and `_chain[2]` is the page's. In a page, `_chain` is empty. Rationale: the direct child is the most common read, so it sits at index zero, and a template knows its own frontmatter, so the list stops below it.
+- `_chain`: the frontmatter variables of each file below in the chain, nearest first, each without its `template` key and with no merging. Rendering the root of a page that selected `_post` under `_wide`, `_chain[0]` is `_wide`'s frontmatter, `_chain[1]` is `_post`'s, and `_chain[2]` is the page's. In a page, `_chain` is empty. Rationale: the direct child is the most common read, so it sits at index zero, and a template knows its own frontmatter, so the list stops below it.
 
 A template author reads a frontmatter variable that a page may not have set without an error. How an absent variable reads is the renderer's rule (see: q-docs/specs/plugins.md, Renderers).
 

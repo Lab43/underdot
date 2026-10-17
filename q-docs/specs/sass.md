@@ -1,6 +1,6 @@
 # Sass
 
-What the Sass plugin commits to: the file handler that compiles every SCSS stylesheet to CSS, how a stylesheet's imports resolve and become inputs of its output, how Sass's warnings reach the author, and that the plugin takes no options. The plugin is a handler under the plugin contract (see: q-docs/specs/plugins.md, File handlers), and this spec holds what it adds to that contract.
+What the Sass plugin commits to: compiling every SCSS stylesheet to CSS. The plugin is a handler under the plugin contract (see: q-docs/specs/plugins.md, File handlers), and this spec holds what it adds to that contract.
 
 ## The handler
 

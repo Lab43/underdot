@@ -1,6 +1,6 @@
 {
   "name": "underdot-svgo",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "SVG optimization for Underdot",
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
@@ -30,7 +30,7 @@
     "svgo": "^4.1.0"
   },
   "peerDependencies": {
-    "underdot": "^2.0.0"
+    "underdot": "^2.0.1"
   },
   "devDependencies": {
     "underdot": "file:../.."

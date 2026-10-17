@@ -1,6 +1,6 @@
 # SVGO
 
-What the SVGO plugin commits to: the file handler that optimizes every SVG, the one helper that inlines an optimized SVG into a page, and the one option the plugin takes. The plugin is a handler and a helper under the plugin contract (see: q-docs/specs/plugins.md, File handlers) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
+What the SVGO plugin commits to: optimizing every SVG and inlining one into a page. The plugin is a handler and a helper under the plugin contract (see: q-docs/specs/plugins.md, File handlers) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
 
 ## The handler
 
@@ -12,7 +12,7 @@ The output is a function of the file's bytes and the plugin list alone, so every
 
 ## The helper
 
-The plugin registers one helper, `inlineSvg`. A page or template calls `inlineSvg(reference)`. It returns the optimized SVG at the reference as text. The reference resolves as a read through the render context does (see: q-docs/specs/templates.md, Relative paths): a relative one against the directory of the file being rendered, and one starting with a slash from the source root. A private output is inlined like any other. Rationale: the handler ran before any page rendered and left its output at the file's own path, so the handled output is the optimized SVG, and a site keeps its inlined icons under an underscore directory so the raw files are never written (see: q-docs/specs/source-tree.md, Underscore prefix).
+The plugin registers one helper, `inlineSvg`. A page or template calls `inlineSvg(reference)`. It returns the optimized SVG at the reference as text. The reference resolves as a read through the render context does (see: q-docs/specs/templates.md, Relative paths). A private output is inlined like any other. Rationale: the handler ran before any page rendered and left its output at the file's own path, so the handled output is the optimized SVG, and a site keeps its inlined icons under an underscore directory so the raw files are never written (see: q-docs/specs/source-tree.md, Underscore prefix).
 
 The helper checks no extension. Whatever output the reference names is inlined. Rationale: every SVG is left at its own path, so an output at a `.svg` path is optimized, and a reference to anything else is the author's deliberate act.
 

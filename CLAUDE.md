@@ -12,7 +12,7 @@ Package doc paths are package name plus path from the package's `q-extension/` p
 
 Binding decisions about how this project's code and docs get written, recorded as they are made (source: @lab43/q conventions/documentation.md, Taxonomy).
 
-Conventions come in three tiers: q's own, the conventions of any installed extensions, and this project's own `q-docs/conventions/` (source: @lab43/q conventions/conventions.md, Three tiers of conventions). q and any installed extension are dependencies in `package.json`, and the payload this package ships to sites is read from its own `q-extension/` directory. Project rules win over an extension's rule, and an extension's rule wins over q's. Check all three tiers before writing code, before design decisions and reviews, and before changing docs.
+Conventions come in three tiers: q's own, the conventions of any installed extensions, and this project's own `q-docs/conventions/` (source: @lab43/q conventions/conventions.md, Three tiers of conventions). q and any installed extension are dependencies in `package.json`, and the payload this package ships to sites is read from its own `q-extension/` directory (source: @lab43/q conventions/extensions.md, Layout). Project rules win over an extension's rule, and an extension's rule wins over q's. Check all three tiers before writing code, before design decisions and reviews, and before changing docs.
 
 `@lab43/q` — The rules of the q workflow, governing how a project's work gets planned, decided, documented, and shipped.
 
@@ -29,36 +29,35 @@ Conventions come in three tiers: q's own, the conventions of any installed exten
 `underdot` — Rules for writing a site built on Underdot: its configuration, source tree, templates, and plugins.
 
 - `underdot conventions/configuration.md` — rules for writing a site's Underdot configuration file
-- `underdot conventions/ejs.md` — rules for writing a site's EJS pages, templates, and partials
-- `underdot conventions/templates.md` — rules for writing a site's pages and templates in any engine
+- `underdot conventions/templates.md` — rules for writing a site's pages, templates, and partials
 
 This project's own:
 
 - `q-docs/conventions/principles.md` — cross-cutting rules, including deviations from q's
 - `q-docs/conventions/documentation.md` — documentation rulings and deviations
 - `q-docs/conventions/toolchain.md` — the language, module system, and runtime the code is written against
-- `q-docs/conventions/structure.md` — how the source is divided into modules: what a module holds, what it is named, and where it lives
+- `q-docs/conventions/structure.md` — how the source is divided into modules
 - `q-docs/conventions/testing.md` — rules for writing and running the tests
 
 ### Specs
 
 What Underdot commits to, stated as behavior the code must honor (source: @lab43/q conventions/documentation.md, Taxonomy).
 
-- `q-docs/specs/source-tree.md` — what Underdot makes of a site's source directory: which files are pages, templates, and static files, where each lands in the destination, and what URL a page gets
+- `q-docs/specs/source-tree.md` — what Underdot makes of a site's source root: which files are pages, templates, and static files, where each lands in the destination, and what URL a page gets
 - `q-docs/specs/templates.md` — how a page becomes a finished document: frontmatter, how a page finds its template chain, and which variables every file in the chain sees
 - `q-docs/specs/plugins.md` — what a plugin can do to a build and what it owes the build in return, so the build knows what depends on what
 - `q-docs/specs/build.md` — what one build guarantees: how the destination relates to the source, the order of work, when work is skipped, what a failure does, and what a build prints
-- `q-docs/specs/dev-server.md` — what a development session gives an author: one command that builds, serves locally, rebuilds on change, and reloads the browser
+- `q-docs/specs/dev-server.md` — what a dev-server session gives an author: one command that builds the site, serves it to this machine and its network, rebuilds when the source changes, and reloads the browser
 - `q-docs/specs/configuration.md` — how a site tells Underdot what to build and how it is routed: the configuration file, its settings, and the commands and programmatic entry points that consume it
-- `q-docs/specs/ejs.md` — what the EJS plugin commits to: how a file renders with EJS, what a template can read, how an include finds its partial, and the one option a site configures
-- `q-docs/specs/bust.md` — what the bust plugin commits to: the one helper it registers, how a reference to a static file resolves, the link the helper returns, and the options the plugin takes
-- `q-docs/specs/helpers.md` — what the helpers plugin commits to: the three helpers it registers, what each takes and returns, and the errors each raises
-- `q-docs/specs/svgo.md` — what the SVGO plugin commits to: the file handler that optimizes every SVG, the one helper that inlines an optimized SVG into a page, and the one option the plugin takes
-- `q-docs/specs/collections.md` — what the collections plugin commits to: the page hook that defines a global per collection, the list of the pages below a directory, and the one helper that reads a page's rendered body into a template
-- `q-docs/specs/srcset.md` — what the srcset plugin commits to: the one helper that renders an image with a `srcset`, the derivatives it has the build produce, and the one option the plugin takes
-- `q-docs/specs/sass.md` — what the Sass plugin commits to: the file handler that compiles every SCSS stylesheet to CSS, how its imports resolve and become inputs, how Sass's warnings reach the author, and that the plugin takes no options
-- `q-docs/specs/postcss.md` — what the PostCSS plugin commits to: the file handler that runs every CSS file through the site's PostCSS plugins, how the files they read become inputs, how their warnings reach the author, and the one option the plugin takes
-- `q-docs/specs/markdown.md` — what the Markdown plugin commits to: how a file renders with Markdown, the one helper it registers, and that the plugin takes no options
+- `q-docs/specs/ejs.md` — what the EJS plugin commits to: how a file renders with EJS
+- `q-docs/specs/bust.md` — what the bust plugin commits to: the helper that links to a static file so the link changes when the file does
+- `q-docs/specs/helpers.md` — what the helpers plugin commits to: the general-purpose helpers it gives templates
+- `q-docs/specs/svgo.md` — what the SVGO plugin commits to: optimizing every SVG and inlining one into a page
+- `q-docs/specs/collections.md` — what the collections plugin commits to: the lists of pages it gives templates
+- `q-docs/specs/srcset.md` — what the srcset plugin commits to: rendering an image with a `srcset` and producing its derivatives
+- `q-docs/specs/sass.md` — what the Sass plugin commits to: compiling every SCSS stylesheet to CSS
+- `q-docs/specs/postcss.md` — what the PostCSS plugin commits to: running every CSS file through the PostCSS plugins a site lists
+- `q-docs/specs/markdown.md` — what the Markdown plugin commits to: how a file renders with Markdown
 
 ### Guides
 
@@ -70,5 +69,5 @@ How to use and operate Underdot, rather than how to write its code (source: @lab
 
 This project's own:
 
-- `q-docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support
-- `q-docs/guides/publishing.md` — how to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, confirming it landed, and the tag and GitHub release that mark it
+- `q-docs/guides/driving-manual.md` — how to bring Underdot up and exercise it by hand
+- `q-docs/guides/publishing.md` — how to release a version of Underdot to npm

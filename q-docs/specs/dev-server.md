@@ -1,14 +1,14 @@
 # Dev server
 
-What a development session gives an author: one command that builds the site, serves it to this machine and its network, rebuilds when the source changes, and reloads the browser. What a rebuild does is the build's rule (see: q-docs/specs/build.md). This doc covers the session around it.
+What a dev-server session gives an author: one command that builds the site, serves it to this machine and its network, rebuilds when the source changes, and reloads the browser. What a rebuild does is the build's rule (see: q-docs/specs/build.md). This doc covers the session around it.
 
 ## Session
 
-A session builds the site once in full, then serves the destination and watches for changes until it is stopped. The session is the scope of incremental builds: every build after the first reruns only what changed (see: q-docs/specs/build.md, Incremental builds). The session serves whether or not the first build succeeded, so an author can start with a broken site and fix it while watching (see: Build status). A configuration that fails to load when the session starts fails the start, since there is nothing to serve or watch. A configuration that fails to reload is reported as a build failure, the previous configuration stays in force, and the report stands until a reload succeeds. Rationale: the author is mid-edit in the configuration exactly as they are mid-edit in a page, and the browser showing the report is how they learn.
+A session serves the destination and watches for changes until it is stopped, and builds the site once in full as it starts. Until that build lands, requests are served from whatever the destination already holds, and the browser shows the build running (see: Build status). The session is the scope of incremental builds: every build after the first reruns only what changed (see: q-docs/specs/build.md, Incremental builds). The session serves whether or not the first build succeeded, so an author can start with a broken site and fix it while watching (see: Build status). A configuration that fails to load when the session starts fails the start, since there is nothing to serve or watch. A configuration that fails to reload is reported as a build failure, the previous configuration stays in force, and the report stands until a reload succeeds. Rationale: the author is mid-edit in the configuration exactly as they are mid-edit in a page, and the browser showing the report is how they learn.
 
 ## Watching
 
-The session watches every file under the source root, dotfiles and underscore-prefixed paths included, and the configuration file. A change to a source file starts an incremental build. A change to the configuration reloads it and starts a full build. A change to a plugin's code is not watched, and takes a restart. Rationale: `.htaccess` and `_data` are as much source as a page is, and a watcher that skips them misses real edits.
+The session watches every file under the source root, dotfiles and underscore-prefixed paths included, and the configuration file. A change to a source file starts an incremental build. A change to the configuration reloads it and starts a full build. A plugin's code is not watched (see: q-docs/specs/build.md, Incremental builds). Rationale: `.htaccess` and `_data` are as much source as a page is, and a watcher that skips them misses real edits.
 
 Changes that arrive while a build runs are held and start one build when it finishes, however many arrived. Rationale: a save that lands mid-build must not be lost, and a burst of saves must not queue a burst of builds.
 
@@ -36,6 +36,6 @@ A plugin's warning prints in the terminal and is never shown in the browser (see
 
 ## Terminal
 
-The first line of every report the session prints starts with the local time, as `09:05:03`. Rationale: the author matches a line to a save by the clock they see.
+The first line of every report a running session prints starts with the local time, as `09:05:03`. A session that fails to start reports as the build command does, without the time. Rationale: the author matches a line to a save by the clock they see.
 
 Each successful build prints the `Built` line, and each failed one its report (see: q-docs/specs/build.md, Output). A reload of the configuration that succeeds prints `Reloaded <file>`, naming the file by its base name, before the build it starts. Rationale: the full rebuild that follows then reads with its cause.

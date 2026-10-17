@@ -1,6 +1,6 @@
 # Markdown
 
-What the Markdown plugin commits to: how a file renders with Markdown, the one helper it registers, and that the plugin takes no options. The plugin is a renderer and a helper under the plugin contract (see: q-docs/specs/plugins.md, Renderers) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
+What the Markdown plugin commits to: how a file renders with Markdown. The plugin is a renderer and a helper under the plugin contract (see: q-docs/specs/plugins.md, Renderers) (see: q-docs/specs/plugins.md, Template helpers), and this spec holds what each adds to that contract.
 
 ## Rendering
 

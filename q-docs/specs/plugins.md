@@ -45,7 +45,7 @@ Reading another page's rendered body is available while a template renders, neve
 
 ## File handlers
 
-A plugin registers a file handler with a glob, in minimatch's dialect, the configuration's one pattern syntax (see: q-docs/specs/configuration.md, Rewrites). Every static file whose path matches passes through the handler, underscore-prefixed files included (see: q-docs/specs/source-tree.md, Underscore prefix). The handler receives the file's output path, as the handlers before it left it, and its contents as bytes. It returns zero or more files, each an output path and contents as text or bytes, and may return them asynchronously, so it may transform, rename, split into several outputs, or drop a file. Rationale: a stylesheet compiles to one CSS file and one source map, and a partial compiles to nothing. A handler that returns anything but a list of files is a build error naming the plugin and the glob. Rationale: a handler keeps a file by returning it and drops one by returning nothing, so a return that is neither is a forgotten `return`, and a JavaScript site is told so rather than having every file pass through in silence. A returned file whose output path is not a string, or has a leading slash or an empty, `.`, or `..` segment, or whose contents are neither text nor bytes, is the same error. Rationale: an output is written under the destination at its path and read back by that exact string (see: Render context), so a path that escapes the destination or spells one location two ways can be neither written nor found.
+A plugin registers a file handler with a glob, the configuration's one pattern syntax (see: q-docs/specs/configuration.md, Rewrites). Every static file whose path matches passes through the handler, underscore-prefixed files included (see: q-docs/specs/source-tree.md, Underscore prefix). The handler receives the file's output path, as the handlers before it left it, and its contents as bytes. It returns zero or more files, each an output path and contents as text or bytes, and may return them asynchronously, so it may transform, rename, split into several outputs, or drop a file. Rationale: a stylesheet compiles to one CSS file and one source map, and a partial compiles to nothing. A handler that returns anything but a list of files is a build error naming the plugin and the glob. Rationale: a handler keeps a file by returning it and drops one by returning nothing, so a return that is neither is a forgotten `return`, and a JavaScript site is told so rather than having every file pass through in silence. A returned file whose output path is not a string, or has a leading slash or an empty, `.`, or `..` segment, or whose contents are neither text nor bytes, is the same error. Rationale: an output is written under the destination at its path and read back by that exact string (see: Render context), so a path that escapes the destination or spells one location two ways can be neither written nor found.
 
 A handler receives a context beside the file. It carries the absolute path of the source root, where a tool the plugin wraps finds files on disk. It declares a file a wrapped tool read, by its path under the source root (see: Reading and writing). It warns (see: Errors). Rationale: a wrapped tool reads from disk, so it needs a location there, and the source root is the one location that holds the file and everything it can import.
 
@@ -67,7 +67,7 @@ Two emits of one path with the same inputs in one build are one output. Rational
 
 Each of the following is a build error naming the file and the path, as the File handlers section states for a handler's output:
 
-- an output path that is not a string, or has a leading slash or an empty, `.`, or `..` segment
+- an output path a handler could not return (see: File handlers)
 - a producer that is not a function
 - parameters `node:v8` cannot serialize
 - a producer that returns neither text nor bytes, which names the plugin in place of the file
@@ -76,7 +76,7 @@ The producer runs only when the emitted file's inputs have changed since it last
 
 ## Page hooks
 
-A plugin registers at most one page hook. Hooks run in plugin order after every page has been classified and its frontmatter parsed, and before any page renders. A hook sees every page's URL, output path, source path, and frontmatter as written. The pages come in the order of their source paths, so a global built from them is the same on every machine. The frontmatter a hook sees is the keys that become variables, the template directive apart. It never sees rendered content. Rationale: a page's body renders with the globals that hooks define, so a hook reading bodies would need the result of the rendering it precedes. A hook changes nothing it sees. Rationale: a hook that changed a page's frontmatter would change what later hooks and the renders see, which the build could neither detect nor attribute.
+A plugin registers at most one page hook. Hooks run in plugin order after every page has been classified and its frontmatter parsed, and before any page renders. A hook sees every page's URL, output path, source path, and frontmatter as written. The pages come in the order of their source paths, so a global built from them is the same on every machine. The frontmatter a hook sees is the keys that become variables, the `template` key apart. It never sees rendered content. Rationale: a page's body renders with the globals that hooks define, so a hook reading bodies would need the result of the rendering it precedes. A hook changes nothing it sees. Rationale: a hook that changed a page's frontmatter would change what later hooks and the renders see, which the build could neither detect nor attribute.
 
 A hook receives a context beside the pages, whose one operation warns (see: Errors).
 
@@ -90,7 +90,7 @@ A tool a plugin wraps may read files on its own, as a stylesheet compiler follow
 
 ## Dependencies
 
-The build treats each of these as a unit of work with inputs: handling one static file, running one page hook, rendering one page, and producing one emitted file. A unit's inputs are everything it read through the context, every file it declared, for a render the pages and templates of its chain and the globals it read, and for an emitted file its parameters. The build reruns a unit when any input changed and otherwise reuses its previous result (see: q-docs/specs/build.md, Incremental builds).
+The build treats each of these as a unit of work with inputs: reading one page, template, or data file, handling one static file, running one page hook, rendering one page's body, rendering that body through its template chain, and producing one emitted file. A unit's inputs are everything it read through the context, every file it declared, for a render the pages and templates of its chain and the globals it read, and for an emitted file its parameters. The build reruns a unit when any input changed and otherwise reuses its previous result (see: q-docs/specs/build.md, Incremental builds).
 
 A plugin's obligations follow from that:
 

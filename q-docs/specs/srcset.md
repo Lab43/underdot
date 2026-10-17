@@ -1,6 +1,6 @@
 # Srcset
 
-What the srcset plugin commits to: the one helper that renders an image with a `srcset`, the derivatives it has the build produce, and the one option the plugin takes. The plugin is a helper that emits files under the plugin contract (see: q-docs/specs/plugins.md, Template helpers) (see: q-docs/specs/plugins.md, Emitted files), and this spec holds what it adds to that contract.
+What the srcset plugin commits to: rendering an image with a `srcset` and producing its derivatives. The plugin is a helper that emits files under the plugin contract (see: q-docs/specs/plugins.md, Template helpers) (see: q-docs/specs/plugins.md, Emitted files), and this spec holds what it adds to that contract.
 
 ## The plugin
 

@@ -1,6 +1,6 @@
 # Publishing
 
-How to release a version of Underdot to npm: the version bump, the checks that come before publishing, the publish itself, confirming it landed, and the tag and GitHub release that mark it.
+How to release a version of Underdot to npm.
 
 ## Bump the version
 
@@ -13,7 +13,7 @@ Every package moves to the same version together, the core and the nine plugins 
 
 Run `npm install` to carry the new versions into `package-lock.json`.
 
-A major version that changes what a site writes also extends `q-extension/guides/migrating-from-v1.md`, or adds a guide beside it for the new major.
+A major version that changes what a site writes also extends `underdot guides/migrating-from-v1.md`, or adds a guide beside it for the new major.
 
 ## Check before publishing
 

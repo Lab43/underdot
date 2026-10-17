@@ -1,10 +1,10 @@
 # Driving manual
 
-How to bring Underdot up and exercise it by hand: the compiled command, the published packages, and the runtimes they support.
+How to bring Underdot up and exercise it by hand.
 
 ## The compiled command
 
-Run the command from a copy of a fixture, never from a fixture itself, because a build writes the destination and nothing under `test/fixtures/` is ever written (see: q-docs/conventions/testing.md, Fixtures). Copy a fixture to a scratch directory, run `npm run build`, and from inside the copy run `node <repo>/dist/underdot.js build`. A successful build prints `✓ Built in <duration>` and exits 0. Run `node <repo>/dist/underdot.js` with no arguments to see a usage error and its exit status of 2.
+Run the command from a copy of a fixture, never from a fixture itself, because a build writes the destination and nothing but `vitest --update` writes under `test/fixtures/` (see: q-docs/conventions/testing.md, Fixtures). Copy a fixture to a scratch directory, run `npm run build`, and from inside the copy run `node <repo>/dist/underdot.js build`. A successful build prints `✓ Built in <duration> · <n> ran` and exits 0. Run `node <repo>/dist/underdot.js` with no arguments to see a usage error and its exit status of 2.
 
 Output piped to a file, or read through an agent's shell tool, prints plain, because color appears on a terminal only. To see the colors, run the command on a pseudo-terminal and show the escape codes: `script -q /dev/null node <repo>/dist/underdot.js build </dev/null | cat -v`. Without `</dev/null`, `script` fails with `tcgetattr/ioctl: Operation not supported on socket` when its input is a socket, as an agent's shell tool can give it.
 
@@ -24,7 +24,7 @@ A session run under `script` with its input from `/dev/null` prints nothing and 
 
 With a page open in the browser, an edit to a page under `source/` rebuilds and reloads it, and the terminal prints another `✓ Built in` line. An edit that breaks a page, such as an unclosed frontmatter block, shows the build's report in an overlay in the browser and prints it in the terminal, and the page behind the overlay stays. Fixing the page reloads it. Without a browser, `curl -N <url>_underdot/events` prints the `building`, `failed`, and `built` events as they are sent.
 
-One save can print two or more `✓ Built in` lines on macOS. The watcher reports a single write as several change events, and an event that lands while a build runs holds one more build after it. The builds after the first reuse every unit, so their lines read `0 ran`. To tell what a save reran, run the session with `--verbose` and read the unit lines printed before the save's first `✓ Built` line. Each names a unit that ran and the inputs whose change made it rerun, and a save that reran nothing prints none. To save a file unchanged, as an editor does, copy it outside `source/` and move the copy over it. Rewriting it in place reports the page as changed in two builds, because a build reads the file truncated mid-write. A temporary copy inside `source/` prints its own `Handled`, `Wrote`, and `Removed` lines.
+One save can print two or more `✓ Built in` lines on macOS. The watcher reports a single write as several change events, and an event that lands while a build runs holds one more build after it. The builds after the first reuse every unit, so their lines read `0 ran, <n> reused`. To tell what a save reran, run the session with `--verbose` and read the unit lines printed before the save's first `✓ Built` line. Each names a unit that ran and the inputs whose change made it rerun, and a save that reran nothing prints none. To save a file unchanged, as an editor does, copy it outside `source/` and move the copy over it. Rewriting it in place reports the page as changed in two builds, because a build reads the file truncated mid-write. A temporary copy inside `source/` prints its own `Handled`, `Wrote`, and `Removed` lines.
 
 An edit to `underdot.config.ts` prints `Reloaded underdot.config.ts`, reloads the configuration, and builds in full, so a rewrite added there serves after the next `✓ Built in` line. A configuration that fails to load is reported the same way, and the previous configuration stays in force until the file loads again.
 

@@ -1,6 +1,6 @@
 # EJS
 
-What the EJS plugin commits to: how a file renders with EJS, what a template can read, how an include finds its partial, and the one option a site configures. The plugin is a renderer under the plugin contract (see: q-docs/specs/plugins.md, Renderers), and this spec holds what EJS adds to that contract.
+What the EJS plugin commits to: how a file renders with EJS. The plugin is a renderer under the plugin contract (see: q-docs/specs/plugins.md, Renderers), and this spec holds what EJS adds to that contract.
 
 ## Rendering
 
@@ -28,7 +28,7 @@ The partial renders under the same rules as the file that included it, entered t
 
 Every partial is read through the render context, so an excluded partial is absent and one above the source root fails the build by the context's rules (see: q-docs/specs/plugins.md, Render context).
 
-An include no candidate satisfies is an error. For a relative reference it names the directory searched, `the source root` for a file at the root, and the views directories. For an absolute reference it says nothing is under the source root at it. The engine reports it with the including file and the line of the include, as it reports any failure (see: Rendering).
+An include no candidate satisfies is an error. For a relative reference it names the directory searched, `the source root` for a file at the root, and adds `or in the views directories` without naming them. For an absolute reference it says nothing is under the source root at it. The engine reports it with the including file and the line of the include, as it reports any failure (see: Rendering).
 
 ## Options
 

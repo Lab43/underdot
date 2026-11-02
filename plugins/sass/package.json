@@ -1,6 +1,6 @@
 {
   "name": "underdot-sass",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Sass for Underdot",
   "author": "Cameron Spencer <cameron@lab43.com> (https://www.lab43.com)",
   "license": "ISC",
@@ -30,7 +30,7 @@
     "sass": "^1.105.1"
   },
   "peerDependencies": {
-    "underdot": "^2.0.1"
+    "underdot": "^2.0.2"
   },
   "devDependencies": {
     "underdot": "file:../.."

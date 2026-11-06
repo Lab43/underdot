@@ -22,6 +22,18 @@ describe('renderActiveLink', () => {
     expect(renderActiveLink(makeContext('/blog/hello/'), '/blog/', 'Blog', { class: 'nav' })).toBe('<a href="/blog/" class="nav parent">Blog</a>');
   });
 
+  test('a link written without the trailing slash is active on its page', () => {
+    expect(renderActiveLink(makeContext('/blog/'), '/blog', 'Blog')).toBe('<a href="/blog" class="active">Blog</a>');
+  });
+
+  test('a link written without the trailing slash is parent of the pages under it', () => {
+    expect(renderActiveLink(makeContext('/blog/hello/'), '/blog', 'Blog')).toBe('<a href="/blog" class="parent">Blog</a>');
+  });
+
+  test('a link is not parent of a sibling whose name shares its prefix', () => {
+    expect(renderActiveLink(makeContext('/blog-archive/'), '/blog', 'Blog')).toBe('<a href="/blog">Blog</a>');
+  });
+
   test('the home link is never parent', () => {
     expect(renderActiveLink(makeContext('/blog/hello/'), '/', 'Home')).toBe('<a href="/">Home</a>');
   });

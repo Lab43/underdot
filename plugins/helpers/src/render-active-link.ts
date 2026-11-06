@@ -36,13 +36,16 @@ export const renderActiveLink = (context: RenderContext, href: unknown, title: u
     throw new Error('The wrapper must not be empty.');
   }
 
-  // A page is active for its own link alone, and `/` is never a parent, since
+  // A href written without its trailing slash names the same page, and is a
+  // parent only of the URLs under it, never of a sibling sharing its prefix. A
+  // page is active for its own link alone, and `/` is never a parent, since
   // every URL starts with it.
   const url = String(context.variables._url);
+  const section = href.endsWith('/') ? href : `${href}/`;
   let className: string | undefined;
-  if (url === href) {
+  if (url === href || url === section) {
     className = 'active';
-  } else if (href !== '/' && url.startsWith(href)) {
+  } else if (href !== '/' && url.startsWith(section)) {
     className = 'parent';
   }
 

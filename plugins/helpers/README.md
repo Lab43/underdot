@@ -24,8 +24,8 @@ export default {
 
 `activeLink(href, title, attributes, wrapper)` returns a link marked when it points at the current page. `attributes` and `wrapper` are optional.
 
-- The link's class is `active` when `href` is the page's URL.
-- The class is `parent` when the page's URL starts with `href`, other than `/`.
+- The link's class is `active` when `href` is the page's URL. A `href` without the trailing slash, such as `/about`, counts as the URL with it.
+- The class is `parent` when the page is under `href`, other than `/`: `/blog` is a parent of `/blog/hello/` and not of `/blog-archive/`.
 - With a `wrapper`, an element name, the link sits inside that element, and the attributes and the class go on the wrapper.
 - Every attribute value is escaped, the `href` included.
 
